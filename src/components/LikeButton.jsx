@@ -55,8 +55,8 @@ export default function LikeButton({ postId, initialCount = 0, onCountChange }) 
       disabled={!user}
       className={`flex items-center gap-2 px-4 py-2.5 rounded-full border transition-all duration-200 ${
         liked
-          ? "bg-red-50 border-red-200 text-red-600"
-          : "bg-card border-border text-muted-foreground hover:text-red-500 hover:border-red-200"
+          ? "bg-red-500/10 border-red-500/30 text-red-500"
+          : "bg-card border-border text-muted-foreground hover:text-red-500 hover:border-red-500/30"
       } ${!user ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
     >
       <motion.div

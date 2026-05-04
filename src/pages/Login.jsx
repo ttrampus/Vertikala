@@ -1,26 +1,41 @@
-import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Loader2, Mountain, Mail, Lock, User, ArrowRight } from "lucide-react";
+import { ThemeCtx } from "@/lib/ThemeContext";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login, loginWithGoogle, register, authError, setAuthError, isAuthenticated } = useAuth();
+  const { login, authError, setAuthError, isAuthenticated } = useAuth();
+  const theme = useContext(ThemeCtx);
 
-  const [mode, setMode] = useState("login"); // "login" | "register"
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [form, setForm] = useState({ email: "", password: "", displayName: "" });
+
+  // Forgot password state
+  const [forgotMode, setForgotMode] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotDone, setForgotDone] = useState(false);
+  const [forgotError, setForgotError] = useState(null);
 
   useEffect(() => {
     if (isAuthenticated) navigate("/");
   }, [isAuthenticated]);
 
-  const update = (field, value) => {
-    setAuthError(null);
-    setForm((prev) => ({ ...prev, [field]: value }));
+  const inputStyle = {
+    width: "100%", boxSizing: "border-box",
+    background: theme.inputBg, border: `1px solid ${theme.border}`,
+    borderRadius: "6px", padding: "13px 16px",
+    color: theme.text, fontFamily: "'Inter', sans-serif", fontSize: "14px",
+    outline: "none", transition: "border-color 0.2s, background 0.4s",
+  };
+
+  const labelStyle = {
+    fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600,
+    fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase",
+    color: theme.textLow, display: "block", marginBottom: "8px",
   };
 
   const handleLogin = async (e) => {
@@ -31,187 +46,177 @@ export default function Login() {
     if (!error) navigate("/");
   };
 
-  const handleRegister = async (e) => {
+  const handleForgot = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    const { error } = await register(form.email, form.password, form.displayName);
-    setLoading(false);
-    if (!error) navigate("/");
-  };
-
-  const handleGoogle = async () => {
-    setGoogleLoading(true);
-    await loginWithGoogle();
-    // No need to setGoogleLoading(false) — page redirects to Google
+    setForgotError(null);
+    setForgotLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
+      redirectTo: `${window.location.origin}/complete-profile`,
+    });
+    setForgotLoading(false);
+    if (error) { setForgotError(error.message); return; }
+    setForgotDone(true);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="w-full max-w-md">
+    <div style={{
+      background: theme.bg, minHeight: "100vh", color: theme.text,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: "100px 24px 60px", position: "relative", overflow: "hidden",
+      transition: "background 0.4s, color 0.4s",
+    }}>
+      <div style={{ position: "absolute", top: "-200px", left: "50%", transform: "translateX(-50%)", width: "600px", height: "600px", background: "radial-gradient(circle, rgba(232,80,26,0.06) 0%, transparent 70%)", borderRadius: "50%", pointerEvents: "none" }} />
 
+      <div style={{ width: "100%", maxWidth: "440px", position: "relative", zIndex: 1 }}>
         {/* Logo */}
-        <div className="flex items-center gap-2 mb-10 justify-center">
-          <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
-            <Mountain className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <span className="font-inter font-extrabold text-xl tracking-tighter">Alpine Club</span>
-        </div>
-
-        <div className="border border-border rounded-2xl p-8 bg-card shadow-sm">
-
-          {/* Google OAuth button */}
-          <Button
-            onClick={handleGoogle}
-            variant="outline"
-            className="w-full gap-3 mb-6 h-11"
-            disabled={googleLoading}
-          >
-            {googleLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <svg className="h-4 w-4" viewBox="0 0 24 24">
-                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
-                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+        <div style={{ textAlign: "center", marginBottom: "40px" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "12px", cursor: "pointer" }} onClick={() => navigate("/")}>
+            <div style={{ width: "48px", height: "48px", background: "rgba(232,80,26,0.15)", border: "2px solid rgba(232,80,26,0.4)", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
+                <polygon points="16,4 30,28 2,28" fill="none" stroke="#E8501A" strokeWidth="2.5" strokeLinejoin="round"/>
+                <polygon points="16,11 23,28 9,28" fill="#E8501A" opacity="0.5"/>
               </svg>
-            )}
-            Continue with Google
-          </Button>
-
-          {/* Divider */}
-          <div className="relative mb-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border" />
             </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="bg-card px-3 text-muted-foreground font-inter">or</span>
+            <div style={{ textAlign: "left" }}>
+              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "18px", lineHeight: 1, letterSpacing: "0.04em", color: theme.text }}>
+                AK <span style={{ color: "#E8501A" }}>VERTIKALA</span>
+              </div>
+              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase", color: theme.textLow, marginTop: "2px" }}>Alpinistični klub</div>
             </div>
           </div>
-
-          {/* Mode tabs */}
-          <div className="flex gap-1 p-1 rounded-lg bg-muted mb-6">
-            {[
-              { key: "login", label: "Sign In" },
-              { key: "register", label: "Register" },
-            ].map(({ key, label }) => (
-              <button
-                key={key}
-                onClick={() => { setMode(key); setAuthError(null); }}
-                className={`flex-1 py-1.5 rounded-md text-sm font-inter font-medium transition-all ${
-                  mode === key
-                    ? "bg-background shadow-sm text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          {/* Error */}
-          {authError && (
-            <div className="mb-5 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-sm text-destructive font-inter">
-              {authError}
-            </div>
-          )}
-
-          {/* Login form */}
-          {mode === "login" && (
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-inter font-medium text-muted-foreground uppercase tracking-wider">Email</label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="email"
-                    value={form.email}
-                    onChange={(e) => update("email", e.target.value)}
-                    placeholder="you@example.com"
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-inter font-medium text-muted-foreground uppercase tracking-wider">Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="password"
-                    value={form.password}
-                    onChange={(e) => update("password", e.target.value)}
-                    placeholder="••••••••"
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
-              <Button type="submit" className="w-full gap-2" disabled={loading}>
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-                Sign In
-              </Button>
-            </form>
-          )}
-
-          {/* Register form */}
-          {mode === "register" && (
-            <form onSubmit={handleRegister} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-inter font-medium text-muted-foreground uppercase tracking-wider">Display Name</label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    value={form.displayName}
-                    onChange={(e) => update("displayName", e.target.value)}
-                    placeholder="Your name"
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-inter font-medium text-muted-foreground uppercase tracking-wider">Email</label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="email"
-                    value={form.email}
-                    onChange={(e) => update("email", e.target.value)}
-                    placeholder="you@example.com"
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-inter font-medium text-muted-foreground uppercase tracking-wider">Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="password"
-                    value={form.password}
-                    onChange={(e) => update("password", e.target.value)}
-                    placeholder="Min. 6 characters"
-                    className="pl-10"
-                    minLength={6}
-                    required
-                  />
-                </div>
-              </div>
-              <Button type="submit" className="w-full gap-2" disabled={loading}>
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-                Create Account
-              </Button>
-            </form>
-          )}
-
         </div>
 
-        <p className="text-center text-xs text-muted-foreground font-inter mt-6">
-          <Link to="/" className="hover:text-foreground transition-colors">← Back to home</Link>
-        </p>
+        {/* Card */}
+        <div style={{ background: theme.bgCard, border: `1px solid ${theme.border}`, borderRadius: "16px", padding: "40px", boxShadow: theme.isDark ? "0 40px 80px rgba(0,0,0,0.4)" : "0 20px 60px rgba(0,0,0,0.1)", transition: "background 0.4s, border-color 0.4s" }}>
+
+          {forgotMode ? (
+            /* ── Forgot password ── */
+            forgotDone ? (
+              <div style={{ textAlign: "center" }}>
+                <div style={{ width: "56px", height: "56px", background: "rgba(34,197,94,0.1)", border: "2px solid rgba(34,197,94,0.3)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "20px", marginBottom: "12px" }}>E-pošta poslana!</h2>
+                <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "14px", color: theme.textMid, lineHeight: 1.6, marginBottom: "24px" }}>
+                  Preverite e-pošto in kliknite na povezavo za ponastavitev gesla.
+                </p>
+                <button onClick={() => { setForgotMode(false); setForgotDone(false); setForgotEmail(""); }}
+                  style={{ background: "none", border: `1px solid ${theme.border}`, borderRadius: "8px", padding: "10px 20px", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "13px", color: theme.textMid }}>
+                  ← Nazaj na prijavo
+                </button>
+              </div>
+            ) : (
+              <>
+                <div style={{ marginBottom: "24px" }}>
+                  <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "22px", letterSpacing: "0.02em", marginBottom: "6px" }}>Pozabljeno geslo</h2>
+                  <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", color: theme.textMid }}>Vnesite e-poštni naslov in poslali vam bomo povezavo za ponastavitev.</p>
+                </div>
+
+                {forgotError && (
+                  <div style={{ marginBottom: "20px", padding: "12px 16px", borderRadius: "6px", background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.2)", fontFamily: "'Inter', sans-serif", fontSize: "13px", color: "#ef4444" }}>{forgotError}</div>
+                )}
+
+                <form onSubmit={handleForgot} style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+                  <div>
+                    <label style={labelStyle}>E-pošta</label>
+                    <input
+                      required type="email" value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      placeholder="vasa@email.com" style={inputStyle}
+                      onFocus={(e) => e.target.style.borderColor = "rgba(232,80,26,0.5)"}
+                      onBlur={(e) => e.target.style.borderColor = theme.border}
+                    />
+                  </div>
+                  <button type="submit" disabled={forgotLoading}
+                    style={{ background: forgotLoading ? "#7a2c0d" : "#E8501A", color: "#fff", border: "none", cursor: forgotLoading ? "not-allowed" : "pointer", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "15px", letterSpacing: "0.1em", textTransform: "uppercase", padding: "15px", borderRadius: "8px", transition: "all 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+                    onMouseEnter={(e) => { if (!forgotLoading) e.currentTarget.style.background = "#c73d10"; }}
+                    onMouseLeave={(e) => { if (!forgotLoading) e.currentTarget.style.background = "#E8501A"; }}
+                  >
+                    {forgotLoading
+                      ? <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" style={{ animation: "spin 0.8s linear infinite" }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Pošiljam...</>
+                      : "Pošlji povezavo →"
+                    }
+                  </button>
+                  <button type="button" onClick={() => setForgotMode(false)}
+                    style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "13px", color: theme.textFaint, padding: 0, textAlign: "center" }}>
+                    ← Nazaj na prijavo
+                  </button>
+                </form>
+              </>
+            )
+          ) : (
+            /* ── Sign in ── */
+            <>
+              <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "22px", letterSpacing: "0.02em", marginBottom: "6px" }}>Prijava</h2>
+              <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", color: theme.textMid, marginBottom: "28px" }}>
+                Dostop je samo za člane kluba. Za povabilo se obrnite na administratorja.
+              </p>
+
+              {authError && (
+                <div style={{ marginBottom: "20px", padding: "12px 16px", borderRadius: "6px", background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.2)", fontFamily: "'Inter', sans-serif", fontSize: "13px", color: "#ef4444" }}>
+                  {authError}
+                </div>
+              )}
+
+              <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+                <div>
+                  <label style={labelStyle}>E-pošta</label>
+                  <input
+                    required type="email" value={form.email}
+                    onChange={(e) => { setAuthError && setAuthError(null); setForm((f) => ({ ...f, email: e.target.value })); }}
+                    placeholder="vasa@email.com" style={inputStyle}
+                    onFocus={(e) => e.target.style.borderColor = "rgba(232,80,26,0.5)"}
+                    onBlur={(e) => e.target.style.borderColor = theme.border}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Geslo</label>
+                  <div style={{ position: "relative" }}>
+                    <input
+                      required type={showPass ? "text" : "password"} value={form.password}
+                      onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                      placeholder="••••••••" style={{ ...inputStyle, paddingRight: "48px" }}
+                      onFocus={(e) => e.target.style.borderColor = "rgba(232,80,26,0.5)"}
+                      onBlur={(e) => e.target.style.borderColor = theme.border}
+                    />
+                    <button type="button" onClick={() => setShowPass((s) => !s)} style={{ position: "absolute", right: "14px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", padding: 0, color: theme.textLow }}>
+                      {showPass
+                        ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                        : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      }
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ textAlign: "right", marginTop: "-8px" }}>
+                  <button type="button" onClick={() => { setForgotMode(true); setForgotEmail(form.email); }}
+                    style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "13px", color: "#E8501A", padding: 0 }}>
+                    Pozabljeno geslo?
+                  </button>
+                </div>
+
+                <button type="submit" disabled={loading}
+                  style={{ background: loading ? "#7a2c0d" : "#E8501A", color: "#fff", border: "none", cursor: loading ? "not-allowed" : "pointer", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "15px", letterSpacing: "0.1em", textTransform: "uppercase", padding: "15px", borderRadius: "8px", marginTop: "4px", transition: "all 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+                  onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = "#c73d10"; }}
+                  onMouseLeave={(e) => { if (!loading) e.currentTarget.style.background = "#E8501A"; }}
+                >
+                  {loading
+                    ? <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" style={{ animation: "spin 0.8s linear infinite" }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Prijavljam...</>
+                    : "Prijava →"
+                  }
+                </button>
+              </form>
+            </>
+          )}
+        </div>
+
+        <div style={{ textAlign: "center", marginTop: "24px" }}>
+          <button onClick={() => navigate("/")} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "13px", color: theme.textFaint, transition: "color 0.2s" }}
+            onMouseEnter={(e) => e.target.style.color = theme.textMid}
+            onMouseLeave={(e) => e.target.style.color = theme.textFaint}>← Nazaj na domačo stran</button>
+        </div>
       </div>
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

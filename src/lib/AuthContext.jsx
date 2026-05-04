@@ -81,35 +81,6 @@ useEffect(() => {
     if (error) setAuthError(error.message);
   };
 
-  const loginWithGoogle = async () => {
-    setAuthError(null);
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: window.location.origin },
-    });
-  };
-
-  const register = async (email, password, displayName) => {
-    setAuthError(null);
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { display_name: displayName } },
-    });
-
-    if (error) {
-      setAuthError(error.message);
-      return;
-    }
-
-    if (data.user) {
-      await supabase.from("profile").insert({
-        id: data.user.id,
-        display_name: displayName,
-      });
-    }
-  };
-
   const logout = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -134,8 +105,6 @@ console.log("AuthContext state:", { isLoadingAuth, isLoadingProfile, role: profi
         authError,
         isAdmin,
         login,
-        loginWithGoogle,
-        register,
         logout,
         setAuthError,
       }}

@@ -5,6 +5,7 @@ import { queryClient } from "@/lib/query-client";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 
 import { AuthProvider, useAuth } from "@/lib/AuthContext";
+import { ThemeProvider } from "@/lib/ThemeContext";
 import UserNotRegisteredError from "@/components/UserNotRegisteredError";
 import Layout from "@/components/Layout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -21,6 +22,7 @@ import PostDetail from "@/pages/PostDetail";
 import EditPost from "@/pages/EditPost"
 import AdminDashboard from "@/pages/AdminDashboard"
 import Login from "@/pages/Login";
+import CompleteProfile from "@/pages/CompleteProfile";
 
 
 const AuthenticatedApp = () => {
@@ -45,6 +47,7 @@ const AuthenticatedApp = () => {
     <Route path="about" element={<About />} />
     <Route path="contact" element={<Contact />} />
     <Route path="login" element={<Login />} />
+    <Route path="complete-profile" element={<CompleteProfile />} />
     <Route path="alpine-school" element={<School />} />
     <Route path="events" element={<Events />} />
 
@@ -79,13 +82,15 @@ const AuthenticatedApp = () => {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <QueryClientProvider client={queryClient}>
-        <Router>
-          <AuthenticatedApp />
-        </Router>
-        <Toaster />
-      </QueryClientProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <Router>
+            <AuthenticatedApp />
+          </Router>
+          <Toaster />
+        </QueryClientProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

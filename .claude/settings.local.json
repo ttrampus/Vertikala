@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      {
+        "description": "Allow full read access to project files",
+        "permission": "read"
+      },
+      {
+        "description": "Allow full write access to project files",
+        "permission": "write"
+      },
+      {
+        "description": "Allow running bash commands",
+        "permission": "bash"
+      },
+      {
+        "description": "Allow editing multiple files",
+        "permission": "edit"
+      }
+    ]
+  }
+}

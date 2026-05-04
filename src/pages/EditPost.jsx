@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import ImageUploader from "../components/ImageUploader";
+import ClimbMetaForm from "../components/ClimbMetaForm";
 
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -513,7 +514,7 @@ export default function EditPost() {
   const [initialContent, setInitialContent] = useState(null);
 
   const [form, setForm] = useState({
-    title: "", summary: "", content: "", featured_image: "", images: [], tags: [], category: "climbs", status: "published",
+    title: "", summary: "", content: "", featured_image: "", images: [], tags: [], category: "climbs", status: "published", climb_metadata: {},
   });
   const [tagInput, setTagInput] = useState("");
 
@@ -565,6 +566,7 @@ export default function EditPost() {
       tags: data.tags || [],
       category: data.category || "climbs",
       status: data.status || "published",
+      climb_metadata: data.climb_metadata || {},
     });
     setInitialContent(data.content || "");
     setLoading(false);
@@ -611,8 +613,10 @@ export default function EditPost() {
     if (!form.title.trim() || !form.content.trim()) return;
     setSaving(true);
     try {
+      const climbMeta = form.category === "climbs" && Object.keys(form.climb_metadata || {}).length > 0
+        ? form.climb_metadata : null;
       const { error } = await supabase.from("BlogPost")
-        .update({ title: form.title, summary: form.summary, content: form.content, featured_image: form.featured_image, images: form.images, tags: form.tags, category: form.category, status })
+        .update({ title: form.title, summary: form.summary, content: form.content, featured_image: form.featured_image, images: form.images, tags: form.tags, category: form.category, climb_metadata: climbMeta, status })
         .eq("id", id);
       if (error) throw error;
       navigate(`/post/${id}`);
@@ -627,7 +631,7 @@ export default function EditPost() {
   if (isLoadingAuth || loading) return <div className="fixed inset-0 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
 
   return (
-    <div className="min-h-screen max-w-4xl mx-auto px-6 py-8 lg:py-16">
+    <div className="min-h-screen max-w-4xl mx-auto px-6 py-8 lg:py-16 pt-24 lg:pt-24">
       {showVideo && editor && <VideoModal editor={editor} onClose={() => setShowVideo(false)} />}
       {showLink && <LinkModal onInsert={(url) => editor?.chain().focus().setLink({ href: url }).run()} onClose={() => setShowLink(false)} />}
       {showSideBySide && editor && <SideBySideModal editor={editor} onClose={() => setShowSideBySide(false)} />}
@@ -697,6 +701,14 @@ export default function EditPost() {
             <Button variant="outline" onClick={addTag} size="sm">Add</Button>
           </div>
         </div>
+
+        {/* Climb metadata — only shown for climbs category */}
+        {form.category === "climbs" && (
+          <ClimbMetaForm
+            value={form.climb_metadata}
+            onChange={(meta) => updateForm("climb_metadata", meta)}
+          />
+        )}
 
         <div>
           <label className="block text-sm font-inter font-medium mb-2">Content</label>

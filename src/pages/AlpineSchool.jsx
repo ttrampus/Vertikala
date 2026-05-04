@@ -1,176 +1,177 @@
-import { Check, Mail, Phone, MapPin, Calendar, ArrowRight } from "lucide-react";
+import { useState, useEffect, useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import { ThemeCtx } from "@/lib/ThemeContext";
 
-const SCHOOL_IMAGE = "https://media.base44.com/images/public/69dbd4180b1b66b19635d3a4/7a4c30aa2_generated_eee97573.png";
-
-const TOPICS = [
-  { title: "Oprema & priprava", desc: "Oprema in priprava na turo, zgodovina alpinizma, orientacija" },
-  { title: "Varnost", desc: "Prva pomoč, nevarnosti v gorah, izrazoslovje, vreme" },
-  { title: "Vrvna tehnika", desc: "Vozli, sidrišča, samoreševanje, reševanje soplezalca" },
-  { title: "Plezanje", desc: "Športno plezanje, plezanje zaledenelih slapov, turna smuka" },
-  { title: "Zimska tehnika", desc: "Sneg, led in plazovi" },
-  { title: "Etika", desc: "Etika in varstvo narave" },
+const modules = [
+  { num: '01', title: 'Osnove alpinizma', desc: 'Oprema in priprava, zgodovina alpinizma, orientacija.', weeks: '2 tedna' },
+  { num: '02', title: 'Skalno plezanje', desc: 'Tehnika plezanja, postavljanje varovalnih točk, vodenje smeri.', weeks: '3 tedne' },
+  { num: '03', title: 'Ledeno plezanje', desc: 'Tehnika s cepin in dereze, varovanje na ledu in snegu.', weeks: '2 tedna' },
+  { num: '04', title: 'Visokogorje', desc: 'Bivouac tehnika, navigacija, reševanje v slabi vidljivosti.', weeks: '2 tedna' },
+  { num: '05', title: 'Praktični vzponi', desc: 'Skupinski vzponi pod mentorstvom izkušenih alpinistov.', weeks: '3 tedne' },
 ];
 
-const INSTRUCTORS = [
-  { name: "Gregor Trampuš", role: "Glavni inštruktor", initials: "GT" },
-  { name: "Ana Kovač", role: "Inštruktorica plezanja", initials: "AK" },
-  { name: "Marko Štefan", role: "Zimska tehnika", initials: "MŠ" },
+const instructors = [
+  { name: 'Gregor Trampuš', role: 'Glavni inštruktor', initials: 'GT' },
+  { name: 'Ana Kovač', role: 'Inštruktorica plezanja', initials: 'AK' },
+  { name: 'Marko Štefan', role: 'Zimska tehnika', initials: 'MŠ' },
 ];
 
 export default function AlpineSchool() {
-  return (
-    <div className="min-h-screen bg-background">
+  const theme = useContext(ThemeCtx);
+  const navigate = useNavigate();
+  const [visible, setVisible] = useState({});
 
+  useEffect(() => {
+    const els = document.querySelectorAll('[data-reveal]');
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) setVisible(v => ({ ...v, [e.target.dataset.reveal]: true })); });
+    }, { threshold: 0.08 });
+    els.forEach(el => obs.observe(el));
+    return () => obs.disconnect();
+  }, []);
+
+  const rev = (key, delay = 0) => ({
+    opacity: visible[key] ? 1 : 0,
+    transform: visible[key] ? 'translateY(0)' : 'translateY(28px)',
+    transition: `opacity 0.7s ${delay}s cubic-bezier(0.16,1,0.3,1), transform 0.7s ${delay}s cubic-bezier(0.16,1,0.3,1)`,
+  });
+
+  return (
+    <div style={{ background: theme.bg, minHeight: '100vh', color: theme.text, transition: 'background 0.4s, color 0.4s' }}>
       {/* Hero */}
-      <div className="relative h-[320px] md:h-[460px] overflow-hidden">
-        <img src={SCHOOL_IMAGE} alt="Alpine school" className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/30 to-black/75" />
-        <div className="absolute inset-0 flex flex-col justify-end px-6 lg:px-16 pb-8">
-          <p className="text-[10px] font-inter font-semibold tracking-[0.25em] uppercase text-white/50 mb-1">Program 2025</p>
-          <h1 className="font-inter font-black text-4xl md:text-5xl tracking-[-0.04em] leading-none text-white drop-shadow-lg">
-            Alpinistična <span className="text-primary">šola</span>
+      <div style={{ position: 'relative', height: '75vh', overflow: 'hidden', display: 'flex', alignItems: 'flex-end' }}>
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: "url('https://images.unsplash.com/photo-1522163182402-834f871fd851?w=1600&q=80')", backgroundSize: 'cover', backgroundPosition: 'center 35%' }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(10,10,10,0.98) 100%)' }} />
+        <div style={{ position: 'relative', zIndex: 1, padding: '0 72px 72px', maxWidth: '1100px', width: '100%' }}>
+          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '12px', letterSpacing: '0.3em', textTransform: 'uppercase', color: '#E8501A', marginBottom: '16px', opacity: 0, animation: 'fadeUp 0.8s 0.3s forwards' }}>Program 2026</div>
+          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 'clamp(56px,8vw,100px)', lineHeight: 0.95, letterSpacing: '-0.01em', margin: '0 0 20px', color: '#fff', opacity: 0, animation: 'fadeUp 0.8s 0.5s forwards' }}>
+            Alpinistična<br /><span style={{ color: '#E8501A' }}>šola</span>
           </h1>
-          <p className="font-serif text-white/70 text-sm mt-2 max-w-lg">
+          <p style={{ fontFamily: "'Inter', sans-serif", fontWeight: 300, fontSize: '18px', color: 'rgba(255,255,255,0.6)', maxWidth: '500px', lineHeight: 1.6, margin: '0 0 36px', opacity: 0, animation: 'fadeUp 0.8s 0.7s forwards' }}>
             Celovit program za vse, ki želijo varno in odgovorno stopiti v svet alpinizma.
           </p>
+          <a
+            href="mailto:gregor.trampus@siol.net"
+            style={{ display: 'inline-block', background: '#E8501A', color: '#fff', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '15px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '14px 32px', borderRadius: '4px', opacity: 0, animation: 'fadeUp 0.8s 0.9s forwards', transition: 'background 0.2s' }}
+            onMouseEnter={e => e.currentTarget.style.background = '#c73d10'}
+            onMouseLeave={e => e.currentTarget.style.background = '#E8501A'}
+          >Prijavi se →</a>
         </div>
       </div>
 
-      {/* Stats bar */}
-      <div className="grid grid-cols-4 border-b border-border bg-muted/40 divide-x divide-border">
-        {[
-          { n: "6", l: "Modulov" },
-          { n: "Mar", l: "Začetek" },
-          { n: "∞", l: "Pustolovščin" },
-          { n: "PZS", l: "Akreditacija" },
-        ].map(({ n, l }) => (
-          <div key={l} className="flex flex-col items-center justify-center py-2.5">
-            <span className="font-inter font-bold text-base leading-none">{n}</span>
-            <span className="text-[10px] text-muted-foreground uppercase tracking-wide mt-0.5">{l}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Main content */}
-      <div className="px-6 lg:px-16 py-10 grid grid-cols-1 lg:grid-cols-3 gap-10 border-b border-border">
-
-        {/* Left: description */}
-        <div className="lg:col-span-2 space-y-5">
-          <div className="flex items-center gap-3">
-            <div className="h-px flex-1 bg-border" />
-            <span className="text-[9px] font-inter font-bold tracking-[0.2em] uppercase text-muted-foreground">O šoli</span>
-            <div className="h-px flex-1 bg-border" />
-          </div>
-
-          <p className="font-serif text-base leading-relaxed text-foreground/80">
-            V mesecu marcu pričenjamo z novo sezono alpinistične šole! Na uvodnem sestanku boste dobili vse informacije o poteku šole, načrtu dela in spoznali inštruktorje.
-          </p>
-          <p className="font-serif text-sm leading-relaxed text-muted-foreground">
-            Prihodnja alpinistična šola bo omogočala tudi program <span className="font-semibold text-foreground">"Skalni plezalec"</span>, ki je že pod okriljem Komisije za alpinizem PZS. Praktično vsa poglavja boste spoznali v teoriji kot tudi v praksi. Število udeležencev bo omejeno.
-          </p>
-
-          {/* Intro meeting card */}
-          <div className="flex items-start gap-4 p-4 rounded-xl border border-orange-200 bg-orange-500/5">
-            <div className="w-9 h-9 rounded-lg bg-orange-500/10 flex items-center justify-center flex-shrink-0">
-              <Calendar className="w-4 h-4 text-orange-500" />
-            </div>
-            <div>
-              <p className="font-inter font-semibold text-sm">Uvodni sestanek</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Četrtek, 06.03.2025 · Klubski prostori v Tacnu</p>
-              <p className="text-xs text-muted-foreground">Pločanska 8, 1000 Ljubljana</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Right: contact + info */}
-        <div className="space-y-4">
-          <div className="p-4 rounded-xl border border-border bg-card space-y-3">
-            <p className="font-inter font-semibold text-sm">Kontakt</p>
-            <div className="space-y-2.5 text-xs text-muted-foreground">
-              <div className="flex items-center gap-2.5">
-                <Mail className="w-3.5 h-3.5 flex-shrink-0" />
-                <span>gregor.trampus@siol.net</span>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <Phone className="w-3.5 h-3.5 flex-shrink-0" />
-                <span>041-377-159</span>
-              </div>
-              <div className="flex items-start gap-2.5">
-                <MapPin className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                <span>Pločanska 8, Tacen, Ljubljana</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-xl border border-border bg-card space-y-1">
-            <span className="text-[10px] uppercase tracking-wider text-primary font-inter font-semibold">Akreditacija</span>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Program "Skalni plezalec" pod okriljem Komisije za alpinizem PZS.
-            </p>
-          </div>
-
-          <div className="p-4 rounded-xl border border-border bg-card space-y-1">
-            <span className="text-[10px] uppercase tracking-wider text-orange-500 font-inter font-semibold">Omejeno število mest</span>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Prijavite se čim prej — število udeležencev je omejeno.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Topics */}
-      <div className="px-6 lg:px-16 py-10 border-b border-border">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="h-px flex-1 bg-border" />
-          <span className="text-[9px] font-inter font-bold tracking-[0.2em] uppercase text-muted-foreground">Teme šole</span>
-          <div className="h-px flex-1 bg-border" />
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {TOPICS.map((topic, i) => (
-            <div key={i} className="flex items-start gap-3 p-4 rounded-xl border border-border bg-card hover:bg-muted/30 transition-colors">
-              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <Check className="w-3.5 h-3.5 text-primary" />
-              </div>
-              <div>
-                <p className="font-inter font-semibold text-sm">{topic.title}</p>
-                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{topic.desc}</p>
-              </div>
+      {/* Stats */}
+      <div style={{ background: theme.statBg, borderTop: `1px solid ${theme.border}`, borderBottom: `1px solid ${theme.border}`, transition: 'background 0.4s' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)' }}>
+          {[
+            { val: '6', label: 'Modulov' },
+            { val: 'Mar', label: 'Pričetek' },
+            { val: '∞', label: 'Pustolovščin' },
+            { val: 'PZS', label: 'Akreditacija' },
+          ].map((s, i) => (
+            <div key={i} style={{ padding: '36px 24px', textAlign: 'center', borderRight: i < 3 ? `1px solid ${theme.border}` : 'none' }}>
+              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: '44px', color: '#E8501A', lineHeight: 1 }}>{s.val}</div>
+              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', color: theme.textLow, marginTop: '6px' }}>{s.label}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Instructors */}
-      <div className="px-6 lg:px-16 py-10 border-b border-border">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="h-px flex-1 bg-border" />
-          <span className="text-[9px] font-inter font-bold tracking-[0.2em] uppercase text-muted-foreground">Inštruktorji</span>
-          <div className="h-px flex-1 bg-border" />
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {INSTRUCTORS.map((inst) => (
-            <div key={inst.name} className="flex items-center gap-3 p-4 rounded-xl border border-border bg-card">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm flex-shrink-0">
-                {inst.initials}
-              </div>
-              <div>
-                <p className="font-inter font-semibold text-sm">{inst.name}</p>
-                <p className="text-xs text-muted-foreground">{inst.role}</p>
+      {/* Content */}
+      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '80px 72px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: '64px', alignItems: 'start' }}>
+          <div>
+            {/* About */}
+            <div data-reveal="school-about" style={{ ...rev('school-about'), marginBottom: '64px' }}>
+              <div style={{ width: '40px', height: '3px', background: '#E8501A', borderRadius: '2px', marginBottom: '28px' }} />
+              <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: '40px', margin: '0 0 20px', lineHeight: 1 }}>O šoli</h2>
+              <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '16px', lineHeight: 1.8, color: theme.textMid, marginBottom: '16px' }}>
+                V mesecu marcu pričenjamo z novo sezono alpinistične šole! Na uvodnem sestanku boste dobili vse informacije o poteku šole, načrtu dela in spoznali inštruktorje.
+              </p>
+              <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '16px', lineHeight: 1.8, color: theme.textMid }}>
+                Prihodnja alpinistična šola bo omogočala tudi program <strong style={{ color: theme.text }}>"Skalni plezalci"</strong>, ki je pod okriljem Komisije za alpinizem PZS.
+              </p>
+            </div>
+
+            {/* Meeting */}
+            <div data-reveal="school-meeting" style={{ ...rev('school-meeting', 0.1), marginBottom: '64px' }}>
+              <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: '32px', margin: '0 0 20px' }}>Uvodni sestanek</h2>
+              <div style={{ background: theme.bgCard, border: '1px solid rgba(232,80,26,0.2)', borderRadius: '8px', padding: '28px 32px', display: 'flex', gap: '20px', alignItems: 'flex-start', transition: 'background 0.4s' }}>
+                <div style={{ width: '44px', height: '44px', borderRadius: '6px', background: 'rgba(232,80,26,0.15)', border: '1px solid rgba(232,80,26,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8501A" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </div>
+                <div>
+                  <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '18px', marginBottom: '8px', color: theme.text }}>Četrtek, 06.03.2025</div>
+                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '14px', color: theme.textMid, lineHeight: 1.6 }}>Klubski prostori v Tačnu<br />Pločnarska 8, 1000 Ljubljana<br />Število udeležencev bo omejeno.</div>
+                </div>
               </div>
             </div>
-          ))}
+
+            {/* Modules */}
+            <div data-reveal="modules-header" style={{ ...rev('modules-header'), marginBottom: '24px' }}>
+              <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: '32px', margin: 0 }}>Program šole</h2>
+            </div>
+            <div data-reveal="modules" style={{ ...rev('modules'), display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              {modules.map((m, i) => (
+                <div
+                  key={i}
+                  style={{ background: theme.bgCard, border: `1px solid ${theme.border}`, borderRadius: '6px', padding: '24px 28px', display: 'grid', gridTemplateColumns: '56px 1fr auto', gap: '20px', alignItems: 'center', transition: 'border-color 0.3s, transform 0.2s, background 0.4s' }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(232,80,26,0.3)'; e.currentTarget.style.transform = 'translateX(4px)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = 'translateX(0)'; }}
+                >
+                  <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: '28px', color: '#E8501A', lineHeight: 1 }}>{m.num}</div>
+                  <div>
+                    <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '18px', marginBottom: '4px', color: theme.text }}>{m.title}</div>
+                    <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: theme.textMid, lineHeight: 1.5 }}>{m.desc}</div>
+                  </div>
+                  <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '12px', letterSpacing: '0.1em', textTransform: 'uppercase', color: theme.textLow, whiteSpace: 'nowrap' }}>{m.weeks}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Instructors */}
+            <div data-reveal="instructors-header" style={{ ...rev('instructors-header'), marginTop: '64px', marginBottom: '24px' }}>
+              <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: '32px', margin: 0 }}>Inštruktorji</h2>
+            </div>
+            <div data-reveal="instructors" style={{ ...rev('instructors'), display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '12px' }}>
+              {instructors.map((inst) => (
+                <div key={inst.name} style={{ background: theme.bgCard, border: `1px solid ${theme.border}`, borderRadius: '8px', padding: '20px', display: 'flex', alignItems: 'center', gap: '12px', transition: 'background 0.4s' }}>
+                  <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(232,80,26,0.12)', border: '1.5px solid rgba(232,80,26,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: '16px', color: '#E8501A', flexShrink: 0 }}>{inst.initials}</div>
+                  <div>
+                    <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '16px', color: theme.text }}>{inst.name}</div>
+                    <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: theme.textLow }}>{inst.role}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <div data-reveal="sidebar" style={{ ...rev('sidebar', 0.2), position: 'sticky', top: '100px' }}>
+            <div style={{ background: theme.bgCard, border: `1px solid ${theme.border}`, borderRadius: '10px', padding: '32px', marginBottom: '16px', transition: 'background 0.4s' }}>
+              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '18px', marginBottom: '20px', color: theme.text }}>Kontakt</div>
+              {[
+                { icon: '✉', text: 'gregor.trampus@siol.net' },
+                { icon: '📞', text: '041 377 159' },
+                { icon: '📍', text: 'Pločnarska 8, Tačen, Ljubljana' },
+              ].map((c, i) => (
+                <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: i < 2 ? '14px' : 0 }}>
+                  <span style={{ fontSize: '14px', marginTop: '1px', opacity: 0.6 }}>{c.icon}</span>
+                  <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: theme.textMid, lineHeight: 1.5 }}>{c.text}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ background: theme.bgCard, border: '1px solid rgba(232,80,26,0.2)', borderRadius: '10px', padding: '24px 28px', marginBottom: '16px', transition: 'background 0.4s' }}>
+              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '14px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#E8501A', marginBottom: '10px' }}>Akreditacija</div>
+              <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: theme.textMid, lineHeight: 1.6, margin: 0 }}>Program "Skalni plezalci" pod okriljem Komisije za alpinizem PZS.</p>
+            </div>
+            <div style={{ background: 'rgba(232,80,26,0.08)', border: '1px solid rgba(232,80,26,0.25)', borderRadius: '10px', padding: '24px 28px' }}>
+              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '14px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#E8501A', marginBottom: '10px' }}>⚠ Omejeno število mest</div>
+              <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: theme.textMid, lineHeight: 1.6, margin: 0 }}>Prijavite se čim prej — število udeležencev je omejeno.</p>
+            </div>
+          </div>
         </div>
       </div>
-
-      {/* Footer CTA */}
-      <footer className="px-6 lg:px-16 py-8 flex flex-col sm:flex-row items-center justify-between gap-3">
-        <h2 className="font-inter font-black text-xl tracking-tighter">
-          AK<span className="text-orange-500">Vertikala</span>
-        </h2>
-        <p className="text-xs text-muted-foreground font-inter">
-          © {new Date().getFullYear()} Alpine Club · All rights reserved.
-        </p>
-      </footer>
+      <style>{`@keyframes fadeUp { from { opacity:0; transform:translateY(28px); } to { opacity:1; transform:translateY(0); } }`}</style>
     </div>
   );
 }

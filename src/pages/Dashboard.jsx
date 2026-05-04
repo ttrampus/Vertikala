@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 import { Loader2, Edit, Trash2 } from "lucide-react";
+import { format } from "date-fns";
 import TagBadge from "../components/TagBadge";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +11,7 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import moment from "moment";
+
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -53,7 +54,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen max-w-5xl mx-auto px-6 py-8 lg:py-16">
+    <div className="min-h-screen max-w-5xl mx-auto px-6 py-8 lg:py-16 pt-24 lg:pt-24">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-extrabold tracking-tighter">My Posts</h1>
         <Button onClick={() => navigate("/create")}>+ New Post</Button>
@@ -90,8 +91,8 @@ export default function Dashboard() {
                 <span
                   className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
                     post.status === "published"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-amber-100 text-amber-700"
+                      ? "bg-green-500/15 text-green-500"
+                      : "bg-amber-500/15 text-amber-500"
                   }`}
                 >
                   {post.status}
@@ -99,7 +100,7 @@ export default function Dashboard() {
               </div>
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 {post.category && <TagBadge tag={post.category} small />}
-                <span>{moment(post.created_date).format("MMM D, YYYY")}</span>
+                <span>{format(new Date(post.created_date), "MMM d, yyyy")}</span>
               </div>
             </div>
 

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Heart, MessageCircle, Eye, Calendar } from "lucide-react";
-import moment from "moment";
+import { format } from "date-fns";
 import TagBadge from "./TagBadge";
 
 export default function PostCard({ post, featured = false }) {
@@ -24,7 +24,7 @@ export default function PostCard({ post, featured = false }) {
             {post.category && <TagBadge tag={post.category} />}
             <span className="text-white/70 text-sm flex items-center gap-1.5">
               <Calendar className="h-3.5 w-3.5" />
-              {moment(post.created_date).format("MMM D, YYYY")}
+              {format(new Date(post.created_date), "MMM d, yyyy")}
             </span>
           </div>
           <h2 className="font-inter font-extrabold text-2xl lg:text-4xl text-white leading-tight mb-2 tracking-tight">
@@ -36,7 +36,7 @@ export default function PostCard({ post, featured = false }) {
             </p>
           )}
           <div className="flex items-center gap-4 mt-4 text-white/60 text-sm">
-            <span className="font-medium text-white/80">{post.author_name || "Member"}</span>
+            <span className="font-medium text-white/80">{post.author_name || "Član"}</span>
             <span className="flex items-center gap-1"><Heart className="h-3.5 w-3.5" />{post.likes_count || 0}</span>
             <span className="flex items-center gap-1"><MessageCircle className="h-3.5 w-3.5" />{post.comments_count || 0}</span>
           </div>
@@ -61,7 +61,7 @@ export default function PostCard({ post, featured = false }) {
       <div className="flex items-center gap-2 mb-2">
         {post.category && <TagBadge tag={post.category} small />}
         <span className="text-muted-foreground text-xs">
-          {moment(post.created_date).format("MMM D, YYYY")}
+          {format(new Date(post.created_date), "MMM d, yyyy")}
         </span>
       </div>
       <h3 className="font-inter font-bold text-lg leading-snug mb-1.5 group-hover:text-primary transition-colors tracking-tight">
@@ -73,7 +73,7 @@ export default function PostCard({ post, featured = false }) {
         </p>
       )}
       <div className="flex items-center gap-3 mt-3 text-muted-foreground text-xs">
-        <span className="font-medium text-foreground/80">{post.author_name || "Member"}</span>
+        <span className="font-medium text-foreground/80">{post.author_name || "Član"}</span>
         <span className="flex items-center gap-1"><Heart className="h-3 w-3" />{post.likes_count || 0}</span>
         <span className="flex items-center gap-1"><MessageCircle className="h-3 w-3" />{post.comments_count || 0}</span>
       </div>

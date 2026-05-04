@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import ImageUploader from "../components/ImageUploader";
+import ClimbMetaForm from "../components/ClimbMetaForm";
 
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -27,6 +28,7 @@ import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
 
 const categories = ["climbs", "trips", "events", "gear", "training", "news"];
+const categoryLabels = { climbs: "Vzponi", trips: "Izleti", events: "Dogodki", gear: "Oprema", training: "Trening", news: "Novice" };
 const VIDEO_MAX_BYTES = 50 * 1024 * 1024; // 50 MB
 
 async function uploadToSupabase(file, folder = "inline") {
@@ -274,7 +276,7 @@ function VideoModal({ editor, onClose }) {
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
       onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="bg-background rounded-2xl p-6 w-full max-w-md shadow-2xl border border-border">
-        <h3 className="font-semibold text-base mb-4">Insert video</h3>
+        <h3 className="font-semibold text-base mb-4">Vstavi video</h3>
 
         {/* Tabs */}
         <div className="flex gap-1 mb-5 p-1 bg-muted rounded-lg">
@@ -288,13 +290,13 @@ function VideoModal({ editor, onClose }) {
             onClick={() => setTab("upload")}
             className={`flex-1 text-sm py-1.5 rounded-md transition-colors font-medium ${tab === "upload" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
           >
-            Upload from device
+            Naloži z naprave
           </button>
         </div>
 
         {tab === "url" ? (
           <>
-            <p className="text-xs text-muted-foreground mb-3">Paste a YouTube URL — it will show as a thumbnail in the editor and play when published.</p>
+            <p className="text-xs text-muted-foreground mb-3">Prilepite YouTube URL — v urejevalniku se prikaže kot sličica, ob objavi pa se predvaja.</p>
             <Input
               value={url}
               onChange={(e) => setUrl(e.target.value)}
@@ -303,22 +305,22 @@ function VideoModal({ editor, onClose }) {
               autoFocus
             />
             <div className="flex gap-2 justify-end mt-4">
-              <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
-              <Button size="sm" onClick={handleUrl} disabled={!url.trim()}>Insert</Button>
+              <Button variant="outline" size="sm" onClick={onClose}>Prekliči</Button>
+              <Button size="sm" onClick={handleUrl} disabled={!url.trim()}>Vstavi</Button>
             </div>
           </>
         ) : (
           <>
-            <p className="text-xs text-muted-foreground mb-3">Select a video from your device. Max 50MB — MP4 recommended.</p>
+            <p className="text-xs text-muted-foreground mb-3">Izberite video z naprave. Največ 50 MB — priporočeno MP4.</p>
             <label className={`flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border hover:border-primary/50 py-8 cursor-pointer transition-colors ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
               {uploading
                 ? <><Loader2 className="h-7 w-7 text-muted-foreground animate-spin" /><span className="text-sm text-muted-foreground">{progress}</span></>
-                : <><Video className="h-7 w-7 text-muted-foreground" /><span className="text-sm text-muted-foreground">Click to choose a video</span><span className="text-xs text-muted-foreground/60">MP4, MOV, WebM · max 50MB</span></>
+                : <><Video className="h-7 w-7 text-muted-foreground" /><span className="text-sm text-muted-foreground">Kliknite za izbiro videa</span><span className="text-xs text-muted-foreground/60">MP4, MOV, WebM · največ 50 MB</span></>
               }
               <input type="file" accept="video/*" className="hidden" onChange={handleFile} disabled={uploading} />
             </label>
             <div className="flex gap-2 justify-end mt-4">
-              <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
+              <Button variant="outline" size="sm" onClick={onClose}>Prekliči</Button>
             </div>
           </>
         )}
@@ -334,12 +336,12 @@ function LinkModal({ onInsert, onClose }) {
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
       onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="bg-background rounded-2xl p-6 w-full max-w-md shadow-2xl border border-border">
-        <h3 className="font-semibold text-base mb-1">Insert link</h3>
+        <h3 className="font-semibold text-base mb-1">Vstavi povezavo</h3>
         <Input value={url} onChange={(e) => setUrl(e.target.value)}
           placeholder="https://..." onKeyDown={(e) => e.key === "Enter" && handle()} autoFocus />
         <div className="flex gap-2 justify-end mt-4">
-          <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
-          <Button size="sm" onClick={handle} disabled={!url.trim()}>Insert</Button>
+          <Button variant="outline" size="sm" onClick={onClose}>Prekliči</Button>
+          <Button size="sm" onClick={handle} disabled={!url.trim()}>Vstavi</Button>
         </div>
       </div>
     </div>
@@ -478,8 +480,8 @@ function SideBySideModal({ editor, onClose }) {
       <div className="bg-background rounded-2xl p-6 w-full max-w-lg shadow-2xl border border-border">
         <div className="flex justify-between items-start mb-4">
           <div>
-            <h3 className="font-semibold text-base">Side-by-side images</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">Pick 2–4 images to place in a row</p>
+            <h3 className="font-semibold text-base">Slike drug ob drugem</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">Izberite 2–4 slike za vrstico</p>
           </div>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground text-xl leading-none">✕</button>
         </div>
@@ -493,7 +495,7 @@ function SideBySideModal({ editor, onClose }) {
                   ? <img src={previews[i]} className="w-full h-full object-cover" alt="" />
                   : <div className="text-center text-muted-foreground">
                       <ImageIcon size={20} className="mx-auto mb-1" />
-                      <span className="text-xs">Image {i + 1}</span>
+                      <span className="text-xs">Slika {i + 1}</span>
                     </div>}
                 <input type="file" accept="image/*" onChange={pick(i)} className="hidden" />
               </label>
@@ -507,25 +509,25 @@ function SideBySideModal({ editor, onClose }) {
 
         <div className="flex items-center gap-3 mb-5">
           {slots.length < 4 && (
-            <button onClick={addSlot} className="text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors">+ Add column</button>
+            <button onClick={addSlot} className="text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors">+ Dodaj stolpec</button>
           )}
           <label className="ml-auto text-xs text-muted-foreground flex items-center gap-2">
-            Gap:
+            Razmik:
             <select value={gap} onChange={(e) => setGap(e.target.value)}
               className="border border-border rounded-md px-2 py-1 text-xs bg-background">
-              <option value="4">Tight</option>
-              <option value="8">Normal</option>
-              <option value="16">Wide</option>
-              <option value="24">Extra wide</option>
+              <option value="4">Tesno</option>
+              <option value="8">Normalno</option>
+              <option value="16">Široko</option>
+              <option value="24">Zelo široko</option>
             </select>
           </label>
         </div>
 
         <div className="flex gap-2 justify-end">
-          <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
+          <Button variant="outline" size="sm" onClick={onClose}>Prekliči</Button>
           <Button size="sm" onClick={insert} disabled={uploading || slots.filter(Boolean).length < 2} className="gap-2">
             {uploading && <Loader2 size={13} className="animate-spin" />}
-            {uploading ? "Uploading…" : "Insert images"}
+            {uploading ? "Nalagam…" : "Vstavi slike"}
           </Button>
         </div>
       </div>
@@ -536,7 +538,7 @@ function SideBySideModal({ editor, onClose }) {
 // ── Main component ────────────────────────────────────────────────────────────
 export default function CreatePost() {
   const navigate = useNavigate();
-  const { user, isLoadingAuth } = useAuth();
+  const { user, profile, isLoadingAuth } = useAuth();
   const editorContainerRef = useRef(null);
 
   const [saving, setSaving] = useState(false);
@@ -547,7 +549,7 @@ export default function CreatePost() {
   const [showSideBySide, setShowSideBySide] = useState(false);
 
   const [form, setForm] = useState({
-    title: "", summary: "", content: "", featured_image: "", images: [], tags: [], category: "climbs",
+    title: "", summary: "", content: "", featured_image: "", images: [], tags: [], category: "climbs", climb_metadata: {},
   });
   const [tagInput, setTagInput] = useState("");
 
@@ -559,7 +561,7 @@ export default function CreatePost() {
       VideoNode,
       ImageRow,
       TextAlign.configure({ types: ["heading", "paragraph"] }),
-      Placeholder.configure({ placeholder: "Write your story… use the toolbar above to insert images, videos, headings, and more." }),
+      Placeholder.configure({ placeholder: "Napišite svojo zgodbo… uporabite orodno vrstico za vstavljanje slik, videoposnetkov, naslovov in več." }),
       Link.configure({ openOnClick: false }),
     ],
     onUpdate: ({ editor }) => {
@@ -613,8 +615,10 @@ export default function CreatePost() {
     if (!form.title.trim() || !form.content.trim()) return;
     setSaving(true);
     try {
+      const climbMeta = form.category === "climbs" && Object.keys(form.climb_metadata || {}).length > 0
+        ? form.climb_metadata : null;
       const { data, error } = await supabase.from("BlogPost")
-        .insert([{ title: form.title, summary: form.summary, content: form.content, featured_image: form.featured_image, images: form.images, tags: form.tags, category: form.category, status, created_by_id: user.id, created_by: user.email, author_email: user.email }])
+        .insert([{ title: form.title, summary: form.summary, content: form.content, featured_image: form.featured_image, images: form.images, tags: form.tags, category: form.category, climb_metadata: climbMeta, status, created_by_id: user.id, created_by: user.email, author_email: user.email, author_name: profile?.display_name || user.email }])
         .select().single();
       if (error) throw error;
       navigate(`/post/${data.id}`);
@@ -630,21 +634,21 @@ export default function CreatePost() {
   if (!user) { navigate("/"); return null; }
 
   return (
-    <div className="min-h-screen max-w-4xl mx-auto px-6 py-8 lg:py-16">
+    <div className="min-h-screen max-w-4xl mx-auto px-6 py-8 lg:py-16 pt-24 lg:pt-24">
       {showVideo && editor && <VideoModal editor={editor} onClose={() => setShowVideo(false)} />}
       {showLink && <LinkModal onInsert={(url) => editor?.chain().focus().setLink({ href: url }).run()} onClose={() => setShowLink(false)} />}
       {showSideBySide && editor && <SideBySideModal editor={editor} onClose={() => setShowSideBySide(false)} />}
 
       <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8">
-        <ArrowLeft className="h-4 w-4" /> Back
+        <ArrowLeft className="h-4 w-4" /> Nazaj
       </button>
 
-      <h1 className="font-inter font-extrabold text-3xl tracking-tighter mb-8">New Post</h1>
+      <h1 className="font-inter font-extrabold text-3xl tracking-tighter mb-8">Nova objava</h1>
 
       <div className="space-y-8">
         {/* Featured Image */}
         <div>
-          <label className="block text-sm font-inter font-medium mb-2">Featured Image</label>
+          <label className="block text-sm font-inter font-medium mb-2">Naslovna slika</label>
           {form.featured_image ? (
             <div className="relative rounded-xl overflow-hidden aspect-[16/9] max-w-2xl">
               <img src={form.featured_image} alt="Featured" className="w-full h-full object-cover" />
@@ -656,7 +660,7 @@ export default function CreatePost() {
           ) : (
             <label className="flex flex-col items-center justify-center aspect-[16/9] max-w-2xl rounded-xl border-2 border-dashed border-border hover:border-primary/50 cursor-pointer transition-colors">
               {featuredUploading ? <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" />
-                : <><Upload className="h-8 w-8 text-muted-foreground mb-2" /><span className="text-sm text-muted-foreground">Click to upload featured image</span></>}
+                : <><Upload className="h-8 w-8 text-muted-foreground mb-2" /><span className="text-sm text-muted-foreground">Kliknite za nalaganje naslovne slike</span></>}
               <input type="file" accept="image/*" onChange={handleFeaturedUpload} className="hidden" disabled={featuredUploading} />
             </label>
           )}
@@ -664,32 +668,32 @@ export default function CreatePost() {
 
         {/* Title */}
         <div>
-          <label className="block text-sm font-inter font-medium mb-2">Title</label>
+          <label className="block text-sm font-inter font-medium mb-2">Naslov</label>
           <Input value={form.title} onChange={(e) => updateForm("title", e.target.value)}
-            placeholder="Your post title..." className="text-xl font-inter font-bold h-14 border-border" />
+            placeholder="Naslov vaše objave..." className="text-xl font-inter font-bold h-14 border-border" />
         </div>
 
         {/* Summary */}
         <div>
-          <label className="block text-sm font-inter font-medium mb-2">Summary</label>
+          <label className="block text-sm font-inter font-medium mb-2">Povzetek</label>
           <Textarea value={form.summary} onChange={(e) => updateForm("summary", e.target.value)}
-            placeholder="A brief description of your post..." className="font-serif resize-none" rows={3} />
+            placeholder="Kratek opis vaše objave..." className="font-serif resize-none" rows={3} />
         </div>
 
         {/* Category */}
         <div>
-          <label className="block text-sm font-inter font-medium mb-2">Category</label>
+          <label className="block text-sm font-inter font-medium mb-2">Kategorija</label>
           <Select value={form.category} onValueChange={(v) => updateForm("category", v)}>
             <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
             <SelectContent>
-              {categories.map((cat) => <SelectItem key={cat} value={cat} className="capitalize">{cat}</SelectItem>)}
+              {categories.map((cat) => <SelectItem key={cat} value={cat}>{categoryLabels[cat]}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
 
         {/* Tags */}
         <div>
-          <label className="block text-sm font-inter font-medium mb-2">Tags</label>
+          <label className="block text-sm font-inter font-medium mb-2">Oznake</label>
           <div className="flex flex-wrap gap-2 mb-2">
             {form.tags.map((tag) => (
               <span key={tag} className="flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm font-inter">
@@ -701,46 +705,54 @@ export default function CreatePost() {
           <div className="flex gap-2">
             <Input value={tagInput} onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
-              placeholder="Add a tag..." className="max-w-xs" />
-            <Button variant="outline" onClick={addTag} size="sm">Add</Button>
+              placeholder="Dodaj oznako..." className="max-w-xs" />
+            <Button variant="outline" onClick={addTag} size="sm">Dodaj</Button>
           </div>
         </div>
 
+        {/* Climb metadata — only shown for climbs category */}
+        {form.category === "climbs" && (
+          <ClimbMetaForm
+            value={form.climb_metadata}
+            onChange={(meta) => updateForm("climb_metadata", meta)}
+          />
+        )}
+
         {/* Content */}
         <div>
-          <label className="block text-sm font-inter font-medium mb-2">Content</label>
+          <label className="block text-sm font-inter font-medium mb-2">Vsebina</label>
           <div ref={editorContainerRef} className="rounded-xl border border-border bg-background shadow-sm"
             style={{ position: "relative", overflow: "visible" }}>
 
             <div className="flex flex-wrap items-center gap-0.5 px-3 py-2 border-b border-border bg-muted/30 rounded-t-xl">
-              <ToolBtn onClick={() => editor?.chain().focus().undo().run()} disabled={!editor?.can().undo()} title="Undo"><Undo size={15} /></ToolBtn>
-              <ToolBtn onClick={() => editor?.chain().focus().redo().run()} disabled={!editor?.can().redo()} title="Redo"><Redo size={15} /></ToolBtn>
+              <ToolBtn onClick={() => editor?.chain().focus().undo().run()} disabled={!editor?.can().undo()} title="Razveljavi"><Undo size={15} /></ToolBtn>
+              <ToolBtn onClick={() => editor?.chain().focus().redo().run()} disabled={!editor?.can().redo()} title="Ponovi"><Redo size={15} /></ToolBtn>
               <Sep />
-              <ToolBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} active={editor?.isActive("heading", { level: 2 })} title="Heading 2"><Heading2 size={15} /></ToolBtn>
-              <ToolBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} active={editor?.isActive("heading", { level: 3 })} title="Heading 3"><Heading3 size={15} /></ToolBtn>
+              <ToolBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} active={editor?.isActive("heading", { level: 2 })} title="Naslov 2"><Heading2 size={15} /></ToolBtn>
+              <ToolBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} active={editor?.isActive("heading", { level: 3 })} title="Naslov 3"><Heading3 size={15} /></ToolBtn>
               <Sep />
-              <ToolBtn onClick={() => editor?.chain().focus().toggleBold().run()} active={editor?.isActive("bold")} title="Bold"><Bold size={15} /></ToolBtn>
-              <ToolBtn onClick={() => editor?.chain().focus().toggleItalic().run()} active={editor?.isActive("italic")} title="Italic"><Italic size={15} /></ToolBtn>
-              <ToolBtn onClick={() => editor?.chain().focus().toggleUnderline().run()} active={editor?.isActive("underline")} title="Underline"><UnderlineIcon size={15} /></ToolBtn>
+              <ToolBtn onClick={() => editor?.chain().focus().toggleBold().run()} active={editor?.isActive("bold")} title="Krepko"><Bold size={15} /></ToolBtn>
+              <ToolBtn onClick={() => editor?.chain().focus().toggleItalic().run()} active={editor?.isActive("italic")} title="Ležeče"><Italic size={15} /></ToolBtn>
+              <ToolBtn onClick={() => editor?.chain().focus().toggleUnderline().run()} active={editor?.isActive("underline")} title="Podčrtano"><UnderlineIcon size={15} /></ToolBtn>
               <Sep />
-              <ToolBtn onClick={() => editor?.chain().focus().setTextAlign("left").run()} active={editor?.isActive({ textAlign: "left" })} title="Align left"><AlignLeft size={15} /></ToolBtn>
-              <ToolBtn onClick={() => editor?.chain().focus().setTextAlign("center").run()} active={editor?.isActive({ textAlign: "center" })} title="Align center"><AlignCenter size={15} /></ToolBtn>
-              <ToolBtn onClick={() => editor?.chain().focus().setTextAlign("right").run()} active={editor?.isActive({ textAlign: "right" })} title="Align right"><AlignRight size={15} /></ToolBtn>
+              <ToolBtn onClick={() => editor?.chain().focus().setTextAlign("left").run()} active={editor?.isActive({ textAlign: "left" })} title="Poravnaj levo"><AlignLeft size={15} /></ToolBtn>
+              <ToolBtn onClick={() => editor?.chain().focus().setTextAlign("center").run()} active={editor?.isActive({ textAlign: "center" })} title="Poravnaj na sredino"><AlignCenter size={15} /></ToolBtn>
+              <ToolBtn onClick={() => editor?.chain().focus().setTextAlign("right").run()} active={editor?.isActive({ textAlign: "right" })} title="Poravnaj desno"><AlignRight size={15} /></ToolBtn>
               <Sep />
-              <ToolBtn onClick={() => editor?.chain().focus().toggleBulletList().run()} active={editor?.isActive("bulletList")} title="Bullet list"><List size={15} /></ToolBtn>
-              <ToolBtn onClick={() => editor?.chain().focus().toggleOrderedList().run()} active={editor?.isActive("orderedList")} title="Numbered list"><ListOrdered size={15} /></ToolBtn>
-              <ToolBtn onClick={() => editor?.chain().focus().toggleBlockquote().run()} active={editor?.isActive("blockquote")} title="Quote"><Quote size={15} /></ToolBtn>
-              <ToolBtn onClick={() => editor?.chain().focus().setHorizontalRule().run()} title="Divider"><Minus size={15} /></ToolBtn>
+              <ToolBtn onClick={() => editor?.chain().focus().toggleBulletList().run()} active={editor?.isActive("bulletList")} title="Seznam s pikami"><List size={15} /></ToolBtn>
+              <ToolBtn onClick={() => editor?.chain().focus().toggleOrderedList().run()} active={editor?.isActive("orderedList")} title="Oštevilčen seznam"><ListOrdered size={15} /></ToolBtn>
+              <ToolBtn onClick={() => editor?.chain().focus().toggleBlockquote().run()} active={editor?.isActive("blockquote")} title="Citat"><Quote size={15} /></ToolBtn>
+              <ToolBtn onClick={() => editor?.chain().focus().setHorizontalRule().run()} title="Ločilo"><Minus size={15} /></ToolBtn>
               <Sep />
-              <ToolBtn onClick={() => setShowLink(true)} active={editor?.isActive("link")} title="Insert link"><LinkIcon size={15} /></ToolBtn>
+              <ToolBtn onClick={() => setShowLink(true)} active={editor?.isActive("link")} title="Vstavi povezavo"><LinkIcon size={15} /></ToolBtn>
               <Sep />
-              <label title="Insert image"
+              <label title="Vstavi sliko"
                 className={`p-1.5 rounded-md transition-colors cursor-pointer ${imageUploading ? "opacity-40 pointer-events-none" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`}>
                 {imageUploading ? <Loader2 size={15} className="animate-spin" /> : <ImageIcon size={15} />}
                 <input type="file" accept="image/*" className="hidden" onChange={handleInlineImage} disabled={imageUploading} />
               </label>
-              <ToolBtn onClick={() => setShowSideBySide(true)} title="Side-by-side images"><Columns2 size={15} /></ToolBtn>
-              <ToolBtn onClick={() => setShowVideo(true)} title="Embed video or upload from device"><Video size={15} /></ToolBtn>
+              <ToolBtn onClick={() => setShowSideBySide(true)} title="Slike drug ob drugem"><Columns2 size={15} /></ToolBtn>
+              <ToolBtn onClick={() => setShowVideo(true)} title="Vstavi video ali naloži z naprave"><Video size={15} /></ToolBtn>
             </div>
 
             <ImageResizeOverlay editorContainerRef={editorContainerRef} />
@@ -748,17 +760,17 @@ export default function CreatePost() {
           </div>
 
           <div className="mt-2.5 rounded-lg bg-muted/40 border border-border px-4 py-2.5 grid grid-cols-2 gap-x-6 gap-y-1">
-            <p className="col-span-2 text-xs font-semibold text-foreground/60 mb-0.5">Tips</p>
-            <p className="text-xs text-muted-foreground"><ImageIcon className="inline h-3 w-3 mr-1" />Click an image then drag corners to resize</p>
-            <p className="text-xs text-muted-foreground"><Columns2 className="inline h-3 w-3 mr-1" />Columns icon → 2–4 images side by side</p>
-            <p className="text-xs text-muted-foreground"><Video className="inline h-3 w-3 mr-1" />Video icon → YouTube link or upload from device</p>
-            <p className="text-xs text-muted-foreground"><ImageIcon className="inline h-3 w-3 mr-1" />Image icon → upload a photo at cursor</p>
+            <p className="col-span-2 text-xs font-semibold text-foreground/60 mb-0.5">Nasveti</p>
+            <p className="text-xs text-muted-foreground"><ImageIcon className="inline h-3 w-3 mr-1" />Kliknite sliko in povlecite kotičke za spremembo velikosti</p>
+            <p className="text-xs text-muted-foreground"><Columns2 className="inline h-3 w-3 mr-1" />Ikona stolpcev → 2–4 slike eno poleg druge</p>
+            <p className="text-xs text-muted-foreground"><Video className="inline h-3 w-3 mr-1" />Ikona videa → YouTube povezava ali nalaganje z naprave</p>
+            <p className="text-xs text-muted-foreground"><ImageIcon className="inline h-3 w-3 mr-1" />Ikona slike → naložite fotografijo na mesto kazalnika</p>
           </div>
         </div>
 
         {/* Photo Gallery */}
         <div>
-          <label className="block text-sm font-inter font-medium mb-2">Photo Gallery</label>
+          <label className="block text-sm font-inter font-medium mb-2">Galerija fotografij</label>
           <ImageUploader
             images={form.images}
             onChange={(imgs) => updateForm("images", imgs)}
@@ -770,12 +782,12 @@ export default function CreatePost() {
           <Button onClick={() => handleSubmit("draft")} variant="outline"
             disabled={saving || !form.title.trim()} className="gap-2">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            Save Draft
+            Shrani osnutek
           </Button>
           <Button onClick={() => handleSubmit("published")}
             disabled={saving || !form.title.trim() || !form.content.trim()} className="gap-2">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            Publish
+            Objavi
           </Button>
         </div>
       </div>

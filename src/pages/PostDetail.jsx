@@ -2,12 +2,14 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { Loader2, ArrowLeft, Calendar, User, Eye } from "lucide-react";
-import moment from "moment";
+import { format } from "date-fns";
 import TagBadge from "../components/TagBadge";
 import LikeButton from "../components/LikeButton";
 import CommentSection from "../components/CommentSection";
 import ImageGallery from "../components/ImageGallery";
 import ElevationDivider from "../components/ElevationDivider";
+import ClimbMetaCard from "../components/ClimbMetaCard";
+import TripSignupButton from "../components/TripSignupButton";
 
 export default function PostDetail() {
   const { id } = useParams();
@@ -33,9 +35,19 @@ export default function PostDetail() {
       return;
     }
 
-    setPost(data);
+    let resolvedPost = { ...data };
+    if (!data.author_name && data.created_by_id) {
+      const { data: authorProfile } = await supabase
+        .from("profile")
+        .select("display_name")
+        .eq("id", data.created_by_id)
+        .single();
+      if (authorProfile?.display_name) {
+        resolvedPost.author_name = authorProfile.display_name;
+      }
+    }
+    setPost(resolvedPost);
 
-    // Increment view count
     await supabase
       .from("BlogPost")
       .update({ views_count: (data.views_count || 0) + 1 })
@@ -62,7 +74,7 @@ export default function PostDetail() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pt-20">
       {/* Header */}
       <div className="border-b border-border">
         <div className="max-w-3xl mx-auto px-6 lg:px-8 pt-10 pb-8">
@@ -82,11 +94,11 @@ export default function PostDetail() {
           <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
             <span className="flex items-center gap-1.5 font-inter font-medium text-foreground/80">
               <User className="h-4 w-4" />
-              {post.author_name || "Member"}
+              {post.author_name || "Član"}
             </span>
             <span className="flex items-center gap-1.5">
               <Calendar className="h-4 w-4" />
-              {moment(post.created_date).format("MMMM D, YYYY")}
+              {format(new Date(post.created_date), "MMMM d, yyyy")}
             </span>
             <span className="flex items-center gap-1.5">
               <Eye className="h-4 w-4" />
@@ -130,9 +142,14 @@ export default function PostDetail() {
           </div>
         )}
 
+        {/* Climb metadata card */}
+        {post.climb_metadata && Object.keys(post.climb_metadata).length > 0 && (
+          <ClimbMetaCard meta={post.climb_metadata} />
+        )}
+
         {/* Body */}
         <div
-          className="font-serif text-lg leading-[1.65] prose prose-slate max-w-none
+          className="font-serif text-lg leading-[1.65] prose prose-slate dark:prose-invert max-w-none
             prose-headings:font-inter prose-headings:tracking-tight
             prose-h2:text-2xl prose-h3:text-xl
             prose-a:text-primary prose-img:rounded-xl"
@@ -145,6 +162,16 @@ export default function PostDetail() {
             <ElevationDivider label="Photo Gallery" />
             <div className="mt-6">
               <ImageGallery images={post.images} />
+            </div>
+          </div>
+        )}
+
+        {/* Trip signup — only for events category */}
+        {post.category === "events" && (
+          <div className="mt-12">
+            <ElevationDivider label="Prijava na izlet" />
+            <div className="mt-6">
+              <TripSignupButton postId={post.id} />
             </div>
           </div>
         )}
