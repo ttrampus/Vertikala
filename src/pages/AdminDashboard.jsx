@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Trash2, Eye, Users, FileText, Shield, Edit, Mail, UserPlus, ShieldCheck, ShieldOff, CheckCircle2, XCircle, List } from "lucide-react";
+import { Loader2, Trash2, Eye, Users, FileText, Shield, Edit, Mail, UserPlus, ShieldCheck, ShieldOff, CheckCircle2, XCircle, List, Mountain, Plus } from "lucide-react";
 import { format } from "date-fns";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -35,26 +35,66 @@ export default function AdminDashboard() {
 
   const [togglingRole, setTogglingRole] = useState(null);
 
+  // Ascents
+  const [ascents, setAscents] = useState([]);
+  const [addingAscent, setAddingAscent] = useState(false);
+  const [ascentForm, setAscentForm] = useState({ date: "", climber_name: "", category: "alpinistični", location: "", route_name: "", difficulty: "", altitude: "", notes: "" });
+  const [savingAscent, setSavingAscent] = useState(false);
+
   const loadData = async () => {
     setLoading(true);
-    const [postsRes, profilesRes] = await Promise.all([
+    const [postsRes, profilesRes, ascentsRes] = await Promise.all([
       supabase.from("BlogPost").select("*").order("created_date", { ascending: false }).limit(200),
       supabase.from("profile").select("*").order("created_date", { ascending: false }).limit(200),
+      supabase.from("ascents").select("*").order("date", { ascending: false }).limit(500),
     ]);
     setPosts(postsRes.data || []);
     setProfiles(profilesRes.data || []);
+    setAscents(ascentsRes.data || []);
     setLoading(false);
   };
 
   const deletePost = async (id) => {
-    const { error, count } = await supabase
-      .from("BlogPost")
-      .delete({ count: "exact" })
-      .eq("id", id);
-    if (!error && count > 0) {
+    const { error } = await supabase.from("BlogPost").delete().eq("id", id);
+    if (!error) {
       setPosts((prev) => prev.filter((p) => p.id !== id));
     } else {
-      console.error("Delete failed:", error?.message || "RLS policy blocked the delete — run the admin delete policy SQL in Supabase.");
+      console.error("Delete failed:", error.message);
+      alert("Brisanje ni uspelo: " + error.message);
+    }
+  };
+
+  const saveAscent = async (e) => {
+    e.preventDefault();
+    setSavingAscent(true);
+    const payload = {
+      date: ascentForm.date,
+      climber_name: ascentForm.climber_name.trim(),
+      category: ascentForm.category,
+      location: ascentForm.location.trim() || null,
+      route_name: ascentForm.route_name.trim() || null,
+      difficulty: ascentForm.difficulty.trim() || null,
+      altitude: ascentForm.altitude ? parseInt(ascentForm.altitude) : null,
+      notes: ascentForm.notes.trim() || null,
+      created_by_id: user.id,
+    };
+    const { data, error } = await supabase.from("ascents").insert(payload).select().single();
+    if (!error && data) {
+      setAscents((prev) => [data, ...prev].sort((a, b) => new Date(b.date) - new Date(a.date)));
+      setAscentForm({ date: "", climber_name: "", category: "alpinistični", location: "", route_name: "", difficulty: "", altitude: "", notes: "" });
+      setAddingAscent(false);
+    } else {
+      alert("Napaka: " + (error?.message || "Neznana napaka"));
+    }
+    setSavingAscent(false);
+  };
+
+  const deleteAscent = async (id) => {
+    const { error } = await supabase.from("ascents").delete().eq("id", id);
+    if (!error) {
+      setAscents((prev) => prev.filter((a) => a.id !== id));
+    } else {
+      alert("Brisanje ni uspelo: " + error.message);
     }
   };
 
@@ -179,6 +219,7 @@ export default function AdminDashboard() {
         <TabsList>
           <TabsTrigger value="posts" className="gap-1"><FileText className="h-4 w-4" /> Objave</TabsTrigger>
           <TabsTrigger value="users" className="gap-1"><Users className="h-4 w-4" /> Člani</TabsTrigger>
+          <TabsTrigger value="ascents" className="gap-1"><Mountain className="h-4 w-4" /> Vzponi</TabsTrigger>
           <TabsTrigger value="invite" className="gap-1"><UserPlus className="h-4 w-4" /> Povabi člana</TabsTrigger>
         </TabsList>
 
@@ -279,6 +320,109 @@ export default function AdminDashboard() {
                 </div>
               );
             })}
+          </div>
+        </TabsContent>
+
+        {/* ASCENTS TAB */}
+        <TabsContent value="ascents" className="mt-6">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm text-muted-foreground font-inter">{ascents.length} vnosov</p>
+            <Button size="sm" className="gap-1.5" onClick={() => setAddingAscent((v) => !v)}>
+              <Plus className="h-4 w-4" /> Dodaj vzpon
+            </Button>
+          </div>
+
+          {addingAscent && (
+            <form onSubmit={saveAscent} className="p-5 rounded-xl border border-border bg-card mb-4 space-y-3">
+              <h3 className="font-inter font-semibold text-sm mb-1">Nov vnos</h3>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <div className="col-span-1">
+                  <label className="text-xs text-muted-foreground font-inter block mb-1">Datum *</label>
+                  <Input type="date" required value={ascentForm.date} onChange={(e) => setAscentForm((f) => ({ ...f, date: e.target.value }))} />
+                </div>
+                <div className="col-span-1">
+                  <label className="text-xs text-muted-foreground font-inter block mb-1">Plezalec *</label>
+                  <Input required placeholder="Ime Priimek" value={ascentForm.climber_name} onChange={(e) => setAscentForm((f) => ({ ...f, climber_name: e.target.value }))} />
+                </div>
+                <div className="col-span-1">
+                  <label className="text-xs text-muted-foreground font-inter block mb-1">Kategorija *</label>
+                  <select
+                    value={ascentForm.category}
+                    onChange={(e) => setAscentForm((f) => ({ ...f, category: e.target.value }))}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-inter"
+                  >
+                    <option value="alpinistični">Alpinistični vzponi</option>
+                    <option value="športnoplezalni">Športnoplezalni vzponi</option>
+                    <option value="turni">Turni in smuki</option>
+                  </select>
+                </div>
+                <div className="col-span-1">
+                  <label className="text-xs text-muted-foreground font-inter block mb-1">Lokacija</label>
+                  <Input placeholder="Mont Blanc, Stovc…" value={ascentForm.location} onChange={(e) => setAscentForm((f) => ({ ...f, location: e.target.value }))} />
+                </div>
+                <div className="col-span-1 sm:col-span-2">
+                  <label className="text-xs text-muted-foreground font-inter block mb-1">Smer</label>
+                  <Input placeholder="Trois Monts route, Botoks…" value={ascentForm.route_name} onChange={(e) => setAscentForm((f) => ({ ...f, route_name: e.target.value }))} />
+                </div>
+                <div className="col-span-1">
+                  <label className="text-xs text-muted-foreground font-inter block mb-1">Težavnost</label>
+                  <Input placeholder="7a+, TD-, D+/5c…" value={ascentForm.difficulty} onChange={(e) => setAscentForm((f) => ({ ...f, difficulty: e.target.value }))} />
+                </div>
+                <div className="col-span-1">
+                  <label className="text-xs text-muted-foreground font-inter block mb-1">Višina (m)</label>
+                  <Input type="number" placeholder="4808" value={ascentForm.altitude} onChange={(e) => setAscentForm((f) => ({ ...f, altitude: e.target.value }))} />
+                </div>
+                <div className="col-span-2 sm:col-span-3">
+                  <label className="text-xs text-muted-foreground font-inter block mb-1">Opomba</label>
+                  <Input placeholder="Neobvezno…" value={ascentForm.notes} onChange={(e) => setAscentForm((f) => ({ ...f, notes: e.target.value }))} />
+                </div>
+              </div>
+              <div className="flex gap-2 pt-1">
+                <Button type="submit" size="sm" disabled={savingAscent} className="gap-1.5">
+                  {savingAscent && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Shrani
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => setAddingAscent(false)}>Prekliči</Button>
+              </div>
+            </form>
+          )}
+
+          <div className="space-y-2">
+            {ascents.length === 0 && <p className="text-muted-foreground text-sm font-inter py-8 text-center">Še ni vnosov.</p>}
+            {ascents.map((a) => (
+              <div key={a.id} className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card">
+                <div className="flex-shrink-0 w-16 text-xs font-inter text-primary font-semibold">{a.date}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-inter font-semibold text-sm">{a.climber_name}</span>
+                    {a.location && <span className="text-sm text-muted-foreground truncate">{a.location}{a.route_name ? ` — ${a.route_name}` : ""}</span>}
+                  </div>
+                  <div className="flex gap-2 mt-1 flex-wrap">
+                    <span className="text-[10px] font-inter px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                      {a.category === "alpinistični" ? "Alpinistični" : a.category === "športnoplezalni" ? "Športnoplezalni" : "Turni"}
+                    </span>
+                    {a.difficulty && <span className="text-[10px] font-inter px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">{a.difficulty}</span>}
+                    {a.altitude && <span className="text-[10px] font-inter px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{a.altitude} m</span>}
+                  </div>
+                </div>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive flex-shrink-0">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Izbriši vnos?</AlertDialogTitle>
+                      <AlertDialogDescription>{a.climber_name} — {a.location || a.route_name}</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Prekliči</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => deleteAscent(a.id)} className="bg-destructive text-destructive-foreground">Izbriši</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            ))}
           </div>
         </TabsContent>
 

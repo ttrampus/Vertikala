@@ -23,6 +23,7 @@ import EditPost from "@/pages/EditPost"
 import AdminDashboard from "@/pages/AdminDashboard"
 import Login from "@/pages/Login";
 import CompleteProfile from "@/pages/CompleteProfile";
+import Vzponi from "@/pages/Vzponi";
 
 
 const AuthenticatedApp = () => {
@@ -50,6 +51,7 @@ const AuthenticatedApp = () => {
     <Route path="complete-profile" element={<CompleteProfile />} />
     <Route path="alpine-school" element={<School />} />
     <Route path="events" element={<Events />} />
+    <Route path="vzponi" element={<Vzponi />} />
 
  
     // Protected: must be logged in

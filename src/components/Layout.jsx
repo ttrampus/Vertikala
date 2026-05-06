@@ -32,7 +32,7 @@ export default function Layout() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Pages with a full-bleed dark hero image at the top
-  const heroPages = ['/', '/about', '/events', '/alpine-school', '/contact'];
+  const heroPages = ['/', '/about', '/events', '/alpine-school', '/contact', '/vzponi'];
   const hasHero = heroPages.includes(location.pathname);
   const isTransparent = hasHero && !scrolled;
 
@@ -51,6 +51,7 @@ export default function Layout() {
     { path: '/', label: 'Domov' },
     { path: '/about', label: 'O nas' },
     { path: '/events', label: 'Dogodki' },
+    { path: '/vzponi', label: 'Vzponi' },
     { path: '/alpine-school', label: 'Šola' },
     { path: '/contact', label: 'Kontakt' },
   ];
