@@ -216,11 +216,11 @@ export default function AdminDashboard() {
       </div>
 
       <Tabs defaultValue="posts">
-        <TabsList>
-          <TabsTrigger value="posts" className="gap-1"><FileText className="h-4 w-4" /> Objave</TabsTrigger>
-          <TabsTrigger value="users" className="gap-1"><Users className="h-4 w-4" /> Člani</TabsTrigger>
-          <TabsTrigger value="ascents" className="gap-1"><Mountain className="h-4 w-4" /> Vzponi</TabsTrigger>
-          <TabsTrigger value="invite" className="gap-1"><UserPlus className="h-4 w-4" /> Povabi člana</TabsTrigger>
+        <TabsList className="max-w-full overflow-x-auto justify-start">
+          <TabsTrigger value="posts" className="gap-1 shrink-0 whitespace-nowrap"><FileText className="h-4 w-4" /> Objave</TabsTrigger>
+          <TabsTrigger value="users" className="gap-1 shrink-0 whitespace-nowrap"><Users className="h-4 w-4" /> Člani</TabsTrigger>
+          <TabsTrigger value="ascents" className="gap-1 shrink-0 whitespace-nowrap"><Mountain className="h-4 w-4" /> Vzponi</TabsTrigger>
+          <TabsTrigger value="invite" className="gap-1 shrink-0 whitespace-nowrap"><UserPlus className="h-4 w-4" /> Povabi člana</TabsTrigger>
         </TabsList>
 
         {/* POSTS TAB */}
@@ -230,7 +230,7 @@ export default function AdminDashboard() {
             {posts.map((post) => (
               <div key={post.id} className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card">
                 <div className="hidden sm:block w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
-                  {post.featured_image ? <img src={post.featured_image} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-muted" />}
+                  {post.featured_image ? <img src={post.featured_image} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-muted" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">

@@ -18,26 +18,33 @@ export default function Footer() {
     <footer style={{
       background: theme.isDark ? '#0a0a0a' : '#f0ede8',
       borderTop: `1px solid ${theme.border}`,
-      padding: '64px 72px 48px',
+      padding: '64px var(--page-x) 48px',
       transition: 'background 0.4s',
     }}>
       <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '48px', alignItems: 'start', marginBottom: '48px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'var(--col-footer)', gap: '48px', alignItems: 'start', marginBottom: '48px' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', cursor: 'pointer' }} onClick={() => navigate('/')}>
-              <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-                <polygon points="16,4 30,28 2,28" fill="none" stroke="#E8501A" strokeWidth="2.5" strokeLinejoin="round"/>
-                <polygon points="16,11 23,28 9,28" fill="#E8501A" opacity="0.5"/>
-              </svg>
-              <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '18px', letterSpacing: '0.04em', color: theme.text }}>
-                AK <span style={{ color: '#E8501A' }}>VERTIKALA</span>
-              </span>
+            <div style={{ marginBottom: '16px', cursor: 'pointer', display: 'inline-block' }} onClick={() => navigate('/')}>
+              <img
+                src="/logo.png"
+                alt="AK Vertikala"
+                style={{
+                  height: '32px',
+                  width: 'auto',
+                  display: 'block',
+                  filter: theme.isDark ? 'brightness(0) invert(1)' : 'none',
+                  opacity: theme.isDark ? 0.85 : 0.75,
+                  transition: 'filter 0.4s, opacity 0.2s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.opacity = '1'; }}
+                onMouseLeave={e => { e.currentTarget.style.opacity = theme.isDark ? '0.85' : '0.75'; }}
+              />
             </div>
             <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '14px', color: theme.textLow, maxWidth: '320px', lineHeight: 1.6 }}>
               Alpinistični klub — skupnost strastnih alpinistov, plezalcev in ljubiteljev gora.
             </p>
           </div>
-          <div style={{ display: 'flex', gap: '32px' }}>
+          <div style={{ display: 'flex', gap: '20px 32px', flexWrap: 'wrap' }}>
             {links.map(l => (
               <button key={l.path} onClick={() => navigate(l.path)} style={{
                 background: 'none', border: 'none', cursor: 'pointer',
@@ -52,7 +59,7 @@ export default function Footer() {
           </div>
         </div>
         <div style={{ height: '1px', background: theme.border, marginBottom: '24px' }} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
           <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: theme.textFaint }}>
             © {new Date().getFullYear()} AK Vertikala · Vse pravice pridržane.
           </span>

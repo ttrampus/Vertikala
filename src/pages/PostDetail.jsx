@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
+import DOMPurify from "dompurify";
 import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/lib/AuthContext";
 import { Loader2, ArrowLeft, Calendar, User, Eye } from "lucide-react";
 import { format } from "date-fns";
+import { sl } from "date-fns/locale";
 import TagBadge from "../components/TagBadge";
 import LikeButton from "../components/LikeButton";
 import CommentSection from "../components/CommentSection";
@@ -13,6 +16,7 @@ import TripSignupButton from "../components/TripSignupButton";
 
 export default function PostDetail() {
   const { id } = useParams();
+  const { isAdmin } = useAuth();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -29,21 +33,25 @@ export default function PostDetail() {
       .eq("id", id)
       .single();
 
-    if (error) {
+    if (error || (!isAdmin && data?.status !== "published")) {
       console.error("Error loading post:", error);
       setLoading(false);
       return;
     }
 
     let resolvedPost = { ...data };
-    if (!data.author_name && data.created_by_id) {
+    // Resolve the author's CURRENT identity (name + avatar) from their profile,
+    // so the post header reflects profile changes rather than the name captured
+    // when the post was written.
+    if (data.created_by_id) {
       const { data: authorProfile } = await supabase
         .from("profile")
-        .select("display_name")
+        .select("display_name, avatar_url")
         .eq("id", data.created_by_id)
         .single();
-      if (authorProfile?.display_name) {
-        resolvedPost.author_name = authorProfile.display_name;
+      if (authorProfile) {
+        if (authorProfile.display_name) resolvedPost.author_name = authorProfile.display_name;
+        resolvedPost.author_avatar = authorProfile.avatar_url || null;
       }
     }
     setPost(resolvedPost);
@@ -67,8 +75,8 @@ export default function PostDetail() {
   if (!post) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <p className="font-serif text-lg text-muted-foreground">Post not found</p>
-        <Link to="/" className="text-primary hover:underline font-inter text-sm">← Back to home</Link>
+        <p className="font-serif text-lg text-muted-foreground">Objava ni najdena</p>
+        <Link to="/" className="text-primary hover:underline font-inter text-sm">← Nazaj na domačo stran</Link>
       </div>
     );
   }
@@ -93,16 +101,18 @@ export default function PostDetail() {
           )}
           <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
             <span className="flex items-center gap-1.5 font-inter font-medium text-foreground/80">
-              <User className="h-4 w-4" />
+              {post.author_avatar
+                ? <img src={post.author_avatar} alt="" className="h-5 w-5 rounded-full object-cover" />
+                : <User className="h-4 w-4" />}
               {post.author_name || "Član"}
             </span>
             <span className="flex items-center gap-1.5">
               <Calendar className="h-4 w-4" />
-              {format(new Date(post.created_date), "MMMM d, yyyy")}
+              {format(new Date(post.created_date), "d. MMMM yyyy", { locale: sl })}
             </span>
             <span className="flex items-center gap-1.5">
               <Eye className="h-4 w-4" />
-              {post.views_count || 0} views
+              {post.views_count || 0} ogledov
             </span>
           </div>
         </div>
@@ -153,7 +163,10 @@ export default function PostDetail() {
             prose-headings:font-inter prose-headings:tracking-tight
             prose-h2:text-2xl prose-h3:text-xl
             prose-a:text-primary prose-img:rounded-xl"
-          dangerouslySetInnerHTML={{ __html: post.content }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content, {
+            ADD_TAGS: ["iframe"],
+            ADD_ATTR: ["allow", "allowfullscreen", "frameborder", "src", "width", "height", "data-type", "data-video-type", "data-youtube-id", "controls"],
+          }) }}
         />
 
         {/* Image Gallery */}

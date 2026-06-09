@@ -13,37 +13,20 @@ export const AuthProvider = ({ children }) => {
 
   const [authError, setAuthError] = useState(null);
 
-  // AUTH ONLY
+  // AUTH STATE
   useEffect(() => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       const u = session?.user ?? null;
-
       setUser(u);
       setIsAuthenticated(!!u);
       setIsLoadingAuth(false);
+      if (!u) setIsLoadingProfile(false);
     });
 
     return () => subscription.unsubscribe();
-  }, []);
-
-  // PROFILE LOAD
-  useEffect(() => {
-  const {
-    data: { subscription },
-  } = supabase.auth.onAuthStateChange((event, session) => {
-    const u = session?.user ?? null;
-    setUser(u);
-    setIsAuthenticated(!!u);
-    setIsLoadingAuth(false);
-    
-    if (!u) {
-      setIsLoadingProfile(false);
-    }
-  });
-  return () => subscription.unsubscribe();
-}, []);
+  }, []);;
 
 // PROFILE LOAD
 useEffect(() => {
@@ -93,7 +76,6 @@ useEffect(() => {
   const isAdmin = profile?.role === "admin";
 
   const isLoading = isLoadingAuth || isLoadingProfile;
-console.log("AuthContext state:", { isLoadingAuth, isLoadingProfile, role: profile?.role, isAdmin });
   return (
     <AuthContext.Provider
       value={{
@@ -107,6 +89,7 @@ console.log("AuthContext state:", { isLoadingAuth, isLoadingProfile, role: profi
         login,
         logout,
         setAuthError,
+        setProfile,
       }}
     >
       {children}

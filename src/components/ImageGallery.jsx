@@ -32,6 +32,8 @@ export default function ImageGallery({ images = [] }) {
             <img
               src={url}
               alt={`Photo ${idx + 1}`}
+              loading="lazy"
+              decoding="async"
               className="w-full h-48 md:h-64 object-cover hover:scale-105 transition-transform duration-500"
             />
           </div>

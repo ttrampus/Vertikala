@@ -210,3 +210,75 @@
   border-color: hsl(var(--border)) !important;
   border-radius: 0 0 var(--radius) var(--radius);
 }
+
+/* ============================================================
+   RESPONSIVE LAYER
+   Inline styles can't carry media queries, but they CAN read
+   CSS custom properties. By redefining these tokens at each
+   breakpoint, every inline `padding: '0 var(--page-x)'` and
+   `gridTemplateColumns: 'var(--col-3)'` becomes responsive
+   without touching the inline-style architecture.
+   ============================================================ */
+:root {
+  /* Horizontal page gutter (was a hard-coded 72px everywhere) */
+  --page-x: 72px;
+
+  /* Grid column templates */
+  --col-2: 1fr 1fr;             /* two equal columns */
+  --col-3: repeat(3, 1fr);      /* card grids */
+  --col-4: repeat(4, 1fr);      /* stat / feature grids */
+  --col-side-l: 340px 1fr;      /* fixed sidebar on the LEFT (e.g. Contact info) */
+  --col-side-r: 1fr 360px;      /* fixed sidebar on the RIGHT (e.g. AlpineSchool) */
+  --col-footer: 1fr auto;       /* footer brand | links */
+  --col-time-e: 80px 1fr auto;  /* Events timeline row: number | content | link */
+  --col-time-s: 56px 1fr auto;  /* AlpineSchool timeline row */
+  --sticky-side: sticky;        /* sidebars stick on desktop, go static when stacked */
+}
+
+/* Large laptops / small desktops */
+@media (max-width: 1200px) {
+  :root { --page-x: 56px; }
+}
+
+/* Tablets (landscape) */
+@media (max-width: 1024px) {
+  :root {
+    --col-3: repeat(2, 1fr);
+    --col-4: repeat(2, 1fr);
+  }
+}
+
+/* Tablets (portrait) / large phones */
+@media (max-width: 860px) {
+  :root {
+    --page-x: 32px;
+    --col-side-l: 1fr;
+    --col-side-r: 1fr;
+    --sticky-side: static;
+  }
+}
+
+/* Phones */
+@media (max-width: 680px) {
+  :root {
+    --col-2: 1fr;
+    --col-3: 1fr;
+    --col-footer: 1fr;
+    --col-time-e: 1fr;   /* stack number / content / link vertically on phones */
+    --col-time-s: 1fr;
+  }
+}
+
+/* Small phones */
+@media (max-width: 560px) {
+  :root {
+    --page-x: 20px;
+    --col-4: 1fr 1fr;   /* keep stats 2-up rather than a tall 1-up column */
+  }
+}
+
+/* Never let a stray fixed-width child cause horizontal scrolling.
+   `clip` (not `hidden`) avoids turning <body> into a scroll container,
+   which would otherwise break `position: sticky` (e.g. AlpineSchool sidebar). */
+html, body { overflow-x: clip; max-width: 100%; }
+img { max-width: 100%; }

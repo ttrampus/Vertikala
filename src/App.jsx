@@ -1,4 +1,4 @@
-import React from "react";
+import React, { lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/query-client";
@@ -10,20 +10,23 @@ import UserNotRegisteredError from "@/components/UserNotRegisteredError";
 import Layout from "@/components/Layout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
-import Home from "@/pages/Home";
-import About from "@/pages/About";
-import Contact from "@/pages/Contact";
-import CreatePost from "@/pages/CreatePost";
-import Dashboard from "@/pages/Dashboard";
-import School from "@/pages/AlpineSchool";
-import Events from "@/pages/Events";
-import PageNotFound from "@/lib/PageNotFound";
-import PostDetail from "@/pages/PostDetail";
-import EditPost from "@/pages/EditPost"
-import AdminDashboard from "@/pages/AdminDashboard"
-import Login from "@/pages/Login";
-import CompleteProfile from "@/pages/CompleteProfile";
-import Vzponi from "@/pages/Vzponi";
+// Pages are code-split so each route loads its own chunk on demand. This keeps
+// the initial bundle small — e.g. the heavy TipTap editor (~380 KB) only loads
+// when visiting the create/edit pages, not on the homepage.
+const Home = lazy(() => import("@/pages/Home"));
+const About = lazy(() => import("@/pages/About"));
+const Contact = lazy(() => import("@/pages/Contact"));
+const CreatePost = lazy(() => import("@/pages/CreatePost"));
+const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const School = lazy(() => import("@/pages/AlpineSchool"));
+const Events = lazy(() => import("@/pages/Events"));
+const PostDetail = lazy(() => import("@/pages/PostDetail"));
+const EditPost = lazy(() => import("@/pages/EditPost"));
+const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
+const Login = lazy(() => import("@/pages/Login"));
+const CompleteProfile = lazy(() => import("@/pages/CompleteProfile"));
+const Vzponi = lazy(() => import("@/pages/Vzponi"));
+const Profile = lazy(() => import("@/pages/Profile"));
 
 
 const AuthenticatedApp = () => {
@@ -68,6 +71,11 @@ const AuthenticatedApp = () => {
     <Route path="dashboard" element={
       <ProtectedRoute>
         <Dashboard />
+      </ProtectedRoute>
+    } />
+    <Route path="profile" element={
+      <ProtectedRoute>
+        <Profile />
       </ProtectedRoute>
     } />
  

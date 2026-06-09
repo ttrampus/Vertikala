@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, Suspense } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/lib/AuthContext";
@@ -71,7 +71,7 @@ export default function Layout() {
   const navStyle = {
     position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '0 40px',
+    padding: '0 clamp(20px, 5vw, 40px)',
     height: isTransparent ? '80px' : '64px',
     background: isTransparent ? 'transparent' : theme.navBg,
     backdropFilter: isTransparent ? 'none' : 'blur(16px)',
@@ -95,16 +95,20 @@ export default function Layout() {
 
         {/* LEFT: Logo */}
         <div
-          style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', flexShrink: 0 }}
+          style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', flexShrink: 0 }}
           onClick={() => navigate('/')}
         >
-          <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
-            <polygon points="16,4 30,28 2,28" fill="none" stroke="#E8501A" strokeWidth="2.5" strokeLinejoin="round"/>
-            <polygon points="16,11 23,28 9,28" fill="#E8501A" opacity="0.5"/>
-          </svg>
-          <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '19px', letterSpacing: '0.05em', color: isTransparent ? '#fff' : theme.text }}>
-            AK <span style={{ color: '#E8501A' }}>VERTIKALA</span>
-          </span>
+          <img
+            src="/logo.png"
+            alt="AK Vertikala"
+            style={{
+              height: '38px',
+              width: 'auto',
+              display: 'block',
+              filter: (isTransparent || theme.isDark) ? 'brightness(0) invert(1)' : 'none',
+              transition: 'filter 0.4s cubic-bezier(0.16,1,0.3,1)',
+            }}
+          />
         </div>
 
         {/* CENTER / RIGHT: desktop links + controls */}
@@ -141,7 +145,13 @@ export default function Layout() {
                   style={navBtnStyle(isActive('/dashboard'))}
                   onMouseEnter={e => { if (!isActive('/dashboard')) e.currentTarget.style.color = linkHover(); }}
                   onMouseLeave={e => { if (!isActive('/dashboard')) e.currentTarget.style.color = linkColor(false); }}
-                >Objave</button>
+                >Moje objave</button>
+                <button
+                  onClick={() => navigate('/profile')}
+                  style={navBtnStyle(isActive('/profile'))}
+                  onMouseEnter={e => { if (!isActive('/profile')) e.currentTarget.style.color = linkHover(); }}
+                  onMouseLeave={e => { if (!isActive('/profile')) e.currentTarget.style.color = linkColor(false); }}
+                >Profil</button>
                 {isAdmin && (
                   <button
                     onClick={() => navigate('/admin')}
@@ -227,7 +237,7 @@ export default function Layout() {
             position: 'absolute', top: '100%', left: 0, right: 0,
             background: theme.isDark ? 'rgba(10,10,10,0.97)' : 'rgba(245,244,240,0.97)',
             backdropFilter: 'blur(16px)',
-            padding: '24px 40px 32px',
+            padding: '24px clamp(20px, 5vw, 40px) 32px',
             display: 'flex', flexDirection: 'column', gap: '18px',
             borderBottom: `1px solid ${theme.border}`,
           }}>
@@ -242,6 +252,7 @@ export default function Layout() {
             {user && <>
               <button onClick={() => navigate('/create')} style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600, fontSize: '18px', letterSpacing: '0.1em', textTransform: 'uppercase', color: isActive('/create') ? '#E8501A' : theme.text }}>Nova objava</button>
               <button onClick={() => navigate('/dashboard')} style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600, fontSize: '18px', letterSpacing: '0.1em', textTransform: 'uppercase', color: isActive('/dashboard') ? '#E8501A' : theme.text }}>Moje objave</button>
+              <button onClick={() => navigate('/profile')} style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600, fontSize: '18px', letterSpacing: '0.1em', textTransform: 'uppercase', color: isActive('/profile') ? '#E8501A' : theme.text }}>Profil</button>
               {isAdmin && <button onClick={() => navigate('/admin')} style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600, fontSize: '18px', letterSpacing: '0.1em', textTransform: 'uppercase', color: isActive('/admin') ? '#E8501A' : theme.text }}>Admin</button>}
             </>}
             <div style={{ height: '1px', background: theme.border }} />
@@ -267,7 +278,13 @@ export default function Layout() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
           >
-            <Outlet />
+            <Suspense fallback={
+              <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div className="animate-spin" style={{ width: '32px', height: '32px', border: `3px solid ${theme.border}`, borderTopColor: '#E8501A', borderRadius: '50%' }} />
+              </div>
+            }>
+              <Outlet />
+            </Suspense>
           </motion.div>
         </AnimatePresence>
         <Footer />

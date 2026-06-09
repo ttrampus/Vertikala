@@ -42,7 +42,7 @@ export default function AlpineSchool() {
       <div style={{ position: 'relative', height: '75vh', overflow: 'hidden', display: 'flex', alignItems: 'flex-end' }}>
         <div style={{ position: 'absolute', inset: 0, backgroundImage: "url('https://images.unsplash.com/photo-1522163182402-834f871fd851?w=1600&q=80')", backgroundSize: 'cover', backgroundPosition: 'center 35%' }} />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(10,10,10,0.98) 100%)' }} />
-        <div style={{ position: 'relative', zIndex: 1, padding: '0 72px 72px', maxWidth: '1100px', width: '100%' }}>
+        <div style={{ position: 'relative', zIndex: 1, padding: '0 var(--page-x) 72px', maxWidth: '1100px', width: '100%' }}>
           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '12px', letterSpacing: '0.3em', textTransform: 'uppercase', color: '#E8501A', marginBottom: '16px', opacity: 0, animation: 'fadeUp 0.8s 0.3s forwards' }}>Program 2026</div>
           <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 'clamp(56px,8vw,100px)', lineHeight: 0.95, letterSpacing: '-0.01em', margin: '0 0 20px', color: '#fff', opacity: 0, animation: 'fadeUp 0.8s 0.5s forwards' }}>
             Alpinistična<br /><span style={{ color: '#E8501A' }}>šola</span>
@@ -61,7 +61,7 @@ export default function AlpineSchool() {
 
       {/* Stats */}
       <div style={{ background: theme.statBg, borderTop: `1px solid ${theme.border}`, borderBottom: `1px solid ${theme.border}`, transition: 'background 0.4s' }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'var(--col-4)' }}>
           {[
             { val: '6', label: 'Modulov' },
             { val: 'Mar', label: 'Pričetek' },
@@ -69,7 +69,7 @@ export default function AlpineSchool() {
             { val: 'PZS', label: 'Akreditacija' },
           ].map((s, i) => (
             <div key={i} style={{ padding: '36px 24px', textAlign: 'center', borderRight: i < 3 ? `1px solid ${theme.border}` : 'none' }}>
-              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: '44px', color: '#E8501A', lineHeight: 1 }}>{s.val}</div>
+              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 'clamp(30px, 5.5vw, 44px)', color: '#E8501A', lineHeight: 1 }}>{s.val}</div>
               <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', color: theme.textLow, marginTop: '6px' }}>{s.label}</div>
             </div>
           ))}
@@ -77,13 +77,13 @@ export default function AlpineSchool() {
       </div>
 
       {/* Content */}
-      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '80px 72px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: '64px', alignItems: 'start' }}>
+      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '80px var(--page-x)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'var(--col-side-r)', gap: '64px', alignItems: 'start' }}>
           <div>
             {/* About */}
             <div data-reveal="school-about" style={{ ...rev('school-about'), marginBottom: '64px' }}>
               <div style={{ width: '40px', height: '3px', background: '#E8501A', borderRadius: '2px', marginBottom: '28px' }} />
-              <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: '40px', margin: '0 0 20px', lineHeight: 1 }}>O šoli</h2>
+              <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 'clamp(28px, 5vw, 40px)', margin: '0 0 20px', lineHeight: 1 }}>O šoli</h2>
               <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '16px', lineHeight: 1.8, color: theme.textMid, marginBottom: '16px' }}>
                 V mesecu marcu pričenjamo z novo sezono alpinistične šole! Na uvodnem sestanku boste dobili vse informacije o poteku šole, načrtu dela in spoznali inštruktorje.
               </p>
@@ -114,7 +114,7 @@ export default function AlpineSchool() {
               {modules.map((m, i) => (
                 <div
                   key={i}
-                  style={{ background: theme.bgCard, border: `1px solid ${theme.border}`, borderRadius: '6px', padding: '24px 28px', display: 'grid', gridTemplateColumns: '56px 1fr auto', gap: '20px', alignItems: 'center', transition: 'border-color 0.3s, transform 0.2s, background 0.4s' }}
+                  style={{ background: theme.bgCard, border: `1px solid ${theme.border}`, borderRadius: '6px', padding: '24px 28px', display: 'grid', gridTemplateColumns: 'var(--col-time-s)', gap: '20px', alignItems: 'center', transition: 'border-color 0.3s, transform 0.2s, background 0.4s' }}
                   onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(232,80,26,0.3)'; e.currentTarget.style.transform = 'translateX(4px)'; }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = 'translateX(0)'; }}
                 >
@@ -132,7 +132,7 @@ export default function AlpineSchool() {
             <div data-reveal="instructors-header" style={{ ...rev('instructors-header'), marginTop: '64px', marginBottom: '24px' }}>
               <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: '32px', margin: 0 }}>Inštruktorji</h2>
             </div>
-            <div data-reveal="instructors" style={{ ...rev('instructors'), display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '12px' }}>
+            <div data-reveal="instructors" style={{ ...rev('instructors'), display: 'grid', gridTemplateColumns: 'var(--col-3)', gap: '12px' }}>
               {instructors.map((inst) => (
                 <div key={inst.name} style={{ background: theme.bgCard, border: `1px solid ${theme.border}`, borderRadius: '8px', padding: '20px', display: 'flex', alignItems: 'center', gap: '12px', transition: 'background 0.4s' }}>
                   <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(232,80,26,0.12)', border: '1.5px solid rgba(232,80,26,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: '16px', color: '#E8501A', flexShrink: 0 }}>{inst.initials}</div>
@@ -146,7 +146,7 @@ export default function AlpineSchool() {
           </div>
 
           {/* Sidebar */}
-          <div data-reveal="sidebar" style={{ ...rev('sidebar', 0.2), position: 'sticky', top: '100px' }}>
+          <div data-reveal="sidebar" style={{ ...rev('sidebar', 0.2), position: 'var(--sticky-side)', top: '100px' }}>
             <div style={{ background: theme.bgCard, border: `1px solid ${theme.border}`, borderRadius: '10px', padding: '32px', marginBottom: '16px', transition: 'background 0.4s' }}>
               <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '18px', marginBottom: '20px', color: theme.text }}>Kontakt</div>
               {[

@@ -157,7 +157,7 @@ export default function WeatherWidget() {
               Napaka pri nalaganju podatkov.
             </div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "var(--col-2)", gap: 16 }}>
               {/* Current conditions */}
               <div style={{
                 background: theme.bgAlt,

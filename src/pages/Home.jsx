@@ -17,6 +17,9 @@ const CATEGORIES = [
 
 const CAT_LABEL = { climbs: 'Vzponi', trips: 'Odprave', events: 'Dogodki', gear: 'Oprema', training: 'Trening', news: 'Novice' };
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const isUuid = (v) => typeof v === "string" && UUID_RE.test(v);
+
 export default function Home() {
   const theme = useContext(ThemeCtx);
   const navigate = useNavigate();
@@ -36,11 +39,37 @@ export default function Home() {
       setLoading(true);
       const { data, error } = await supabase
         .from("BlogPost")
-        .select("*")
+        // Only the columns the cards use — avoids transferring the full HTML
+        // `content` and large jsonb fields for every post on the landing page.
+        .select("id, title, summary, featured_image, author_name, category, created_date, likes_count, created_by, created_by_id")
         .eq("status", "published")
         .order("created_date", { ascending: false });
       if (!alive) return;
-      if (!error) setPosts(data || []);
+      if (!error) {
+        const list = data || [];
+        // Override the stored author name/avatar with each author's CURRENT
+        // profile, so cards reflect profile changes instead of the name saved
+        // when the post was written. Only look up valid UUIDs — some legacy
+        // posts have non-UUID created_by_id values that would otherwise make
+        // the whole batched query fail.
+        const ids = [...new Set(list.map((p) => p.created_by_id).filter(isUuid))];
+        if (ids.length) {
+          const { data: profs } = await supabase
+            .from("profile")
+            .select("id, display_name, avatar_url")
+            .in("id", ids);
+          const map = {};
+          (profs || []).forEach((pr) => { map[pr.id] = pr; });
+          list.forEach((p) => {
+            const pr = map[p.created_by_id];
+            if (pr) {
+              if (pr.display_name) p.author_name = pr.display_name;
+              p.author_avatar = pr.avatar_url || null;
+            }
+          });
+        }
+        if (alive) setPosts(list);
+      }
       setLoading(false);
     };
     fetchPosts();
@@ -151,7 +180,7 @@ export default function Home() {
 
       {/* STATS */}
       <div id="stats-section" style={{ background: theme.statBg, borderTop: `1px solid ${theme.border}`, borderBottom: `1px solid ${theme.border}`, transition: 'background 0.4s' }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'var(--col-4)' }}>
           {[
             { val: counts.dispatches, label: 'Objav' },
             { val: counts.contributors, label: 'Avtorjev' },
@@ -159,7 +188,7 @@ export default function Home() {
             { val: counts.categories, label: 'Kategorij' },
           ].map((s, i) => (
             <div key={i} style={{ padding: '40px 24px', textAlign: 'center', borderRight: i < 3 ? `1px solid ${theme.border}` : 'none' }}>
-              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: '52px', color: '#E8501A', lineHeight: 1 }}>{s.val}</div>
+              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 'clamp(34px, 7vw, 52px)', color: '#E8501A', lineHeight: 1 }}>{s.val}</div>
               <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 500, fontSize: '12px', letterSpacing: '0.2em', textTransform: 'uppercase', color: theme.textLow, marginTop: '8px' }}>{s.label}</div>
             </div>
           ))}
@@ -206,7 +235,7 @@ export default function Home() {
           <div style={{ textAlign: 'center', padding: '80px 0', color: theme.textLow, fontFamily: "'Barlow Condensed', sans-serif", fontSize: '16px', letterSpacing: '0.1em' }}>NALAGANJE...</div>
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px 0' }}>
-            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: '80px', color: theme.border }}>404</div>
+            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 'clamp(44px, 10vw, 80px)', color: theme.border }}>404</div>
             <p style={{ fontFamily: "'Inter', sans-serif", color: theme.textLow }}>Ni najdenih objav.</p>
           </div>
         ) : (
@@ -217,7 +246,7 @@ export default function Home() {
                 <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '11px', letterSpacing: '0.25em', textTransform: 'uppercase', color: theme.textFaint, marginBottom: '16px' }}>— Izpostavljeno</div>
                 <Link to={`/post/${featuredPost.id}`} style={{ textDecoration: 'none' }}>
                   <div
-                    style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', background: theme.bgCard, border: `1px solid ${theme.border}`, borderRadius: '8px', overflow: 'hidden', transition: 'border-color 0.3s, transform 0.3s, background 0.4s', cursor: 'pointer' }}
+                    style={{ display: 'grid', gridTemplateColumns: 'var(--col-2)', background: theme.bgCard, border: `1px solid ${theme.border}`, borderRadius: '8px', overflow: 'hidden', transition: 'border-color 0.3s, transform 0.3s, background 0.4s', cursor: 'pointer' }}
                     onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(232,80,26,0.4)'; e.currentTarget.style.transform = 'translateY(-3px)'; }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = 'translateY(0)'; }}
                   >
@@ -227,7 +256,7 @@ export default function Home() {
                           <span style={{ background: '#E8501A', color: '#fff', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 10px', borderRadius: '3px' }}>{CAT_LABEL[featuredPost.category] || featuredPost.category || 'Objava'}</span>
                           <span style={{ color: theme.textLow, fontFamily: "'Inter', sans-serif", fontSize: '13px' }}>{formatDate(featuredPost.created_date)}</span>
                         </div>
-                        <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: '42px', lineHeight: 1.05, letterSpacing: '-0.01em', margin: '0 0 16px', color: theme.text }}>{featuredPost.title}</h2>
+                        <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 'clamp(28px, 5.5vw, 42px)', lineHeight: 1.05, letterSpacing: '-0.01em', margin: '0 0 16px', color: theme.text }}>{featuredPost.title}</h2>
                         {featuredPost.summary && <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '15px', lineHeight: 1.7, color: theme.textMid, margin: 0 }}>{featuredPost.summary}</p>}
                       </div>
                       <div style={{ marginTop: '32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -247,7 +276,7 @@ export default function Home() {
             )}
 
             {/* Grid */}
-            <div data-reveal="grid" style={{ ...rev('grid'), display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+            <div data-reveal="grid" style={{ ...rev('grid'), display: 'grid', gridTemplateColumns: 'var(--col-3)', gap: '20px' }}>
               {otherPosts.map((post, i) => (
                 <Link key={post.id} to={`/post/${post.id}`} style={{ textDecoration: 'none' }}>
                   <div
@@ -281,11 +310,11 @@ export default function Home() {
 
       {/* School CTA */}
       <div data-reveal="school-cta" style={{ ...rev('school-cta'), maxWidth: '1052px', margin: '0 auto 80px', padding: '0 24px' }}>
-        <div style={{ background: theme.isDark ? 'linear-gradient(135deg, #1a0a05 0%, #2a1008 50%, #1a0a05 100%)' : 'linear-gradient(135deg, #fff3ee 0%, #ffe8df 50%, #fff3ee 100%)', border: '1px solid rgba(232,80,26,0.25)', borderRadius: '12px', padding: '64px 72px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '40px', flexWrap: 'wrap', position: 'relative', overflow: 'hidden', transition: 'background 0.4s' }}>
+        <div style={{ background: theme.isDark ? 'linear-gradient(135deg, #1a0a05 0%, #2a1008 50%, #1a0a05 100%)' : 'linear-gradient(135deg, #fff3ee 0%, #ffe8df 50%, #fff3ee 100%)', border: '1px solid rgba(232,80,26,0.25)', borderRadius: '12px', padding: '64px var(--page-x)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '40px', flexWrap: 'wrap', position: 'relative', overflow: 'hidden', transition: 'background 0.4s' }}>
           <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '240px', height: '240px', background: 'radial-gradient(circle, rgba(232,80,26,0.12) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
           <div>
             <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '12px', letterSpacing: '0.25em', textTransform: 'uppercase', color: '#E8501A', marginBottom: '12px' }}>Program 2026</div>
-            <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: '48px', lineHeight: 1, margin: '0 0 12px', color: theme.text }}>Alpinistična šola</h2>
+            <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 'clamp(30px, 6vw, 48px)', lineHeight: 1, margin: '0 0 12px', color: theme.text }}>Alpinistična šola</h2>
             <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '15px', color: theme.textMid, maxWidth: '420px', lineHeight: 1.6, margin: 0 }}>Celovit program za vse, ki želijo varno in odgovorno stopiti v svet alpinizma.</p>
           </div>
           <button
@@ -300,14 +329,10 @@ export default function Home() {
       <style>{`
         @keyframes fadeUp { from { opacity:0; transform:translateY(28px); } to { opacity:1; transform:translateY(0); } }
         @keyframes scrollPulse { 0%,100%{opacity:0.4;} 50%{opacity:0.8;} }
-        @media (max-width: 900px) {
-          #posts-section > div:nth-child(3) > div { grid-template-columns: 1fr !important; }
-          #posts-section > div:nth-child(3) > a > div { grid-template-columns: 1fr !important; }
-          #posts-section > div:nth-child(3) > div > div:last-child { min-height: 200px !important; }
-        }
-        @media (max-width: 700px) {
-          #posts-section [data-reveal="grid"] { grid-template-columns: 1fr !important; }
-          #posts-section [data-reveal="filters"] { flex-direction: column !important; }
+        /* Grid columns are handled by the global --col-* tokens; here we only
+           shrink the featured post's image once it stacks under the text. */
+        @media (max-width: 680px) {
+          #posts-section [data-reveal="featured"] a > div > div:last-child { min-height: 200px !important; }
         }
       `}</style>
     </div>

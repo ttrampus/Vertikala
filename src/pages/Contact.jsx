@@ -53,15 +53,15 @@ export default function Contact() {
       <div style={{ position: 'relative', height: '55vh', overflow: 'hidden', display: 'flex', alignItems: 'flex-end' }}>
         <div style={{ position: 'absolute', inset: 0, backgroundImage: "url('https://images.unsplash.com/photo-1491555103944-7c647fd857e6?w=1600&q=80')", backgroundSize: 'cover', backgroundPosition: 'center 40%' }} />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(10,10,10,0.97) 100%)' }} />
-        <div style={{ position: 'relative', zIndex: 1, padding: '0 72px 64px' }}>
+        <div style={{ position: 'relative', zIndex: 1, padding: '0 var(--page-x) 64px' }}>
           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '12px', letterSpacing: '0.3em', textTransform: 'uppercase', color: '#E8501A', marginBottom: '16px', opacity: 0, animation: 'fadeUp 0.8s 0.3s forwards' }}>Kontakt</div>
           <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 'clamp(56px,8vw,96px)', lineHeight: 0.95, margin: '0 0 16px', color: '#fff', opacity: 0, animation: 'fadeUp 0.8s 0.5s forwards' }}>Stopite v stik</h1>
           <p style={{ fontFamily: "'Inter', sans-serif", fontWeight: 300, fontSize: '17px', color: 'rgba(255,255,255,0.55)', opacity: 0, animation: 'fadeUp 0.8s 0.7s forwards' }}>Z veseljem odgovorimo na vsa vaša vprašanja.</p>
         </div>
       </div>
 
-      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '80px 72px 96px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '340px 1fr', gap: '80px', alignItems: 'start' }}>
+      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '80px var(--page-x) 96px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'var(--col-side-l)', gap: '80px', alignItems: 'start' }}>
           {/* Info */}
           <div data-reveal="contact-info" style={{ ...rev('contact-info') }}>
             <div style={{ width: '40px', height: '3px', background: '#E8501A', borderRadius: '2px', marginBottom: '32px' }} />
@@ -90,13 +90,8 @@ export default function Contact() {
                 </div>
               ))}
             </div>
-            <div style={{ marginTop: '56px', padding: '32px', background: theme.bgCard, borderRadius: '10px', border: `1px solid ${theme.border}`, transition: 'background 0.4s' }}>
-              <svg viewBox="0 0 200 100" style={{ width: '100%', opacity: 0.5 }}>
-                <polygon points="100,10 160,90 40,90" fill="none" stroke="#E8501A" strokeWidth="1.5"/>
-                <polygon points="100,35 135,90 65,90" fill="rgba(232,80,26,0.15)"/>
-                <line x1="0" y1="90" x2="200" y2="90" stroke="rgba(128,128,128,0.2)" strokeWidth="1"/>
-              </svg>
-              <div style={{ textAlign: 'center', marginTop: '16px', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '13px', letterSpacing: '0.15em', textTransform: 'uppercase', color: theme.textFaint }}>AK Vertikala</div>
+            <div style={{ marginTop: '56px', padding: '32px', background: theme.bgCard, borderRadius: '10px', border: `1px solid ${theme.border}`, transition: 'background 0.4s', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <img src="/logo.png" alt="AK Vertikala" style={{ height: '64px', width: 'auto', objectFit: 'contain', filter: theme.isDark ? 'brightness(0) invert(1)' : 'none', transition: 'filter 0.4s' }} />
             </div>
           </div>
 
@@ -104,14 +99,14 @@ export default function Contact() {
           <div data-reveal="contact-form" style={{ ...rev('contact-form', 0.15) }}>
             {sent ? (
               <div style={{ textAlign: 'center', padding: '80px 40px', background: theme.bgCard, borderRadius: '12px', border: '1px solid rgba(232,80,26,0.2)', transition: 'background 0.4s' }}>
-                <div style={{ fontSize: '48px', marginBottom: '20px', color: '#E8501A' }}>✓</div>
+                <div style={{ fontSize: 'clamp(30px, 6vw, 48px)', marginBottom: '20px', color: '#E8501A' }}>✓</div>
                 <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: '36px', margin: '0 0 12px', color: '#E8501A' }}>Sporočilo poslano!</h3>
                 <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '15px', color: theme.textMid, lineHeight: 1.6 }}>Hvala za vaše sporočilo. Odgovorili vam bomo v najkrajšem možnem času.</p>
                 <button onClick={() => { setSent(false); setForm({ name: '', email: '', subject: '', message: '' }); }} style={{ marginTop: '28px', background: 'none', border: `1px solid ${theme.border}`, color: theme.text, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600, fontSize: '13px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '10px 24px', borderRadius: '4px', cursor: 'pointer' }}>Novo sporočilo</button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'var(--col-2)', gap: '20px' }}>
                   <div>
                     <label style={labelStyle}>Ime *</label>
                     <input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Vaše ime" style={inputStyle}
@@ -119,7 +114,7 @@ export default function Contact() {
                   </div>
                   <div>
                     <label style={labelStyle}>E-pošta *</label>
-                    <input required type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="vasa@email.com" style={inputStyle}
+                    <input required type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="vaš@email.com" style={inputStyle}
                       onFocus={e => e.target.style.borderColor = 'rgba(232,80,26,0.5)'} onBlur={e => e.target.style.borderColor = theme.border} />
                   </div>
                 </div>

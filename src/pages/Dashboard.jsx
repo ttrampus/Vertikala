@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 import { Loader2, Edit, Trash2 } from "lucide-react";
 import { format } from "date-fns";
+import { sl } from "date-fns/locale";
 import TagBadge from "../components/TagBadge";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,7 +27,7 @@ export default function Dashboard() {
       setLoading(true);
       const { data, error } = await supabase
         .from("BlogPost")
-        .select("*")
+        .select("id, title, status, category, featured_image, created_date")
         .eq("created_by_id", user.id)
         .order("created_date", { ascending: false })
         .limit(100);
@@ -56,14 +57,14 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen max-w-5xl mx-auto px-6 py-8 lg:py-16 pt-24 lg:pt-24">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-extrabold tracking-tighter">My Posts</h1>
-        <Button onClick={() => navigate("/create")}>+ New Post</Button>
+        <h1 className="text-3xl font-extrabold tracking-tighter">Moje objave</h1>
+        <Button onClick={() => navigate("/create")}>+ Nova objava</Button>
       </div>
 
       <div className="space-y-2">
         {posts.length === 0 && (
           <p className="text-muted-foreground text-sm py-8 text-center">
-            No posts yet. Write your first one!
+            Še nimate objav. Napišite svojo prvo!
           </p>
         )}
 
@@ -75,7 +76,7 @@ export default function Dashboard() {
             {/* Thumbnail */}
             <div className="hidden sm:block w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
               {post.featured_image
-                ? <img src={post.featured_image} alt="" className="w-full h-full object-cover" />
+                ? <img src={post.featured_image} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                 : <div className="w-full h-full bg-muted" />}
             </div>
 
@@ -95,12 +96,12 @@ export default function Dashboard() {
                       : "bg-amber-500/15 text-amber-500"
                   }`}
                 >
-                  {post.status}
+                  {post.status === "published" ? "Objavljeno" : post.status === "draft" ? "Osnutek" : post.status}
                 </span>
               </div>
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 {post.category && <TagBadge tag={post.category} small />}
-                <span>{format(new Date(post.created_date), "MMM d, yyyy")}</span>
+                <span>{format(new Date(post.created_date), "d. MMM yyyy", { locale: sl })}</span>
               </div>
             </div>
 
@@ -127,18 +128,18 @@ export default function Dashboard() {
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Delete this post?</AlertDialogTitle>
+                    <AlertDialogTitle>Izbriši to objavo?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will permanently remove the post.
+                      To bo trajno odstranilo objavo.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel>Prekliči</AlertDialogCancel>
                     <AlertDialogAction
                       onClick={() => deletePost(post.id)}
                       className="bg-destructive text-destructive-foreground"
                     >
-                      Delete
+                      Izbriši
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>

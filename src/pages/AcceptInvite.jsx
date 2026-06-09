@@ -123,20 +123,22 @@ export default function AcceptInvite() {
 
       <div style={{ width: "100%", maxWidth: "440px", position: "relative", zIndex: 1 }}>
         <div style={{ textAlign: "center", marginBottom: "40px" }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: "12px", cursor: "pointer" }} onClick={() => navigate("/")}>
-            <div style={{ width: "48px", height: "48px", background: "rgba(232,80,26,0.15)", border: "2px solid rgba(232,80,26,0.4)", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
-                <polygon points="16,4 30,28 2,28" fill="none" stroke="#E8501A" strokeWidth="2.5" strokeLinejoin="round"/>
-                <polygon points="16,11 23,28 9,28" fill="#E8501A" opacity="0.5"/>
-              </svg>
-            </div>
-            <div style={{ textAlign: "left" }}>
-              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "18px", lineHeight: 1, letterSpacing: "0.04em", color: theme.text }}>
-                AK <span style={{ color: "#E8501A" }}>VERTIKALA</span>
-              </div>
-              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase", color: theme.textLow, marginTop: "2px" }}>Alpinistični klub</div>
-            </div>
-          </div>
+          <img
+            src="/logo.png"
+            alt="AK Vertikala"
+            onClick={() => navigate("/")}
+            style={{
+              height: "44px",
+              width: "auto",
+              display: "inline-block",
+              cursor: "pointer",
+              filter: theme.isDark ? "brightness(0) invert(1)" : "none",
+              transition: "filter 0.4s, opacity 0.2s",
+              opacity: 0.9,
+            }}
+            onMouseEnter={e => { e.currentTarget.style.opacity = "1"; }}
+            onMouseLeave={e => { e.currentTarget.style.opacity = "0.9"; }}
+          />
         </div>
 
         <div style={{ background: theme.bgCard, border: `1px solid ${theme.border}`, borderRadius: "16px", padding: "40px", boxShadow: theme.isDark ? "0 40px 80px rgba(0,0,0,0.4)" : "0 20px 60px rgba(0,0,0,0.1)", transition: "background 0.4s, border-color 0.4s" }}>

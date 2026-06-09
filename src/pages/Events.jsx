@@ -65,7 +65,7 @@ export default function Events() {
       <div style={{ position: 'relative', height: '55vh', overflow: 'hidden', display: 'flex', alignItems: 'flex-end' }}>
         <div style={{ position: 'absolute', inset: 0, backgroundImage: "url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1600&q=80')", backgroundSize: 'cover', backgroundPosition: 'center 50%' }} />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(10,10,10,0.97) 100%)' }} />
-        <div style={{ position: 'relative', zIndex: 1, padding: '0 72px 64px', maxWidth: '1100px' }}>
+        <div style={{ position: 'relative', zIndex: 1, padding: '0 var(--page-x) 64px', maxWidth: '1100px' }}>
           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '12px', letterSpacing: '0.3em', textTransform: 'uppercase', color: '#E8501A', marginBottom: '16px', opacity: 0, animation: 'fadeUp 0.8s 0.3s forwards' }}>Koledar</div>
           <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 'clamp(56px,8vw,96px)', lineHeight: 0.95, margin: '0 0 16px', color: '#fff', opacity: 0, animation: 'fadeUp 0.8s 0.5s forwards' }}>
             Dogodki &amp;<br /><span style={{ color: '#E8501A' }}>Prireditve</span>
@@ -76,21 +76,21 @@ export default function Events() {
 
       {/* Stats */}
       <div style={{ background: theme.statBg, borderTop: `1px solid ${theme.border}`, borderBottom: `1px solid ${theme.border}`, transition: 'background 0.4s' }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(3,1fr)' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'var(--col-3)' }}>
           {[
             { val: filtered.length, label: 'Dogodki' },
             { val: thisMonth, label: 'Ta mesec' },
             { val: organizers, label: 'Organizatorji' },
           ].map((s, i) => (
             <div key={i} style={{ padding: '32px 24px', textAlign: 'center', borderRight: i < 2 ? `1px solid ${theme.border}` : 'none' }}>
-              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: '44px', color: '#E8501A', lineHeight: 1 }}>{s.val}</div>
+              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 'clamp(30px, 5.5vw, 44px)', color: '#E8501A', lineHeight: 1 }}>{s.val}</div>
               <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', color: theme.textLow, marginTop: '6px' }}>{s.label}</div>
             </div>
           ))}
         </div>
       </div>
 
-      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '64px 72px 96px' }}>
+      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '64px var(--page-x) 96px' }}>
         {/* Search */}
         <div data-reveal="search" style={{ ...rev('search'), marginBottom: '48px' }}>
           <div style={{ position: 'relative', maxWidth: '360px' }}>
@@ -110,7 +110,7 @@ export default function Events() {
           <div style={{ textAlign: 'center', padding: '80px 0', color: theme.textLow, fontFamily: "'Barlow Condensed', sans-serif", fontSize: '16px', letterSpacing: '0.1em' }}>NALAGANJE...</div>
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px 0' }}>
-            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: '80px', color: theme.border }}>—</div>
+            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 'clamp(44px, 10vw, 80px)', color: theme.border }}>—</div>
             <p style={{ fontFamily: "'Inter', sans-serif", color: theme.textLow }}>Ni najdenih dogodkov.</p>
           </div>
         ) : (
@@ -121,7 +121,7 @@ export default function Events() {
                 <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '11px', letterSpacing: '0.25em', textTransform: 'uppercase', color: theme.textFaint, marginBottom: '16px' }}>— Naslednji dogodek</div>
                 <Link to={`/post/${upcoming.id}`} style={{ textDecoration: 'none' }}>
                   <div
-                    style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', background: theme.bgCard, border: `1px solid ${theme.border}`, borderRadius: '10px', overflow: 'hidden', transition: 'border-color 0.3s, background 0.4s', cursor: 'pointer' }}
+                    style={{ display: 'grid', gridTemplateColumns: 'var(--col-2)', background: theme.bgCard, border: `1px solid ${theme.border}`, borderRadius: '10px', overflow: 'hidden', transition: 'border-color 0.3s, background 0.4s', cursor: 'pointer' }}
                     onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(232,80,26,0.4)'}
                     onMouseLeave={e => e.currentTarget.style.borderColor = theme.border}
                   >
@@ -158,7 +158,7 @@ export default function Events() {
                   {(search ? filtered : rest).map((ev, i) => (
                     <Link key={ev.id} to={`/post/${ev.id}`} style={{ textDecoration: 'none' }}>
                       <div
-                        style={{ background: theme.bgCard, border: `1px solid ${theme.border}`, borderRadius: '8px', padding: '28px 32px', display: 'grid', gridTemplateColumns: '80px 1fr auto', gap: '24px', alignItems: 'center', cursor: 'pointer', transition: 'border-color 0.3s, transform 0.2s, background 0.4s' }}
+                        style={{ background: theme.bgCard, border: `1px solid ${theme.border}`, borderRadius: '8px', padding: '28px 32px', display: 'grid', gridTemplateColumns: 'var(--col-time-e)', gap: '24px', alignItems: 'center', cursor: 'pointer', transition: 'border-color 0.3s, transform 0.2s, background 0.4s' }}
                         onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(232,80,26,0.35)'; e.currentTarget.style.transform = 'translateX(6px)'; }}
                         onMouseLeave={e => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = 'translateX(0)'; }}
                       >

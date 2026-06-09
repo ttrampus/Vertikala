@@ -12,6 +12,8 @@ export default function PostCard({ post, featured = false }) {
             <img
               src={post.featured_image}
               alt={post.title}
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
           ) : (
@@ -52,6 +54,8 @@ export default function PostCard({ post, featured = false }) {
           <img
             src={post.featured_image}
             alt={post.title}
+            loading="lazy"
+            decoding="async"
             className="w-full aspect-[4/3] object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
