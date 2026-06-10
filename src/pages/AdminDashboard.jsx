@@ -233,22 +233,20 @@ export default function AdminDashboard() {
                   {post.featured_image ? <img src={post.featured_image} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-muted" />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <Link to={`/post/${post.id}`} className="font-inter font-semibold text-sm truncate hover:text-primary">{post.title}</Link>
+                  <Link to={`/post/${post.id}`} className="font-inter font-semibold text-sm line-clamp-2 hover:text-primary block">{post.title}</Link>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mt-1">
                     <button
                       onClick={() => togglePostStatus(post)}
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-medium cursor-pointer ${post.status === "published" ? "bg-green-500/15 text-green-500" : "bg-amber-500/15 text-amber-500"}`}
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-medium cursor-pointer flex-shrink-0 ${post.status === "published" ? "bg-green-500/15 text-green-500" : "bg-amber-500/15 text-amber-500"}`}
                     >
                       {post.status === "published" ? "objavljeno" : "osnutek"}
                     </button>
-                  </div>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    <span>{post.author_name || post.author_email || post.created_by || "—"}</span>
+                    <span className="truncate max-w-[45%]">{post.author_name || post.author_email || post.created_by || "—"}</span>
                     {post.category && <TagBadge tag={post.category} small />}
-                    <span>{format(new Date(post.created_date), "d. M. yyyy")}</span>
+                    <span className="flex-shrink-0">{format(new Date(post.created_date), "d. M. yyyy")}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-shrink-0">
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/edit/${post.id}`)}>
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -283,20 +281,22 @@ export default function AdminDashboard() {
               const isMe = u.id === user.id;
               const isUserAdmin = u.role === "admin";
               return (
-                <div key={u.id} className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card">
-                  <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-                    {u.avatar_url
-                      ? <img src={u.avatar_url} alt="" className="w-full h-full object-cover" />
-                      : <div className="w-full h-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">{u.display_name?.[0] || "?"}</div>}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-inter font-semibold text-sm truncate">{u.display_name || "Brez imena"}</p>
-                      {isMe && <span className="text-[10px] text-muted-foreground font-inter">(jaz)</span>}
+                <div key={u.id} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 rounded-xl border border-border bg-card">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                      {u.avatar_url
+                        ? <img src={u.avatar_url} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                        : <div className="w-full h-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">{u.display_name?.[0] || "?"}</div>}
                     </div>
-                    <p className="text-xs text-muted-foreground">{u.id}</p>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="font-inter font-semibold text-sm truncate">{u.display_name || "Brez imena"}</p>
+                        {isMe && <span className="text-[10px] text-muted-foreground font-inter flex-shrink-0">(jaz)</span>}
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate">{u.id}</p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-shrink-0 pl-[52px] sm:pl-0">
                     <span className={`px-3 py-1 rounded-full text-xs font-inter font-medium ${isUserAdmin ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
                       {isUserAdmin ? "admin" : "član"}
                     </span>
