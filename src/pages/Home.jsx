@@ -117,8 +117,17 @@ export default function Home() {
   useEffect(() => {
     const els = document.querySelectorAll('[data-reveal]');
     const obs = new IntersectionObserver(entries => {
-      entries.forEach(e => { if (e.isIntersecting) setVisible(v => ({ ...v, [e.target.dataset.reveal]: true })); });
-    }, { threshold: 0.1 });
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          setVisible(v => ({ ...v, [e.target.dataset.reveal]: true }));
+          obs.unobserve(e.target); // reveal once, then stop watching
+        }
+      });
+      // threshold 0 = fire the moment any part enters; the positive bottom
+      // rootMargin starts the reveal ~15% of a viewport BEFORE the section
+      // scrolls in, so tall sections (e.g. the posts grid) are no longer
+      // stuck invisible until you've nearly scrolled past them.
+    }, { threshold: 0, rootMargin: '0px 0px 15% 0px' });
     els.forEach(el => obs.observe(el));
     return () => obs.disconnect();
   }, [loading]);

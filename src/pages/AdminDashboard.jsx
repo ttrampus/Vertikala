@@ -281,7 +281,7 @@ export default function AdminDashboard() {
               const isMe = u.id === user.id;
               const isUserAdmin = u.role === "admin";
               return (
-                <div key={u.id} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 rounded-xl border border-border bg-card">
+                <div key={u.id} className="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-4 p-4 rounded-xl border border-border bg-card">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
                       {u.avatar_url
@@ -289,14 +289,14 @@ export default function AdminDashboard() {
                         : <div className="w-full h-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">{u.display_name?.[0] || "?"}</div>}
                     </div>
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-inter font-semibold text-sm truncate">{u.display_name || "Brez imena"}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-inter font-semibold text-sm break-words">{u.display_name || "Brez imena"}</p>
                         {isMe && <span className="text-[10px] text-muted-foreground font-inter flex-shrink-0">(jaz)</span>}
                       </div>
                       <p className="text-xs text-muted-foreground truncate">{u.id}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0 pl-[52px] sm:pl-0">
+                  <div className="flex items-center gap-2 flex-shrink-0 pl-[52px] lg:pl-0">
                     <span className={`px-3 py-1 rounded-full text-xs font-inter font-medium ${isUserAdmin ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
                       {isUserAdmin ? "admin" : "član"}
                     </span>
