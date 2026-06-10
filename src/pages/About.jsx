@@ -63,7 +63,7 @@ export default function About() {
           <div data-reveal="mission-stats" style={{ ...rev('mission-stats', 0.15) }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'var(--col-2)', gap: '2px' }}>
               {[
-                { val: '2020', label: 'Ustanovljen' },
+                { val: '1992', label: 'Ustanovljen' },
                 { val: '40+', label: 'Aktivnih članov' },
                 { val: '100+', label: 'Vzponov' },
                 { val: 'PZS', label: 'Akreditacija' },
