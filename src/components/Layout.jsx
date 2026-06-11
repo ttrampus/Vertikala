@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext, Suspense } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate, useNavigationType } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/lib/AuthContext";
 import { ThemeCtx } from "@/lib/ThemeContext";
@@ -21,9 +21,14 @@ const MoonIcon = () => (
   </svg>
 );
 
+// We restore scroll ourselves (see the location.key effect below); the
+// browser's native restoration would race with it on back/forward.
+if ("scrollRestoration" in window.history) window.history.scrollRestoration = "manual";
+
 export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const navigationType = useNavigationType();
   const { user, logout, isAdmin } = useAuth();
   const theme = useContext(ThemeCtx);
   const { darkMode, toggleDark } = theme;
@@ -42,10 +47,46 @@ export default function Layout() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  // Remember where the user was on each history entry, so Back returns there.
+  // Track the position from scroll events only and persist it on cleanup:
+  // reading window.scrollY at cleanup time is wrong under StrictMode (the
+  // immediate dev remount would record 0 while the page is still a spinner)
+  // — seeding from the stored value makes that write a no-op.
+  useEffect(() => {
+    const key = `scroll:${location.key}`;
+    let last = parseInt(sessionStorage.getItem(key) || "0", 10) || 0;
+    const onScroll = () => { last = window.scrollY; };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      sessionStorage.setItem(key, String(last));
+    };
+  }, [location.key]);
+
   useEffect(() => {
     setMenuOpen(false);
-    window.scrollTo(0, 0);
-  }, [location.pathname]);
+
+    // Forward navigation (clicking a link) starts at the top; back/forward
+    // (POP) restores the saved position once the page has grown tall enough
+    // for it — list pages render a spinner first, then their content.
+    const saved = navigationType === "POP"
+      ? parseInt(sessionStorage.getItem(`scroll:${location.key}`) || "0", 10)
+      : 0;
+    if (!saved) { window.scrollTo(0, 0); return; }
+
+    let raf;
+    const deadline = Date.now() + 3000;
+    const attempt = () => {
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      if (maxScroll >= saved || Date.now() > deadline) {
+        window.scrollTo(0, saved);
+      } else {
+        raf = requestAnimationFrame(attempt);
+      }
+    };
+    raf = requestAnimationFrame(attempt);
+    return () => cancelAnimationFrame(raf);
+  }, [location.key]);
 
   const navLinks = [
     { path: '/', label: 'Domov' },

@@ -34,11 +34,19 @@ const light = {
 
 export const ThemeCtx = createContext({ ...dark, darkMode: true, toggleDark: () => {} });
 
-export function ThemeProvider({ children }) {
-  const [darkMode, setDarkMode] = useState(true);
+function getSavedDarkMode() {
+  try {
+    const saved = localStorage.getItem('darkMode');
+    return saved === null ? true : saved !== 'false';
+  } catch (_) {
+    return true;
+  }
+}
 
-  // Sync with Tailwind's class-based dark mode so all shadcn/ui components
-  // and CSS variable consumers automatically flip too.
+export function ThemeProvider({ children }) {
+  const [darkMode, setDarkMode] = useState(getSavedDarkMode);
+
+  // Sync Tailwind's class-based dark mode and persist preference.
   useEffect(() => {
     const root = document.documentElement;
     if (darkMode) {
@@ -46,6 +54,7 @@ export function ThemeProvider({ children }) {
     } else {
       root.classList.remove('dark');
     }
+    try { localStorage.setItem('darkMode', String(darkMode)); } catch (_) {}
   }, [darkMode]);
 
   const theme = darkMode ? dark : light;

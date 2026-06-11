@@ -1,9 +1,10 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useRef, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { ThemeCtx } from "@/lib/ThemeContext";
 import { format } from "date-fns";
 import WeatherWidget from "../components/WeatherWidget";
+import StatsSection from "../components/StatsSection";
 
 const CATEGORIES = [
   { key: '', label: 'Vse' },
@@ -20,6 +21,8 @@ const CAT_LABEL = { climbs: 'Vzponi', trips: 'Odprave', events: 'Dogodki', gear:
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const isUuid = (v) => typeof v === "string" && UUID_RE.test(v);
 
+const PAGE_SIZE = 24; // cards rendered initially / added per "show more" click
+
 export default function Home() {
   const theme = useContext(ThemeCtx);
   const navigate = useNavigate();
@@ -28,10 +31,14 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('');
-  const [heroParallax, setHeroParallax] = useState(0);
-  const [statsVisible, setStatsVisible] = useState(false);
-  const [counts, setCounts] = useState({ dispatches: 0, contributors: 0, events: 0, categories: 0 });
+  // Survives navigating into a post and back, so the restored scroll
+  // position still has the same number of cards under it.
+  const [visibleCount, setVisibleCount] = useState(() => parseInt(sessionStorage.getItem("home:visibleCount"), 10) || PAGE_SIZE);
   const [visible, setVisible] = useState({});
+  const heroBgRef = useRef(null);
+  const firstFilterRun = useRef(true);
+
+  useEffect(() => { sessionStorage.setItem("home:visibleCount", String(visibleCount)); }, [visibleCount]);
 
   useEffect(() => {
     let alive = true;
@@ -76,43 +83,29 @@ export default function Home() {
     return () => { alive = false; };
   }, []);
 
+  // Parallax via direct DOM transform — storing scrollY in state re-rendered
+  // the entire page (hundreds of cards) on every scroll frame.
   useEffect(() => {
     const onScroll = () => {
-      setHeroParallax(window.scrollY * 0.35);
-      const statsEl = document.getElementById('stats-section');
-      if (statsEl) {
-        const rect = statsEl.getBoundingClientRect();
-        if (rect.top < window.innerHeight * 0.85 && !statsVisible) setStatsVisible(true);
-      }
+      if (heroBgRef.current) heroBgRef.current.style.transform = `translateY(${window.scrollY * 0.35}px)`;
     };
-    window.addEventListener('scroll', onScroll);
+    window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
-  }, [statsVisible]);
+  }, []);
 
+  const statItems = useMemo(() => [
+    { val: posts.length, label: 'Objav' },
+    { val: new Set(posts.map(p => p.author_name || p.created_by || 'Member')).size, label: 'Avtorjev' },
+    { val: posts.filter(p => p.category === 'events').length, label: 'Dogodkov' },
+    { val: new Set(posts.map(p => p.category).filter(Boolean)).size, label: 'Kategorij' },
+  ], [posts]);
+
+  // New search/filter restarts the pagination window (but not on mount,
+  // which would clobber the count restored after back-navigation)
   useEffect(() => {
-    if (!statsVisible || posts.length === 0) return;
-    const targets = {
-      dispatches: posts.length,
-      contributors: new Set(posts.map(p => p.author_name || p.created_by || 'Member')).size,
-      events: posts.filter(p => p.category === 'events').length,
-      categories: new Set(posts.map(p => p.category).filter(Boolean)).size,
-    };
-    const duration = 1200;
-    const start = Date.now();
-    const tick = () => {
-      const elapsed = Date.now() - start;
-      const progress = Math.min(elapsed / duration, 1);
-      const ease = 1 - Math.pow(1 - progress, 3);
-      setCounts({
-        dispatches: Math.round(targets.dispatches * ease),
-        contributors: Math.round(targets.contributors * ease),
-        events: Math.round(targets.events * ease),
-        categories: Math.round(targets.categories * ease),
-      });
-      if (progress < 1) requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-  }, [statsVisible, posts]);
+    if (firstFilterRun.current) { firstFilterRun.current = false; return; }
+    setVisibleCount(PAGE_SIZE);
+  }, [search, activeCategory]);
 
   useEffect(() => {
     const els = document.querySelectorAll('[data-reveal]');
@@ -139,7 +132,8 @@ export default function Home() {
   });
 
   const featuredPost = filtered[0];
-  const otherPosts = filtered.slice(1);
+  const otherPosts = filtered.slice(1, 1 + visibleCount);
+  const hasMore = filtered.length - 1 > visibleCount;
 
   const rev = (key, extra = {}) => ({
     opacity: visible[key] ? 1 : 0,
@@ -157,7 +151,7 @@ export default function Home() {
       {/* HERO */}
       <div style={{ position: 'relative', height: '100vh', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.5) 60%, rgba(10,10,10,1) 100%)', zIndex: 2 }} />
-        <div style={{ position: 'absolute', inset: 0, zIndex: 1, backgroundImage: "url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1600&q=80')", backgroundSize: 'cover', backgroundPosition: 'center 30%', transform: `translateY(${heroParallax}px)`, willChange: 'transform' }} />
+        <div ref={heroBgRef} style={{ position: 'absolute', inset: 0, zIndex: 1, backgroundImage: "url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1600&q=80')", backgroundSize: 'cover', backgroundPosition: 'center 30%', willChange: 'transform' }} />
         <div style={{ position: 'relative', zIndex: 3, textAlign: 'center', padding: '0 24px', maxWidth: '900px' }}>
           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 400, fontSize: '13px', letterSpacing: '0.3em', textTransform: 'uppercase', color: '#E8501A', marginBottom: '20px', opacity: 0, animation: 'fadeUp 0.8s 0.3s cubic-bezier(0.16,1,0.3,1) forwards' }}>EST. 1992 — SLOVENIJA</div>
           <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 'clamp(72px, 12vw, 140px)', lineHeight: 0.9, letterSpacing: '-0.01em', textTransform: 'uppercase', margin: '0 0 24px', color: '#fff', opacity: 0, animation: 'fadeUp 0.8s 0.5s cubic-bezier(0.16,1,0.3,1) forwards' }}>
@@ -188,21 +182,7 @@ export default function Home() {
       </div>
 
       {/* STATS */}
-      <div id="stats-section" style={{ background: theme.statBg, borderTop: `1px solid ${theme.border}`, borderBottom: `1px solid ${theme.border}`, transition: 'background 0.4s' }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'var(--col-4)' }}>
-          {[
-            { val: counts.dispatches, label: 'Objav' },
-            { val: counts.contributors, label: 'Avtorjev' },
-            { val: counts.events, label: 'Dogodkov' },
-            { val: counts.categories, label: 'Kategorij' },
-          ].map((s, i) => (
-            <div key={i} style={{ padding: '40px 24px', textAlign: 'center', borderRight: i < 3 ? `1px solid ${theme.border}` : 'none' }}>
-              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 'clamp(34px, 7vw, 52px)', color: '#E8501A', lineHeight: 1 }}>{s.val}</div>
-              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 500, fontSize: '12px', letterSpacing: '0.2em', textTransform: 'uppercase', color: theme.textLow, marginTop: '8px' }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <StatsSection theme={theme} items={statItems} />
 
       {/* POSTS */}
       <div id="posts-section" style={{ maxWidth: '1100px', margin: '0 auto', padding: '80px 24px' }}>
@@ -273,10 +253,12 @@ export default function Home() {
                         <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '14px', letterSpacing: '0.08em', color: '#E8501A', textTransform: 'uppercase' }}>Preberi →</span>
                       </div>
                     </div>
-                    <div style={{
-                      backgroundImage: featuredPost.featured_image ? `url('${featuredPost.featured_image}')` : "url('https://images.unsplash.com/photo-1551632811-561732d1e306?w=800&q=80')",
-                      backgroundSize: 'cover', backgroundPosition: 'center', minHeight: '360px', position: 'relative',
-                    }}>
+                    <div style={{ minHeight: '360px', position: 'relative', overflow: 'hidden' }}>
+                      <img
+                        src={featuredPost.featured_image || 'https://images.unsplash.com/photo-1551632811-561732d1e306?w=800&q=80'}
+                        alt="" loading="lazy" decoding="async"
+                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
                       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(20,20,20,0.3), transparent)' }} />
                     </div>
                   </div>
@@ -289,15 +271,16 @@ export default function Home() {
               {otherPosts.map((post, i) => (
                 <Link key={post.id} to={`/post/${post.id}`} style={{ textDecoration: 'none' }}>
                   <div
-                    style={{ background: theme.bgCard, border: `1px solid ${theme.border}`, borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', transition: 'border-color 0.3s, transform 0.3s, background 0.4s', transitionDelay: `${i * 0.06}s`, height: '100%' }}
+                    style={{ background: theme.bgCard, border: `1px solid ${theme.border}`, borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', transition: 'border-color 0.3s, transform 0.3s, background 0.4s', transitionDelay: `${Math.min(i * 0.06, 0.6)}s`, height: '100%' }}
                     onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(232,80,26,0.35)'; e.currentTarget.style.transform = 'translateY(-4px)'; }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = 'translateY(0)'; }}
                   >
-                    <div style={{
-                      height: '180px',
-                      backgroundImage: post.featured_image ? `url('${post.featured_image}')` : `url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=70')`,
-                      backgroundSize: 'cover', backgroundPosition: 'center', position: 'relative',
-                    }}>
+                    <div style={{ height: '180px', position: 'relative', overflow: 'hidden' }}>
+                      <img
+                        src={post.featured_image || 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=70'}
+                        alt="" loading="lazy" decoding="async"
+                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
                       <span style={{ position: 'absolute', top: '12px', left: '12px', background: 'rgba(10,10,10,0.75)', backdropFilter: 'blur(8px)', color: '#E8501A', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 10px', borderRadius: '3px' }}>{CAT_LABEL[post.category] || post.category || 'Objava'}</span>
                     </div>
                     <div style={{ padding: '24px' }}>
@@ -313,6 +296,18 @@ export default function Home() {
                 </Link>
               ))}
             </div>
+
+            {/* Load more */}
+            {hasMore && (
+              <div style={{ textAlign: 'center', marginTop: '48px' }}>
+                <button
+                  onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                  style={{ background: 'transparent', color: theme.text, border: `1.5px solid ${theme.border}`, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '15px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '14px 40px', borderRadius: '4px', transition: 'all 0.2s' }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#E8501A'; e.currentTarget.style.color = '#E8501A'; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.text; }}
+                >Pokaži več ({filtered.length - 1 - otherPosts.length})</button>
+              </div>
+            )}
           </>
         )}
       </div>

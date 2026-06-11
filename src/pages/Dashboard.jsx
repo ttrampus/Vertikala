@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 import { Loader2, Edit, Trash2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { deletePostsWithImages } from "@/lib/deletePosts";
 import { format } from "date-fns";
 import { sl } from "date-fns/locale";
 import TagBadge from "../components/TagBadge";
@@ -19,6 +21,8 @@ export default function Dashboard() {
   const { user, isLoadingAuth } = useAuth();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [selected, setSelected] = useState(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -41,9 +45,30 @@ export default function Dashboard() {
   }, [isLoadingAuth, user?.id]);
 
   const deletePost = async (id) => {
-    const { error } = await supabase.from("BlogPost").delete().eq("id", id);
+    const { error } = await deletePostsWithImages([id]);
     if (error) return console.error(error);
     setPosts((prev) => prev.filter((p) => p.id !== id));
+    setSelected((prev) => { const n = new Set(prev); n.delete(id); return n; });
+  };
+
+  const toggleSelected = (id) => {
+    setSelected((prev) => {
+      const n = new Set(prev);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+  };
+
+  const bulkDelete = async () => {
+    setBulkDeleting(true);
+    const { error } = await deletePostsWithImages([...selected]);
+    if (error) {
+      alert("Brisanje ni uspelo: " + error.message);
+    } else {
+      setPosts((prev) => prev.filter((p) => !selected.has(p.id)));
+      setSelected(new Set());
+    }
+    setBulkDeleting(false);
   };
 
   if (isLoadingAuth || loading) {
@@ -61,6 +86,38 @@ export default function Dashboard() {
         <Button onClick={() => navigate("/create")}>+ Nova objava</Button>
       </div>
 
+      {posts.length > 0 && (
+        <div className="flex items-center justify-between mb-4 min-h-9">
+          <label className="flex items-center gap-2.5 text-sm text-muted-foreground font-inter cursor-pointer px-4">
+            <Checkbox
+              checked={selected.size === posts.length}
+              onCheckedChange={(v) => setSelected(v ? new Set(posts.map((p) => p.id)) : new Set())}
+            />
+            {selected.size > 0 ? `${selected.size} izbranih` : "Izberi vse"}
+          </label>
+          {selected.size > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm" className="gap-1.5" disabled={bulkDeleting}>
+                  {bulkDeleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                  Izbriši ({selected.size})
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Izbriši {selected.size} objav?</AlertDialogTitle>
+                  <AlertDialogDescription>Izbrane objave bodo trajno izbrisane. Tega ni mogoče razveljaviti.</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Prekliči</AlertDialogCancel>
+                  <AlertDialogAction onClick={bulkDelete} className="bg-destructive text-destructive-foreground">Izbriši vse izbrane</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
+      )}
+
       <div className="space-y-2">
         {posts.length === 0 && (
           <p className="text-muted-foreground text-sm py-8 text-center">
@@ -71,8 +128,13 @@ export default function Dashboard() {
         {posts.map((post) => (
           <div
             key={post.id}
-            className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card"
+            className={`flex items-center gap-4 p-4 rounded-xl border bg-card ${selected.has(post.id) ? "border-primary/50" : "border-border"}`}
           >
+            <Checkbox
+              checked={selected.has(post.id)}
+              onCheckedChange={() => toggleSelected(post.id)}
+              className="flex-shrink-0"
+            />
             {/* Thumbnail */}
             <div className="hidden sm:block w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
               {post.featured_image

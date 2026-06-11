@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { ThemeCtx } from "@/lib/ThemeContext";
 import { format, isAfter, subDays } from "date-fns";
+import StatsSection from "@/components/StatsSection";
 
 export default function Events() {
   const theme = useContext(ThemeCtx);
@@ -17,7 +18,8 @@ export default function Events() {
       setLoading(true);
       const { data, error } = await supabase
         .from("BlogPost")
-        .select("*")
+        // List columns only — full `content` HTML isn't used by the cards
+        .select("id, title, summary, featured_image, author_name, created_by, category, tags, created_date, likes_count")
         .eq("status", "published")
         .eq("category", "events")
         .order("created_date", { ascending: false });
@@ -75,20 +77,14 @@ export default function Events() {
       </div>
 
       {/* Stats */}
-      <div style={{ background: theme.statBg, borderTop: `1px solid ${theme.border}`, borderBottom: `1px solid ${theme.border}`, transition: 'background 0.4s' }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'var(--col-3)' }}>
-          {[
-            { val: filtered.length, label: 'Dogodki' },
-            { val: thisMonth, label: 'Ta mesec' },
-            { val: organizers, label: 'Organizatorji' },
-          ].map((s, i) => (
-            <div key={i} style={{ padding: '32px 24px', textAlign: 'center', borderRight: i < 2 ? `1px solid ${theme.border}` : 'none' }}>
-              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 'clamp(30px, 5.5vw, 44px)', color: '#E8501A', lineHeight: 1 }}>{s.val}</div>
-              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', color: theme.textLow, marginTop: '6px' }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <StatsSection
+        theme={theme}
+        items={[
+          { val: filtered.length, label: 'Dogodki' },
+          { val: thisMonth, label: 'Ta mesec' },
+          { val: organizers, label: 'Organizatorji' },
+        ]}
+      />
 
       <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '64px var(--page-x) 96px' }}>
         {/* Search */}

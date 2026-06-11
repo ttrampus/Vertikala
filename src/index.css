@@ -282,3 +282,148 @@
    which would otherwise break `position: sticky` (e.g. AlpineSchool sidebar). */
 html, body { overflow-x: clip; max-width: 100%; }
 img { max-width: 100%; }
+
+/* ============================================================
+   IMPORTED WORDPRESS GALLERIES
+   The classic [gallery] shortcode ships its own inline <style>
+   (.gallery-item { float:left; width:33% }) to make the grid, but
+   DOMPurify strips <style> tags — so we re-create the layout here.
+   Scoped to .prose (the post-content container in PostDetail).
+   ============================================================ */
+.prose .gallery {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 24px 0;
+  list-style: none;
+  padding: 0;
+}
+.prose .gallery-columns-1 { grid-template-columns: 1fr; }
+.prose .gallery-columns-2 { grid-template-columns: repeat(2, 1fr); }
+.prose .gallery-columns-4 { grid-template-columns: repeat(4, 1fr); }
+.prose .gallery-columns-5 { grid-template-columns: repeat(5, 1fr); }
+/* WP inserts <br style="clear:both"> between every 3 items (float-clear hack).
+   In a CSS grid these <br> elements occupy a cell, breaking rows 2+.
+   Hide them so every dl.gallery-item fills consecutive cells. */
+.prose .gallery > br { display: none; }
+
+/* Each <dl class="gallery-item"> is a grid cell */
+.prose .gallery-item,
+.prose .gallery figure {
+  display: block;
+  width: auto !important;
+  margin: 0 !important;
+  float: none !important;
+  overflow: hidden;
+  border-radius: 8px;
+}
+/* <dt class="gallery-icon"> and the <a> wrapper must fill their parent */
+.prose .gallery dt,
+.prose .gallery-icon {
+  display: block;
+  margin: 0 !important;
+  padding: 0;
+  line-height: 0;
+}
+.prose .gallery-icon a {
+  display: block;
+  line-height: 0;
+}
+.prose .gallery img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  display: block;
+  border-radius: 8px;
+  margin: 0 !important;
+  border: none !important;
+}
+/* ── Standalone content images ──────────────────────────────────────────────
+   Old WP posts also embed bare <img> tags with no figure/gallery wrapper;
+   without WP's theme CSS they render inline — hugging the left edge, or two
+   stacked with zero gap. Normalize: every content image is its own centered
+   block with breathing room, regardless of how the source HTML positioned it.
+   Scoped exceptions below restore layouts that manage their own geometry. */
+.prose img {
+  display: block;
+  margin: 2rem auto;
+  max-width: 100%;
+  height: auto;
+  float: none;
+}
+/* WP emoji/smiley images must keep flowing with the text */
+.prose img.wp-smiley,
+.prose img.emoji {
+  display: inline-block;
+  margin: 0 2px;
+  vertical-align: text-bottom;
+}
+/* Side-by-side image rows and video nodes space themselves */
+.prose [data-type="image-row"] img,
+.prose [data-type="video-node"] img {
+  margin: 0;
+}
+
+/* ── Image captions ─────────────────────────────────────────────────────────── */
+/* All figures (new posts with data-type="figure" AND WP-imported figures).
+   !important: imported + editor figures carry an inline margin:20px 0 — this
+   keeps image↔text spacing identical to the bare-image rule above. */
+.prose figure {
+  margin: 2rem auto !important;
+}
+/* Inner table-display wrapper (new posts) — already sized to image width */
+.prose figure > div[style*="display:table"] {
+  max-width: 100%;
+}
+/* Center images inside any figure (fixes WP import misalignment) */
+.prose figure > img,
+.prose figure > a > img,
+.prose figure > div > img {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+}
+.prose figure figcaption {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 0.8rem;
+  font-style: italic;
+  color: hsl(var(--foreground) / 0.80);
+  text-align: center;
+  margin-top: 8px;
+  line-height: 1.5;
+  padding: 0 6px;
+}
+/* Gallery captions (<dd class="gallery-caption">) — WP classic gallery */
+.prose .gallery-caption,
+.prose dd.wp-caption-text,
+.prose .wp-caption-text {
+  display: block;
+  font-size: 0.775rem !important;
+  font-style: italic;
+  color: hsl(var(--foreground) / 0.80) !important;
+  text-align: center;
+  margin: 6px 0 0 !important;
+  line-height: 1.4;
+  padding: 0 4px;
+  background: transparent;
+}
+/* Newer block-editor galleries, just in case some posts use them */
+.prose .wp-block-gallery {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 24px 0;
+}
+.prose .wp-block-gallery .wp-block-image { margin: 0 !important; }
+.prose .wp-block-gallery img {
+  width: 100%; height: 100%; aspect-ratio: 1 / 1; object-fit: cover;
+  border-radius: 8px; margin: 0 !important;
+}
+@media (max-width: 600px) {
+  .prose .gallery,
+  .prose .gallery-columns-4,
+  .prose .gallery-columns-5,
+  .prose .wp-block-gallery { grid-template-columns: repeat(2, 1fr); }
+}

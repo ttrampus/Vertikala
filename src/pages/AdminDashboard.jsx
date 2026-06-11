@@ -12,6 +12,8 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { deletePostsWithImages } from "@/lib/deletePosts";
 import TagBadge from "../components/TagBadge";
 
 export default function AdminDashboard() {
@@ -21,6 +23,10 @@ export default function AdminDashboard() {
   const [posts, setPosts] = useState([]);
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Bulk post selection
+  const [selectedPosts, setSelectedPosts] = useState(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   // Single invite
   const [inviteEmail, setInviteEmail] = useState("");
@@ -41,27 +47,65 @@ export default function AdminDashboard() {
   const [ascentForm, setAscentForm] = useState({ date: "", climber_name: "", category: "alpinistični", location: "", route_name: "", difficulty: "", altitude: "", notes: "" });
   const [savingAscent, setSavingAscent] = useState(false);
 
+  // All posts, paged past PostgREST's 1000-row cap (586+ after the WP import).
+  // Only list columns — `content` across hundreds of posts is megabytes.
+  const loadAllPosts = async () => {
+    const cols = "id, title, status, featured_image, author_name, author_email, created_by, category, created_date";
+    const all = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await supabase
+        .from("BlogPost").select(cols)
+        .order("created_date", { ascending: false })
+        .range(from, from + 999);
+      if (error) { console.error(error); break; }
+      all.push(...(data || []));
+      if (!data || data.length < 1000) break;
+    }
+    return all;
+  };
+
   const loadData = async () => {
     setLoading(true);
-    const [postsRes, profilesRes, ascentsRes] = await Promise.all([
-      supabase.from("BlogPost").select("*").order("created_date", { ascending: false }).limit(200),
-      supabase.from("profile").select("*").order("created_date", { ascending: false }).limit(200),
+    const [allPosts, profilesRes, ascentsRes] = await Promise.all([
+      loadAllPosts(),
+      supabase.from("profile").select("*").order("created_date", { ascending: false }).limit(1000),
       supabase.from("ascents").select("*").order("date", { ascending: false }).limit(500),
     ]);
-    setPosts(postsRes.data || []);
+    setPosts(allPosts);
     setProfiles(profilesRes.data || []);
     setAscents(ascentsRes.data || []);
     setLoading(false);
   };
 
   const deletePost = async (id) => {
-    const { error } = await supabase.from("BlogPost").delete().eq("id", id);
+    const { error } = await deletePostsWithImages([id]);
     if (!error) {
       setPosts((prev) => prev.filter((p) => p.id !== id));
+      setSelectedPosts((prev) => { const n = new Set(prev); n.delete(id); return n; });
     } else {
       console.error("Delete failed:", error.message);
       alert("Brisanje ni uspelo: " + error.message);
     }
+  };
+
+  const togglePostSelected = (id) => {
+    setSelectedPosts((prev) => {
+      const n = new Set(prev);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+  };
+
+  const bulkDeletePosts = async () => {
+    setBulkDeleting(true);
+    const { error } = await deletePostsWithImages([...selectedPosts]);
+    if (!error) {
+      setPosts((prev) => prev.filter((p) => !selectedPosts.has(p.id)));
+      setSelectedPosts(new Set());
+    } else {
+      alert("Brisanje ni uspelo: " + error.message);
+    }
+    setBulkDeleting(false);
   };
 
   const saveAscent = async (e) => {
@@ -225,10 +269,46 @@ export default function AdminDashboard() {
 
         {/* POSTS TAB */}
         <TabsContent value="posts" className="mt-6">
+          {posts.length > 0 && (
+            <div className="flex items-center justify-between mb-4 min-h-9">
+              <label className="flex items-center gap-2.5 text-sm text-muted-foreground font-inter cursor-pointer px-4">
+                <Checkbox
+                  checked={selectedPosts.size === posts.length}
+                  onCheckedChange={(v) => setSelectedPosts(v ? new Set(posts.map((p) => p.id)) : new Set())}
+                />
+                {selectedPosts.size > 0 ? `${selectedPosts.size} izbranih` : "Izberi vse"}
+              </label>
+              {selectedPosts.size > 0 && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm" className="gap-1.5" disabled={bulkDeleting}>
+                      {bulkDeleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                      Izbriši ({selectedPosts.size})
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Izbriši {selectedPosts.size} objav?</AlertDialogTitle>
+                      <AlertDialogDescription>Izbrane objave bodo trajno izbrisane. Tega ni mogoče razveljaviti.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Prekliči</AlertDialogCancel>
+                      <AlertDialogAction onClick={bulkDeletePosts} className="bg-destructive text-destructive-foreground">Izbriši vse izbrane</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+            </div>
+          )}
           <div className="space-y-2">
             {posts.length === 0 && <p className="text-muted-foreground text-sm font-inter py-8 text-center">Še ni objav.</p>}
             {posts.map((post) => (
-              <div key={post.id} className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card">
+              <div key={post.id} className={`flex items-center gap-4 p-4 rounded-xl border bg-card ${selectedPosts.has(post.id) ? "border-primary/50" : "border-border"}`}>
+                <Checkbox
+                  checked={selectedPosts.has(post.id)}
+                  onCheckedChange={() => togglePostSelected(post.id)}
+                  className="flex-shrink-0"
+                />
                 <div className="hidden sm:block w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
                   {post.featured_image ? <img src={post.featured_image} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-muted" />}
                 </div>

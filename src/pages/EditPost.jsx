@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
+import { uploadToSupabase } from "@/lib/uploadToSupabase";
 import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,30 +22,15 @@ import {
 
 import { useEditor, EditorContent, Node, mergeAttributes } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import ImageExtension from "@tiptap/extension-image";
 import TextAlign from "@tiptap/extension-text-align";
+import { FigureNode } from "@/lib/FigureNode";
+import { RawHtmlNode } from "@/lib/RawHtmlNode";
 import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
 
 const categories = ["climbs", "trips", "events", "gear", "training", "news"];
 const VIDEO_MAX_BYTES = 50 * 1024 * 1024;
-
-async function uploadToSupabase(file, folder = "inline") {
-  const ext = file.name.split(".").pop();
-  const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  let uploadError = null;
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    const { error } = await supabase.storage
-      .from("blog-images").upload(fileName, file, { upsert: false });
-    uploadError = error;
-    if (!error) break;
-    if (attempt < 3) await new Promise((r) => setTimeout(r, 1000 * attempt));
-  }
-  if (uploadError) throw new Error(uploadError.message);
-  const { data } = supabase.storage.from("blog-images").getPublicUrl(fileName);
-  return data.publicUrl;
-}
 
 function extractYoutubeId(url) {
   const patterns = [
@@ -325,9 +311,12 @@ function LinkModal({ onInsert, onClose }) {
   );
 }
 
-function ImageResizeOverlay({ editorContainerRef }) {
+function ImageResizeOverlay({ editorContainerRef, editor }) {
   const [selected, setSelected] = useState(null);
   const dragRef = useRef(null);
+  const overlayBoxRef = useRef(null);
+  const handleRefs = useRef({});
+  const isDraggingRef = useRef(false);
 
   useEffect(() => {
     const container = editorContainerRef.current;
@@ -357,6 +346,7 @@ function ImageResizeOverlay({ editorContainerRef }) {
   useEffect(() => {
     if (!selected) return;
     const sync = () => {
+      if (isDraggingRef.current) return;
       const container = editorContainerRef.current;
       if (!container || !selected.el) return;
       const cr = container.getBoundingClientRect();
@@ -370,29 +360,79 @@ function ImageResizeOverlay({ editorContainerRef }) {
   const startDrag = (e, corner) => {
     e.preventDefault();
     e.stopPropagation();
-    const img = selected.el;
+    const container = editorContainerRef.current;
+    if (!container) return;
+
+    // Re-query live img in case the NodeView was recreated since selection
+    let img = selected.el;
+    if (!img || !img.isConnected) {
+      img = container.querySelector('figure[data-type="figure"] img');
+      if (!img) return;
+    }
+
     const startX = e.clientX;
     const startW = img.getBoundingClientRect().width;
-    const container = editorContainerRef.current;
     const containerW = container.getBoundingClientRect().width;
     dragRef.current = { corner, startX, startW, img, containerW };
+    img.dataset.resizing = "1";
+    isDraggingRef.current = true;
+
     const onMove = (ev) => {
+      ev.stopPropagation();
       const { corner, startX, startW, img, containerW } = dragRef.current;
       let delta = ev.clientX - startX;
       if (corner === "sw" || corner === "nw") delta = -delta;
       const newW = Math.max(60, Math.min(containerW, startW + delta));
-      img.style.width = newW + "px";
-      img.style.maxWidth = "100%";
+
+      img.style.width = `${newW}px`;
+
+      // Update overlay DOM directly — bypasses React batching so every frame paints live
+      const cr = container.getBoundingClientRect();
+      const ir = img.getBoundingClientRect();
+      const ox = ir.left - cr.left;
+      const oy = ir.top - cr.top;
+      const ow = ir.width;
+      const oh = ir.height;
+      if (overlayBoxRef.current) {
+        overlayBoxRef.current.style.left = `${ox}px`;
+        overlayBoxRef.current.style.top = `${oy}px`;
+        overlayBoxRef.current.style.width = `${ow}px`;
+        overlayBoxRef.current.style.height = `${oh}px`;
+      }
+      const pos = { nw: [ox - 5, oy - 5], ne: [ox + ow - 5, oy - 5], sw: [ox - 5, oy + oh - 5], se: [ox + ow - 5, oy + oh - 5] };
+      Object.entries(pos).forEach(([id, [l, t]]) => {
+        const el = handleRefs.current[id];
+        if (el) { el.style.left = `${l}px`; el.style.top = `${t}px`; }
+      });
+    };
+
+    const onUp = () => {
+      document.removeEventListener("mousemove", onMove, { capture: true });
+      document.removeEventListener("mouseup", onUp, { capture: true });
+      delete img.dataset.resizing;
+      isDraggingRef.current = false;
+
+      if (editor) {
+        const src = img.src;
+        const finalWidth = img.style.width;
+        editor.view.state.doc.descendants((node, pos) => {
+          if (node.type.name === "figure" && node.attrs.src === src) {
+            editor.view.dispatch(
+              editor.view.state.tr.setNodeMarkup(pos, null, { ...node.attrs, width: finalWidth })
+            );
+            return false;
+          }
+        });
+      }
+
+      // Sync React state once with the final dimensions
       const cr = container.getBoundingClientRect();
       const ir = img.getBoundingClientRect();
       setSelected((s) => s ? { ...s, x: ir.left - cr.left, y: ir.top - cr.top, w: ir.width, h: ir.height } : null);
     };
-    const onUp = () => {
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
-    };
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
+
+    document.addEventListener("mousemove", onMove, { capture: true });
+    document.addEventListener("mouseup", onUp, { capture: true });
   };
 
   if (!selected) return null;
@@ -405,9 +445,11 @@ function ImageResizeOverlay({ editorContainerRef }) {
   ];
   return (
     <>
-      <div style={{ position: "absolute", top: y, left: x, width: w, height: h, border: "2px solid hsl(221,83%,53%)", borderRadius: 6, pointerEvents: "none", zIndex: 40 }} />
+      <div ref={overlayBoxRef} style={{ position: "absolute", top: y, left: x, width: w, height: h, border: "2px solid hsl(221,83%,53%)", borderRadius: 6, pointerEvents: "none", zIndex: 40 }} />
       {handles.map(({ id, style }) => (
-        <div key={id} data-resize-handle onMouseDown={(e) => startDrag(e, id)}
+        <div key={id} data-resize-handle
+          ref={(el) => { handleRefs.current[id] = el; }}
+          onMouseDown={(e) => startDrag(e, id)}
           style={{ position: "absolute", width: 10, height: 10, background: "white", border: "2px solid hsl(221,83%,53%)", borderRadius: 2, zIndex: 41, ...style }} />
       ))}
     </>
@@ -501,7 +543,7 @@ function SideBySideModal({ editor, onClose }) {
 export default function EditPost() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, isLoadingAuth } = useAuth();
+  const { user, isAdmin, isLoadingAuth } = useAuth();
   const editorContainerRef = useRef(null);
 
   const [loading, setLoading] = useState(true);
@@ -522,10 +564,11 @@ export default function EditPost() {
     extensions: [
       StarterKit.configure({ link: false, underline: false }),
       Underline,
-      ImageExtension.configure({ inline: false, allowBase64: false }),
+      FigureNode,
+      RawHtmlNode,
       VideoNode,
       ImageRow,
-      TextAlign.configure({ types: ["heading", "paragraph"] }),
+      TextAlign.configure({ types: ["heading", "paragraph", "figure"] }),
       Placeholder.configure({ placeholder: "Write your story…" }),
       Link.configure({ openOnClick: false }),
     ],
@@ -556,7 +599,7 @@ export default function EditPost() {
     setLoading(true);
     const { data, error } = await supabase.from("BlogPost").select("*").eq("id", id).single();
     if (error) { console.error(error); navigate("/dashboard"); return; }
-    if (data.created_by_id !== user.id) { alert("You cannot edit this post"); navigate("/dashboard"); return; }
+    if (data.created_by_id !== user.id && !isAdmin) { alert("Te objave ne morete urejati."); navigate("/dashboard"); return; }
     setForm({
       title: data.title || "",
       summary: data.summary || "",
@@ -578,7 +621,7 @@ export default function EditPost() {
     setImageUploading(true);
     try {
       const url = await uploadToSupabase(file, "inline");
-      editor.chain().focus().setImage({ src: url }).run();
+      editor.chain().focus().insertContent({ type: "figure", attrs: { src: url, alt: "" } }).run();
     } catch (err) {
       alert(`Upload failed: ${err.message}`);
     } finally {
@@ -744,7 +787,7 @@ export default function EditPost() {
               <ToolBtn onClick={() => setShowSideBySide(true)} title="Side-by-side images"><Columns2 size={15} /></ToolBtn>
               <ToolBtn onClick={() => setShowVideo(true)} title="Embed video or upload from device"><Video size={15} /></ToolBtn>
             </div>
-            <ImageResizeOverlay editorContainerRef={editorContainerRef} />
+            <ImageResizeOverlay editorContainerRef={editorContainerRef} editor={editor} />
             <EditorContent editor={editor} />
           </div>
 
@@ -822,6 +865,22 @@ export default function EditPost() {
         .tiptap li { margin: 0.25rem 0; }
         .tiptap a { color: hsl(var(--primary)); text-decoration: underline; text-underline-offset: 2px; }
         .tiptap p { margin: 0.5rem 0; }
+        .tiptap figcaption {
+          display: block; width: 100%; box-sizing: border-box;
+          text-align: center; font-style: italic; font-size: 13px;
+          color: inherit; opacity: 0.80; outline: none; min-height: 1.4em;
+          border-bottom: 1px dashed rgba(120,120,120,0.45);
+          padding: 5px 4px; margin-top: 6px;
+          transition: opacity 0.15s, border-color 0.15s;
+        }
+        .tiptap figcaption:focus {
+          opacity: 1;
+          border-bottom-color: rgba(232,80,26,0.55);
+        }
+        .tiptap figcaption:empty::before {
+          content: attr(data-placeholder);
+          opacity: 0.45; pointer-events: none;
+        }
       `}</style>
     </div>
   );

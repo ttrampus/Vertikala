@@ -1,25 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { uploadToSupabase } from "@/lib/uploadToSupabase";
 import { Loader2, Upload, X, ChevronLeft, ChevronRight } from "lucide-react";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB per image
 
-async function uploadImageToSupabase(file) {
-  const ext = file.name.split(".").pop();
-  const fileName = `gallery/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  let uploadError = null;
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    const { error } = await supabase.storage
-      .from("blog-images")
-      .upload(fileName, file, { upsert: false });
-    uploadError = error;
-    if (!error) break;
-    if (attempt < 3) await new Promise((r) => setTimeout(r, 1000 * attempt));
-  }
-  if (uploadError) throw new Error(uploadError.message);
-  const { data } = supabase.storage.from("blog-images").getPublicUrl(fileName);
-  return data.publicUrl;
-}
+const uploadImageToSupabase = (file) => uploadToSupabase(file, "gallery");
 
 // ── Lightbox ──────────────────────────────────────────────────────────────────
 function Lightbox({ images, startIndex, onClose }) {

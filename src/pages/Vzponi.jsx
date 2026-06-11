@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { ThemeCtx } from "@/lib/ThemeContext";
+import StatsSection from "@/components/StatsSection";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/lib/AuthContext";
 import { format } from "date-fns";
@@ -157,22 +158,16 @@ export default function Vzponi() {
         </div>
       </div>
 
-      {/* Stats bar */}
-      <div style={{ background: theme.isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.025)", borderBottom: `1px solid ${theme.border}` }}>
-        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 var(--page-x)", display: "flex", gap: "48px", overflowX: "auto" }}>
-          {[
-            { label: "Skupaj", value: ascents.length },
-            { label: "Alpinistični vzponi", value: ascents.filter((a) => a.category === "alpinistični").length },
-            { label: "Športnoplezalni vzponi", value: ascents.filter((a) => a.category === "športnoplezalni").length },
-            { label: "Turni in smuki", value: ascents.filter((a) => a.category === "turni").length },
-          ].map((s) => (
-            <div key={s.label} style={{ padding: "20px 0", flexShrink: 0 }}>
-              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "28px", lineHeight: 1 }}>{loading ? "—" : s.value}</div>
-              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "11px", color: theme.textLow, letterSpacing: "0.05em", marginTop: "3px" }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Stats */}
+      <StatsSection
+        theme={theme}
+        items={[
+          { val: ascents.length, label: "Skupaj" },
+          { val: ascents.filter((a) => a.category === "alpinistični").length, label: "Alpinistični" },
+          { val: ascents.filter((a) => a.category === "športnoplezalni").length, label: "Športnoplezalni" },
+          { val: ascents.filter((a) => a.category === "turni").length, label: "Turni in smuki" },
+        ]}
+      />
 
       {/* Main content */}
       <div className="vzponi-content" style={{ maxWidth: "1100px", margin: "0 auto", padding: "56px var(--page-x)" }}>

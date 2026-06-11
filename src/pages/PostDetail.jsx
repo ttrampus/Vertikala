@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import DOMPurify from "dompurify";
 import { supabase } from "@/lib/supabaseClient";
@@ -10,6 +10,7 @@ import TagBadge from "../components/TagBadge";
 import LikeButton from "../components/LikeButton";
 import CommentSection from "../components/CommentSection";
 import ImageGallery from "../components/ImageGallery";
+import Lightbox from "../components/Lightbox";
 import ElevationDivider from "../components/ElevationDivider";
 import ClimbMetaCard from "../components/ClimbMetaCard";
 import TripSignupButton from "../components/TripSignupButton";
@@ -19,6 +20,18 @@ export default function PostDetail() {
   const { isAdmin } = useAuth();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
+  const bodyRef = useRef(null);
+  const [bodyLightbox, setBodyLightbox] = useState({ images: [], index: null });
+
+  // Click-to-enlarge for images inside the post body (rendered via
+  // dangerouslySetInnerHTML, so plain <img> tags with no React handlers).
+  const handleBodyClick = (e) => {
+    const img = e.target.closest("img");
+    if (!img || !bodyRef.current?.contains(img)) return;
+    if (img.closest("a")) return; // linked images keep their link behavior
+    const imgs = [...bodyRef.current.querySelectorAll("img")].filter((el) => !el.closest("a"));
+    setBodyLightbox({ images: imgs.map((el) => el.src), index: imgs.indexOf(img) });
+  };
 
   useEffect(() => {
     loadPost();
@@ -159,14 +172,21 @@ export default function PostDetail() {
 
         {/* Body */}
         <div
+          ref={bodyRef}
+          onClick={handleBodyClick}
           className="font-serif text-lg leading-[1.65] prose prose-slate dark:prose-invert max-w-none
             prose-headings:font-inter prose-headings:tracking-tight
             prose-h2:text-2xl prose-h3:text-xl
-            prose-a:text-primary prose-img:rounded-xl"
+            prose-a:text-primary prose-img:rounded-xl prose-img:cursor-zoom-in"
           dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content, {
             ADD_TAGS: ["iframe"],
             ADD_ATTR: ["allow", "allowfullscreen", "frameborder", "src", "width", "height", "data-type", "data-video-type", "data-youtube-id", "controls"],
           }) }}
+        />
+        <Lightbox
+          images={bodyLightbox.images}
+          index={bodyLightbox.index}
+          onClose={() => setBodyLightbox((s) => ({ ...s, index: null }))}
         />
 
         {/* Image Gallery */}
