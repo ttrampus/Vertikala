@@ -62,6 +62,7 @@ useEffect(() => {
       password,
     });
     if (error) setAuthError(error.message);
+    return { error };
   };
 
   const logout = async () => {

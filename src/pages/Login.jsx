@@ -41,9 +41,12 @@ export default function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await login(form.email, form.password);
-    setLoading(false);
-    if (!error) navigate("/");
+    try {
+      const { error } = await login(form.email, form.password);
+      if (!error) navigate("/");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleForgot = async (e) => {
