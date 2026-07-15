@@ -21,9 +21,11 @@ export default function CommentSection({ postId, onCountChange }) {
 
   const loadComments = async () => {
     setLoading(true);
+    // Explicit column list — never fetch author_email to the browser (it is PII
+    // and not needed for display; names/avatars are read live from profile).
     const { data, error } = await supabase
       .from("comments")
-      .select("*")
+      .select("id, post_id, content, author_id, author_name, created_at")
       .eq("post_id", postId)
       .order("created_at", { ascending: false })
       .limit(100);

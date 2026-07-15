@@ -148,7 +148,7 @@ export default function PostDetail() {
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to posts
+          Nazaj na objave
         </Link>
 
         {/* Tags */}
@@ -192,7 +192,7 @@ export default function PostDetail() {
         {/* Image Gallery */}
         {post.images?.length > 0 && (
           <div className="mt-12">
-            <ElevationDivider label="Photo Gallery" />
+            <ElevationDivider label="Galerija fotografij" />
             <div className="mt-6">
               <ImageGallery images={post.images} />
             </div>
@@ -220,7 +220,7 @@ export default function PostDetail() {
 
         {/* Comments */}
         <div className="mt-12">
-          <ElevationDivider label="Discussion" />
+          <ElevationDivider label="Razprava" />
           <div className="mt-8">
             <CommentSection
               postId={post.id}

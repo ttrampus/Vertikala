@@ -211,8 +211,15 @@ export default function AdminDashboard() {
     if (targetUser.id === user.id) return; // can't change your own role
     const newRole = targetUser.role === "admin" ? "user" : "admin";
     setTogglingRole(targetUser.id);
-    const { error } = await supabase.from("profile").update({ role: newRole }).eq("id", targetUser.id);
-    if (!error) setProfiles((prev) => prev.map((p) => p.id === targetUser.id ? { ...p, role: newRole } : p));
+    // .select() so we can tell an RLS-blocked no-op (0 rows, no error) apart
+    // from a real success — otherwise the UI flips then reverts on reload.
+    const { data, error } = await supabase
+      .from("profile").update({ role: newRole }).eq("id", targetUser.id).select();
+    if (!error && data?.length) {
+      setProfiles((prev) => prev.map((p) => p.id === targetUser.id ? { ...p, role: newRole } : p));
+    } else {
+      alert("Spremembe vloge ni bilo mogoče shraniti. Preverite, ali imate skrbniške pravice.");
+    }
     setTogglingRole(null);
   };
 

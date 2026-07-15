@@ -55,13 +55,23 @@ useEffect(() => {
   loadProfile();
 }, [user?.id]);
 
+  // Map Supabase's English auth errors to Slovene messages for the UI.
+  const authErrorToSlovene = (message) => {
+    const m = (message || "").toLowerCase();
+    if (m.includes("invalid login credentials")) return "Napačen e-poštni naslov ali geslo.";
+    if (m.includes("email not confirmed")) return "E-poštni naslov še ni potrjen. Preverite svojo e-pošto.";
+    if (m.includes("too many requests") || m.includes("rate limit")) return "Preveč poskusov. Poskusite znova čez nekaj minut.";
+    if (m.includes("network")) return "Napaka pri povezavi. Preverite internetno povezavo.";
+    return "Prijava ni uspela. Poskusite znova.";
+  };
+
   const login = async (email, password) => {
     setAuthError(null);
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-    if (error) setAuthError(error.message);
+    if (error) setAuthError(authErrorToSlovene(error.message));
     return { error };
   };
 

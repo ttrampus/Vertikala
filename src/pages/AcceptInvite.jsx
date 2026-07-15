@@ -26,11 +26,12 @@ export default function AcceptInvite() {
 
   const validateToken = async () => {
     setLoading(true);
+    // Validate via a SECURITY DEFINER RPC that returns only this token's safe
+    // fields. The invitations table itself is not readable by anon, so pending
+    // invites and their tokens can't be enumerated. See supabase/security_fixes.sql.
     const { data, error } = await supabase
-      .from("invitations")
-      .select("*")
-      .eq("token", token)
-      .single();
+      .rpc("validate_invitation", { p_token: token })
+      .maybeSingle();
 
     if (error || !data) {
       setTokenError("Povabilo ni veljavno. Preverite povezavo ali se obrnite na administratorja.");
@@ -84,10 +85,9 @@ export default function AcceptInvite() {
           display_name: form.name.trim(),
         });
 
-        await supabase
-          .from("invitations")
-          .update({ used_at: new Date().toISOString() })
-          .eq("token", token);
+        // Mark the invite consumed via a SECURITY DEFINER RPC — the invitations
+        // table is not writable by regular users. See supabase/security_fixes.sql.
+        await supabase.rpc("mark_invitation_used", { p_token: token });
       }
 
       setDone(true);

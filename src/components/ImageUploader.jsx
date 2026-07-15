@@ -107,8 +107,8 @@ export default function ImageUploader({ images = [], onChange }) {
 
   const handleFiles = async (files) => {
     const validFiles = Array.from(files).filter((f) => {
-      if (!f.type.startsWith("image/")) { alert(`${f.name} is not an image.`); return false; }
-      if (f.size > MAX_FILE_SIZE) { alert(`${f.name} exceeds 10MB.`); return false; }
+      if (!f.type.startsWith("image/")) { alert(`${f.name} ni slika.`); return false; }
+      if (f.size > MAX_FILE_SIZE) { alert(`${f.name} presega 10 MB.`); return false; }
       return true;
     });
     if (!validFiles.length) return;
@@ -118,7 +118,7 @@ export default function ImageUploader({ images = [], onChange }) {
       const urls = await Promise.all(validFiles.map(uploadImageToSupabase));
       onChange([...images, ...urls]);
     } catch (err) {
-      alert(`Upload failed: ${err.message}`);
+      alert(`Nalaganje ni uspelo: ${err.message}`);
     } finally {
       setUploading(false);
     }
@@ -156,7 +156,7 @@ export default function ImageUploader({ images = [], onChange }) {
             >
               <img
                 src={url}
-                alt={`Gallery image ${i + 1}`}
+                alt={`Slika galerije ${i + 1}`}
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
               />
               {/* Hover overlay */}
@@ -185,9 +185,9 @@ export default function ImageUploader({ images = [], onChange }) {
           <>
             <Upload className="h-6 w-6 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">
-              Click or drag to add photos
+              Kliknite ali povlecite za dodajanje fotografij
             </span>
-            <span className="text-xs text-muted-foreground/60">Max 10MB per image</span>
+            <span className="text-xs text-muted-foreground/60">Največ 10 MB na sliko</span>
           </>
         )}
         <input

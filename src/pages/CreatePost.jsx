@@ -117,7 +117,7 @@ const VideoNode = Node.create({
         // Label
         const label = document.createElement("div");
         label.style.cssText = "position:absolute;bottom:8px;left:10px;color:rgba(255,255,255,0.8);font-size:11px;font-family:sans-serif;";
-        label.textContent = "YouTube · click to open in new tab";
+        label.textContent = "YouTube · kliknite za odpiranje v novem zavihku";
         wrapper.appendChild(label);
         wrapper.addEventListener("click", () => {
           window.open(`https://www.youtube.com/watch?v=${youtubeId}`, "_blank");
@@ -242,16 +242,16 @@ function VideoModal({ editor, onClose }) {
   const handleFile = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("video/")) { alert("Please select a video file."); return; }
-    if (file.size > VIDEO_MAX_BYTES) { alert("Video must be under 50MB."); return; }
+    if (!file.type.startsWith("video/")) { alert("Izberite video datoteko."); return; }
+    if (file.size > VIDEO_MAX_BYTES) { alert("Video mora biti manjši od 50 MB."); return; }
     setUploading(true);
-    setProgress("Uploading…");
+    setProgress("Nalagam…");
     try {
       const publicUrl = await uploadToSupabase(file, "videos");
       insertVideoNode(editor, { src: publicUrl, type: "upload", youtubeId: null });
       onClose();
     } catch (err) {
-      alert(`Upload failed: ${err.message}`);
+      alert(`Nalaganje ni uspelo: ${err.message}`);
     } finally {
       setUploading(false);
       setProgress("");
@@ -499,7 +499,7 @@ function SideBySideModal({ editor, onClose }) {
 
   const insert = async () => {
     const files = slots.filter(Boolean);
-    if (files.length < 2) return alert("Pick at least 2 images.");
+    if (files.length < 2) return alert("Izberite vsaj 2 sliki.");
     setUploading(true);
     try {
       const urls = await Promise.all(files.map((f) => uploadToSupabase(f, "inline")));
@@ -509,7 +509,7 @@ function SideBySideModal({ editor, onClose }) {
       }).run();
       onClose();
     } catch (err) {
-      alert(`Upload failed: ${err.message}`);
+      alert(`Nalaganje ni uspelo: ${err.message}`);
     } finally {
       setUploading(false);
     }
@@ -624,7 +624,7 @@ export default function CreatePost() {
       const url = await uploadToSupabase(file, "inline");
       editor.chain().focus().insertContent({ type: "figure", attrs: { src: url, alt: "" } }).run();
     } catch (err) {
-      alert(`Upload failed: ${err.message}`);
+      alert(`Nalaganje ni uspelo: ${err.message}`);
     } finally {
       setImageUploading(false);
       e.target.value = "";
@@ -639,7 +639,7 @@ export default function CreatePost() {
       const url = await uploadToSupabase(file, "inline");
       setForm((prev) => ({ ...prev, featured_image: url }));
     } catch (err) {
-      alert(`Upload failed: ${err.message}`);
+      alert(`Nalaganje ni uspelo: ${err.message}`);
     } finally {
       setFeaturedUploading(false);
     }
@@ -666,7 +666,7 @@ export default function CreatePost() {
       navigate(`/post/${data.id}`);
     } catch (err) {
       console.error(err);
-      alert("Failed to save post");
+      alert("Shranjevanje objave ni uspelo");
     } finally {
       setSaving(false);
     }
