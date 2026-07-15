@@ -4,24 +4,27 @@
 -- Zaženite CELOTNO datoteko v Supabase Dashboard → SQL Editor → New query.
 -- Skripta je idempotentna (varno jo je pognati večkrat).
 --
--- Ozadje: aplikacija do baze dostopa NEPOSREDNO iz brskalnika z javnim
--- "anon" ključem. Edina resnična varnostna meja je zato RLS v bazi — ne
--- koda v Reactu. Ta skripta zapre tri konkretne luknje in popravi gumb
--- "Naredi admina".
+-- Ta različica je prilagojena OBSTOJEČIM politikam v vaši bazi (RLS je že
+-- vklopljen na vseh tabelah). Popravi le tisto, kar dejansko pušča, in se
+-- NE dotika politik, ki že delujejo pravilno.
 --
---  1) invitations — cela tabela (vključno s TOKENI) je bila berljiva vsem
---     anonimnim obiskovalcem → kdorkoli je lahko prebral povabila in se
---     registriral kot povabljena oseba (prevzem povabila).
---  2) comments.author_email — e-poštni naslovi članov so bili vidni vsem.
---  3) profile.role — brez zaščite bi lahko član z ročnim API klicem sam
---     sebi nastavil role='admin' (dvig privilegijev). Hkrati je manjkala
---     politika, da admin lahko spreminja vloge → gumb "Naredi admina" ni
---     deloval.
+-- Ugotovitve (potrjene na živi bazi):
+--   1) invitations — politika "Public can read invitations" USING(true) je
+--      omogočala vsem branje povabil in TOKENOV → prevzem računa.
+--   2) comments.author_email — politika "Anyone can read comments" USING(true)
+--      + stolpčna pravica sta razkrivala e-pošte članov.
+--   3) profile — "Users can update own profile" nima WITH CHECK, zato lahko
+--      član pri urejanju svojega profila nastavi role='admin' (dvig privilegijev).
+--   4) is_admin() — verjetni vzrok, da gumb "Naredi admina" ne deluje: če
+--      trenutna funkcija bere vlogo iz JWT (vedno 'authenticated'), vrne vedno
+--      false. Spodaj jo nadomestimo s pravilno, ki bere tabelo profile.
 -- ============================================================================
 
--- ── Pomožna funkcija: ali je trenutni uporabnik admin? ─────────────────────
--- SECURITY DEFINER + ločena funkcija prepreči neskončno rekurzijo, ki bi
--- nastala, če bi politika na "profile" v svojem pogoju spet brala "profile".
+
+-- ── 0) Pravilna is_admin(): bere tabelo profile, ne JWT ────────────────────
+-- SECURITY DEFINER prepreči rekurzijo RLS in zagotovi, da preverjanje res
+-- prebere vlogo iz baze. Podpis ostaja is_admin() -> boolean, zato obstoječe
+-- politike ("Admins can update any profile") delujejo naprej — le pravilno.
 create or replace function public.is_admin()
 returns boolean
 language sql
@@ -40,30 +43,15 @@ grant execute on function public.is_admin() to anon, authenticated;
 
 
 -- ============================================================================
--- 1) INVITATIONS — zapri tabelo, dostop samo prek varnih funkcij
+-- 1) INVITATIONS — odstrani javno branje, validacija prek varne funkcije
 -- ============================================================================
-alter table public.invitations enable row level security;
+-- Odstrani TOČNO tisto politiko, ki pušča (ime iz vaše baze).
+drop policy if exists "Public can read invitations" on public.invitations;
+-- Po tem na invitations ni več nobene SELECT politike → anon/član tabele ne
+-- more brati neposredno. Sprejem povabila zato teče prek spodnjih funkcij.
 
--- Odstrani morebitne prej nastavljene (preohlapne) politike.
-drop policy if exists "anon read invitations"            on public.invitations;
-drop policy if exists "public read invitations"          on public.invitations;
-drop policy if exists "Enable read access for all users" on public.invitations;
-drop policy if exists "admin manage invitations"         on public.invitations;
-
--- Nihče (anon/authenticated) ne dostopa do tabele neposredno prek PostgREST.
-revoke all on public.invitations from anon, authenticated;
-
--- Admini lahko upravljajo povabila (branje, ustvarjanje, brisanje) prek RLS.
-create policy "admin manage invitations"
-  on public.invitations
-  for all
-  to authenticated
-  using (public.is_admin())
-  with check (public.is_admin());
-
--- Preverjanje tokena BREZ razkritja tabele. Vrne samo varna polja za en
--- konkreten token. Token je treba že poznati (iz e-poštne povezave), zato
--- naštevanje ostalih povabil ni mogoče.
+-- Preverjanje tokena BREZ razkritja tabele: vrne samo varna polja za točno
+-- znani token (naštevanje ostalih povabil ni mogoče). Kliče AcceptInvite.jsx.
 create or replace function public.validate_invitation(p_token text)
 returns table (email text, expires_at timestamptz, used_at timestamptz)
 language sql
@@ -76,12 +64,10 @@ as $$
   where token::text = p_token
   limit 1;
 $$;
-
 revoke all on function public.validate_invitation(text) from public;
 grant execute on function public.validate_invitation(text) to anon, authenticated;
 
 -- Označi povabilo kot uporabljeno (kliče prijavljen uporabnik po registraciji).
--- Deluje samo za še neuporabljeno, nepotečeno povabilo.
 create or replace function public.mark_invitation_used(p_token text)
 returns void
 language sql
@@ -95,58 +81,46 @@ as $$
     and used_at is null
     and expires_at > now();
 $$;
-
 revoke all on function public.mark_invitation_used(text) from public;
 grant execute on function public.mark_invitation_used(text) to authenticated;
+
+-- (Utrjevanje) Ustvarjanje/brisanje/urejanje povabil naj bo samo za admine.
+-- Trenutno lahko to počne KATERIKOLI prijavljen član (USING true). Pošiljanje
+-- povabil v UI teče prek edge funkcije s service_role (obide RLS), sprejem pa
+-- prek zgornje SECURITY DEFINER funkcije — zato ožitev na admine ničesar ne zlomi.
+drop policy if exists "Authenticated users can create invitations" on public.invitations;
+drop policy if exists "Authenticated users can update invitations" on public.invitations;
+drop policy if exists "Authenticated users can delete invitations" on public.invitations;
+
+create policy "Admins can create invitations"
+  on public.invitations for insert to authenticated
+  with check (public.is_admin());
+create policy "Admins can update invitations"
+  on public.invitations for update to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+create policy "Admins can delete invitations"
+  on public.invitations for delete to authenticated
+  using (public.is_admin());
 
 
 -- ============================================================================
 -- 2) COMMENTS — skrij e-poštne naslove avtorjev pred branjem
 -- ============================================================================
--- E-pošta se še vedno shrani ob oddaji komentarja (za administracijo), a je
--- ni več mogoče prebrati prek javnega API-ja. Odjemalec bere samo:
---   id, post_id, content, author_id, author_name, created_at
--- (glej src/components/CommentSection.jsx).
+-- Politiko "Anyone can read comments" pustimo (komentarji SO javni), a stolpec
+-- author_email umaknemo iz dosega javnega API-ja. E-pošta ostane shranjena in
+-- vidna adminu v Dashboardu (service_role obide stolpčne pravice).
+-- Odjemalec (CommentSection.jsx) bere samo potrebne stolpce.
 revoke select (author_email) on public.comments from anon, authenticated;
 
--- Če želite e-pošto vseeno videti kot admin, jo preberite v Dashboardu
--- (service_role obide RLS in stolpčne pravice).
-
 
 -- ============================================================================
--- 3) PROFILE — prepreči samostojni dvig v admina + omogoči "Naredi admina"
+-- 3) PROFILE — prepreči samostojni dvig v admina
 -- ============================================================================
-alter table public.profile enable row level security;
-
--- Branje profilov (ime, avatar) je javno — potrebno za prikaz avtorjev.
-drop policy if exists "public read profiles" on public.profile;
-create policy "public read profiles"
-  on public.profile
-  for select
-  using (true);
-
--- Uporabnik lahko ustvari SVOJ profil (ob sprejemu povabila / registraciji).
-drop policy if exists "insert own profile" on public.profile;
-create policy "insert own profile"
-  on public.profile
-  for insert
-  to authenticated
-  with check (id = auth.uid());
-
--- Uporabnik lahko posodobi svoj profil; admin lahko posodobi kateregakoli
--- (to je tisto, kar potrebuje gumb "Naredi admina").
-drop policy if exists "update own profile"       on public.profile;
-drop policy if exists "admin update any profile" on public.profile;
-create policy "update own or admin"
-  on public.profile
-  for update
-  to authenticated
-  using (id = auth.uid() or public.is_admin())
-  with check (id = auth.uid() or public.is_admin());
-
--- KLJUČNA ZAŠČITA: samo admin lahko spremeni stolpec "role". Brez tega bi
--- lahko član pri posodobitvi svojega profila (dovoljeni zgoraj) hkrati
--- nastavil role='admin'. Sprožilec to prepreči na ravni vrstice.
+-- Politiki puščamo pri miru — "Users can update own profile" in
+-- "Admins can update any profile" sta v redu. Manjka pa zaščita stolpca role:
+-- ker "Users can update own profile" nima WITH CHECK, lahko član pri urejanju
+-- svojega profila nastavi tudi role='admin'. Sprožilec to prepreči za vse
+-- razen adminov (in s tem NE ovira gumba "Naredi admina").
 create or replace function public.guard_profile_role()
 returns trigger
 language plpgsql
@@ -168,9 +142,10 @@ create trigger profile_guard_role
   execute function public.guard_profile_role();
 
 -- ============================================================================
--- Konec. Po zagonu:
---   • Povabila/tokeni niso več javno berljivi.
+-- Po zagonu:
+--   • Povabila/tokeni niso več javno berljivi (validacija prek funkcije).
+--   • Povabila lahko upravljajo le admini.
 --   • E-pošte v komentarjih niso več javno berljive.
 --   • Član si ne more sam dodeliti admina.
---   • Gumb "Naredi admina" deluje (za administratorje).
+--   • Gumb "Naredi admina" deluje (pravilna is_admin()).
 -- ============================================================================
