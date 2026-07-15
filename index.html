@@ -11,10 +11,10 @@
     <!-- Apply saved theme before first paint to avoid flash -->
     <script>
       try {
-        if (localStorage.getItem('darkMode') === 'false') {
-          document.documentElement.classList.remove('dark');
-        } else {
+        if (localStorage.getItem('darkMode') === 'true') {
           document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
         }
       } catch (_) {}
     </script>

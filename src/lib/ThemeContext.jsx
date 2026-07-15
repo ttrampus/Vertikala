@@ -32,14 +32,14 @@ const light = {
   isDark: false,
 };
 
-export const ThemeCtx = createContext({ ...dark, darkMode: true, toggleDark: () => {} });
+export const ThemeCtx = createContext({ ...light, darkMode: false, toggleDark: () => {} });
 
 function getSavedDarkMode() {
   try {
     const saved = localStorage.getItem('darkMode');
-    return saved === null ? true : saved !== 'false';
+    return saved === null ? false : saved !== 'false';
   } catch (_) {
-    return true;
+    return false;
   }
 }
 
