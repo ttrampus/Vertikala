@@ -1,21 +1,40 @@
 -- ============================================================================
--- Vertikala — obvezna dvostopenjska prijava (MFA/AAL2) za skrbniška dejanja
+-- Vertikala — MFA na ravni baze (AAL2) + izjema za posamezen račun
 -- ============================================================================
--- ⚠️  ZAŽENITE ŠELE, KO STE NA SVOJEM ADMIN RAČUNU USPEŠNO NASTAVILI MFA
---     (odprite /admin in dokončajte nastavitev s QR kodo). Šele takrat ima
---     vaša seja raven "aal2".
+-- Zaženite CELOTNO datoteko v Supabase SQL Editor. Idempotentno.
 --
--- Zakaj ločena datoteka: odjemalčeva zaščita (AdminMfaGate) ščiti le UI —
--- napadalec z geslom bi lahko klical API mimo nje. Ta skripta zahteva aal2
--- na ravni baze za občutljiva skrbniška pisanja (spremembe vlog, povabila),
--- kar velja tudi za neposredne API klice.
+-- Kaj naredi:
+--   • doda stolpec profile.mfa_exempt — "prepustnica", ki za posamezen račun
+--     ZAČASNO izklopi zahtevo po MFA (tudi v UI). To je vaš izhod v sili
+--     (npr. če izgubite telefon) IN način, da račun začasno uporablja nekdo
+--     brez MFA;
+--   • zahteva preverjeno MFA (AAL2) za občutljiva skrbniška dejanja (spremembe
+--     vlog, upravljanje povabil) — razen za račune z mfa_exempt = true.
 --
--- IZHOD V SILI: SQL Editor (service_role) obide RLS, zato lahko te spremembe
--- kadarkoli razveljavite tukaj, tudi če se v aplikaciji izključite.
+-- OPOMBA: TOTP je v Supabase že vklopljen (uspešno ste se registrirali z QR).
+-- V Supabase ni treba ničesar dodatno vklapljati — "baza MFA" je ta skripta.
 -- ============================================================================
 
 
--- Admin + preverjena MFA v tej seji.
+-- ── 0) Prepustnica (mfa_exempt) ────────────────────────────────────────────
+alter table public.profile add column if not exists mfa_exempt boolean not null default false;
+
+-- ┌──────────────────────────────────────────────────────────────────────────┐
+-- │ STIKALO: ZAČASNO IZKLOPI MFA ZA LASTNIKA (tim.trampus0@gmail.com)         │
+-- │ Ta vrstica je AKTIVNA — po zagonu lahko račun uporablja druga oseba BREZ  │
+-- │ MFA. Ko želite MFA spet VKLOPITI, zaženite spodnjo vrstico s false.       │
+-- └──────────────────────────────────────────────────────────────────────────┘
+update public.profile p set mfa_exempt = true
+from auth.users u
+where u.id = p.id and lower(u.email) = 'tim.trampus0@gmail.com';
+
+-- PONOVEN VKLOP MFA za lastnika (zaženite, ko izjeme ne potrebujete več):
+--   update public.profile p set mfa_exempt = false
+--   from auth.users u
+--   where u.id = p.id and lower(u.email) = 'tim.trampus0@gmail.com';
+
+
+-- ── 1) Admin + (preverjena MFA ALI prepustnica) ────────────────────────────
 create or replace function public.is_admin_mfa()
 returns boolean
 language sql
@@ -24,14 +43,17 @@ security definer
 set search_path = public
 as $$
   select public.is_admin()
-     and coalesce((auth.jwt() ->> 'aal') = 'aal2', false);
+     and (
+       coalesce((auth.jwt() ->> 'aal') = 'aal2', false)
+       or exists (select 1 from public.profile where id = auth.uid() and mfa_exempt = true)
+     );
 $$;
 
 revoke all on function public.is_admin_mfa() from public;
 grant execute on function public.is_admin_mfa() to authenticated;
 
 
--- ── Povabila: upravljanje zahteva aal2 ─────────────────────────────────────
+-- ── 2) Povabila: upravljanje zahteva is_admin_mfa() ────────────────────────
 drop policy if exists "Admins can create invitations" on public.invitations;
 drop policy if exists "Admins can update invitations" on public.invitations;
 drop policy if exists "Admins can delete invitations" on public.invitations;
@@ -47,9 +69,7 @@ create policy "Admins can delete invitations"
   using (public.is_admin_mfa());
 
 
--- ── Spremembe vlog: zahtevaj aal2 ──────────────────────────────────────────
--- Nadgradnja guard_profile_role iz security_fixes.sql: poleg lastništva in
--- admina zahteva še preverjeno MFA za spremembo vloge iz aplikacije.
+-- ── 3) Spremembe vlog: zahtevaj is_admin_mfa() ─────────────────────────────
 create or replace function public.guard_profile_role()
 returns trigger
 language plpgsql
@@ -83,6 +103,8 @@ end;
 $$;
 
 -- ============================================================================
--- Razveljavitev (če se izključite): v SQL Editorju zamenjajte is_admin_mfa()
--- nazaj z is_admin() v zgornjih politikah in v guard_profile_role.
+-- Po zagonu:
+--   • Lastnikov račun (za zdaj) NE zahteva MFA → uporablja ga lahko druga oseba.
+--   • Vsi drugi admini še vedno potrebujejo preverjeno MFA (UI + baza).
+--   • Izhod v sili ob izgubi telefona: nastavite mfa_exempt = true za svoj račun.
 -- ============================================================================

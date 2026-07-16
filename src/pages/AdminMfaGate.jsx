@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/lib/AuthContext";
 import { Loader2, ShieldCheck, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,8 @@ import { Input } from "@/components/ui/input";
 // no factor yet → enrollment (QR + code); factor already set up → a code prompt.
 // Once verified, the whole session is AAL2, so this passes for the rest of it.
 export default function AdminMfaGate({ children }) {
+  const { profile } = useAuth();
+  const mfaExempt = profile?.mfa_exempt === true; // per-account break-glass
   const [phase, setPhase] = useState("checking"); // checking | enroll | challenge | ok | error
   const [factorId, setFactorId] = useState(null);
   const [qrSvg, setQrSvg] = useState(null);
@@ -36,6 +39,7 @@ export default function AdminMfaGate({ children }) {
 
   const init = useCallback(async () => {
     setError(null);
+    if (mfaExempt) { setPhase("ok"); return; } // account exempted from MFA
     const { data: aal, error: aalErr } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     if (aalErr) { setError(aalErr.message); setPhase("error"); return; }
     if (aal.currentLevel === "aal2") { setPhase("ok"); return; }
@@ -48,7 +52,7 @@ export default function AdminMfaGate({ children }) {
     } else {
       await beginEnroll();
     }
-  }, [beginEnroll]);
+  }, [beginEnroll, mfaExempt]);
 
   useEffect(() => { init(); }, [init]);
 
