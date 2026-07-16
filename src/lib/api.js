@@ -5,6 +5,7 @@ export const fetchPosts = async () => {
     .from("BlogPost")
     .select("*")
     .eq("status", "published")
+    .is("deleted_at", null)
     .order("created_date", { ascending: false });
 
   if (error) throw error;
@@ -17,6 +18,7 @@ export const fetchEvents = async () => {
     .select("*")
     .eq("status", "published")
     .eq("category", "events")
+    .is("deleted_at", null)
     .order("created_date", { ascending: false })
     .limit(3);
 
@@ -29,6 +31,7 @@ export const fetchUserPosts = async (userId) => {
     .from("BlogPost")
     .select("*")
     .eq("created_by_id", userId)
+    .is("deleted_at", null)
     .order("created_date", { ascending: false });
 
   if (error) throw error;

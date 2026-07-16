@@ -50,6 +50,7 @@ export default function Home() {
         // `content` and large jsonb fields for every post on the landing page.
         .select("id, title, summary, featured_image, author_name, category, created_date, likes_count, created_by, created_by_id")
         .eq("status", "published")
+        .is("deleted_at", null)
         .order("created_date", { ascending: false });
       if (!alive) return;
       if (!error) {

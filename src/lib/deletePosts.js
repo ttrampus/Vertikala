@@ -44,9 +44,40 @@ async function stillReferenced(paths) {
   return used;
 }
 
-// Delete posts plus (best-effort) their files in the blog-images bucket.
+// Soft delete: hide posts without destroying them. Sets deleted_at so the row
+// (and its images) survive and can be restored from the admin trash. This is
+// the default "delete" everywhere in the UI — a compromised or mistaken delete
+// is now a one-click undo instead of permanent data loss.
+export async function softDeletePosts(ids) {
+  if (!ids?.length) return { error: null };
+  const stamp = new Date().toISOString();
+  for (let i = 0; i < ids.length; i += 100) {
+    const { error } = await supabase
+      .from("BlogPost")
+      .update({ deleted_at: stamp })
+      .in("id", ids.slice(i, i + 100));
+    if (error) return { error };
+  }
+  return { error: null };
+}
+
+// Restore soft-deleted posts (clears deleted_at).
+export async function restorePosts(ids) {
+  if (!ids?.length) return { error: null };
+  for (let i = 0; i < ids.length; i += 100) {
+    const { error } = await supabase
+      .from("BlogPost")
+      .update({ deleted_at: null })
+      .in("id", ids.slice(i, i + 100));
+    if (error) return { error };
+  }
+  return { error: null };
+}
+
+// PERMANENT delete plus (best-effort) their files in the blog-images bucket.
 // Storage cleanup failure never fails the call — the rows are already gone.
-export async function deletePostsWithImages(ids) {
+// Only reachable from the admin trash ("permanently delete") — irreversible.
+export async function purgePostsWithImages(ids) {
   // Chunk: hundreds of UUIDs in one .in() overflow the request URL.
   const doomed = [];
   for (let i = 0; i < ids.length; i += 100) {

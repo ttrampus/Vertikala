@@ -22,6 +22,7 @@ export default function Events() {
         .select("id, title, summary, featured_image, author_name, created_by, category, tags, created_date, likes_count")
         .eq("status", "published")
         .eq("category", "events")
+        .is("deleted_at", null)
         .order("created_date", { ascending: false });
       if (!alive) return;
       if (!error) setEvents(data || []);

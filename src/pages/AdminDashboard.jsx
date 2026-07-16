@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Trash2, Eye, Users, FileText, Shield, Edit, Mail, UserPlus, ShieldCheck, ShieldOff, CheckCircle2, XCircle, List, Mountain, Plus } from "lucide-react";
+import { Loader2, Trash2, Eye, Users, FileText, Shield, Edit, Mail, UserPlus, ShieldCheck, ShieldOff, CheckCircle2, XCircle, List, Mountain, Plus, RotateCcw, ScrollText } from "lucide-react";
 import { format } from "date-fns";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -13,7 +13,7 @@ import {
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { deletePostsWithImages } from "@/lib/deletePosts";
+import { softDeletePosts, restorePosts, purgePostsWithImages } from "@/lib/deletePosts";
 import TagBadge from "../components/TagBadge";
 
 export default function AdminDashboard() {
@@ -21,6 +21,9 @@ export default function AdminDashboard() {
   const { isAdmin, isLoadingAuth, isLoadingProfile, user } = useAuth();
 
   const [posts, setPosts] = useState([]);
+  const [trashedPosts, setTrashedPosts] = useState([]);
+  const [auditLog, setAuditLog] = useState([]);
+  const [purgingId, setPurgingId] = useState(null);
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -50,7 +53,7 @@ export default function AdminDashboard() {
   // All posts, paged past PostgREST's 1000-row cap (586+ after the WP import).
   // Only list columns — `content` across hundreds of posts is megabytes.
   const loadAllPosts = async () => {
-    const cols = "id, title, status, featured_image, author_name, author_email, created_by, category, created_date";
+    const cols = "id, title, status, featured_image, author_name, author_email, created_by, category, created_date, deleted_at";
     const all = [];
     for (let from = 0; ; from += 1000) {
       const { data, error } = await supabase
@@ -66,21 +69,28 @@ export default function AdminDashboard() {
 
   const loadData = async () => {
     setLoading(true);
-    const [allPosts, profilesRes, ascentsRes] = await Promise.all([
+    const [allPosts, profilesRes, ascentsRes, auditRes] = await Promise.all([
       loadAllPosts(),
       supabase.from("profile").select("*").order("created_date", { ascending: false }).limit(1000),
       supabase.from("ascents").select("*").order("date", { ascending: false }).limit(500),
+      supabase.from("audit_log").select("*").order("created_at", { ascending: false }).limit(200),
     ]);
-    setPosts(allPosts);
+    // Split active posts from the trash so a deleted post is recoverable.
+    setPosts(allPosts.filter((p) => !p.deleted_at));
+    setTrashedPosts(allPosts.filter((p) => p.deleted_at));
     setProfiles(profilesRes.data || []);
     setAscents(ascentsRes.data || []);
+    setAuditLog(auditRes.data || []); // empty if the audit migration isn't applied yet
     setLoading(false);
   };
 
+  // Soft delete: move to trash (recoverable), don't destroy.
   const deletePost = async (id) => {
-    const { error } = await deletePostsWithImages([id]);
+    const { error } = await softDeletePosts([id]);
     if (!error) {
+      const moved = posts.find((p) => p.id === id);
       setPosts((prev) => prev.filter((p) => p.id !== id));
+      if (moved) setTrashedPosts((prev) => [{ ...moved, deleted_at: new Date().toISOString() }, ...prev]);
       setSelectedPosts((prev) => { const n = new Set(prev); n.delete(id); return n; });
     } else {
       console.error("Delete failed:", error.message);
@@ -98,14 +108,42 @@ export default function AdminDashboard() {
 
   const bulkDeletePosts = async () => {
     setBulkDeleting(true);
-    const { error } = await deletePostsWithImages([...selectedPosts]);
+    const ids = [...selectedPosts];
+    const { error } = await softDeletePosts(ids);
     if (!error) {
+      const moved = posts.filter((p) => selectedPosts.has(p.id)).map((p) => ({ ...p, deleted_at: new Date().toISOString() }));
       setPosts((prev) => prev.filter((p) => !selectedPosts.has(p.id)));
+      setTrashedPosts((prev) => [...moved, ...prev]);
       setSelectedPosts(new Set());
     } else {
       alert("Brisanje ni uspelo: " + error.message);
     }
     setBulkDeleting(false);
+  };
+
+  // Restore a post from the trash back to the active list.
+  const restorePost = async (id) => {
+    const { error } = await restorePosts([id]);
+    if (!error) {
+      const moved = trashedPosts.find((p) => p.id === id);
+      setTrashedPosts((prev) => prev.filter((p) => p.id !== id));
+      if (moved) setPosts((prev) => [{ ...moved, deleted_at: null }, ...prev]
+        .sort((a, b) => new Date(b.created_date) - new Date(a.created_date)));
+    } else {
+      alert("Obnovitev ni uspela: " + error.message);
+    }
+  };
+
+  // Permanent, irreversible delete (also removes images from storage).
+  const purgePost = async (id) => {
+    setPurgingId(id);
+    const { error } = await purgePostsWithImages([id]);
+    if (!error) {
+      setTrashedPosts((prev) => prev.filter((p) => p.id !== id));
+    } else {
+      alert("Trajno brisanje ni uspelo: " + error.message);
+    }
+    setPurgingId(null);
   };
 
   const saveAscent = async (e) => {
@@ -272,6 +310,8 @@ export default function AdminDashboard() {
           <TabsTrigger value="users" className="gap-1 shrink-0 whitespace-nowrap"><Users className="h-4 w-4" /> Člani</TabsTrigger>
           <TabsTrigger value="ascents" className="gap-1 shrink-0 whitespace-nowrap"><Mountain className="h-4 w-4" /> Vzponi</TabsTrigger>
           <TabsTrigger value="invite" className="gap-1 shrink-0 whitespace-nowrap"><UserPlus className="h-4 w-4" /> Povabi člana</TabsTrigger>
+          <TabsTrigger value="trash" className="gap-1 shrink-0 whitespace-nowrap"><Trash2 className="h-4 w-4" /> Koš{trashedPosts.length > 0 ? ` (${trashedPosts.length})` : ""}</TabsTrigger>
+          <TabsTrigger value="audit" className="gap-1 shrink-0 whitespace-nowrap"><ScrollText className="h-4 w-4" /> Dnevnik</TabsTrigger>
         </TabsList>
 
         {/* POSTS TAB */}
@@ -295,8 +335,8 @@ export default function AdminDashboard() {
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Izbriši {selectedPosts.size} objav?</AlertDialogTitle>
-                      <AlertDialogDescription>Izbrane objave bodo trajno izbrisane. Tega ni mogoče razveljaviti.</AlertDialogDescription>
+                      <AlertDialogTitle>Premakni {selectedPosts.size} objav v koš?</AlertDialogTitle>
+                      <AlertDialogDescription>Objave bodo premaknjene v koš in skrite z javnih strani. Obnovite jih lahko kadarkoli iz zavihka „Koš“.</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Prekliči</AlertDialogCancel>
@@ -345,12 +385,12 @@ export default function AdminDashboard() {
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Izbriši objavo?</AlertDialogTitle>
-                        <AlertDialogDescription>Objava bo trajno izbrisana.</AlertDialogDescription>
+                        <AlertDialogTitle>Premakni objavo v koš?</AlertDialogTitle>
+                        <AlertDialogDescription>Objava bo skrita z javnih strani, a jo lahko obnovite iz zavihka „Koš“.</AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Prekliči</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => deletePost(post.id)} className="bg-destructive text-destructive-foreground">Izbriši</AlertDialogAction>
+                        <AlertDialogAction onClick={() => deletePost(post.id)} className="bg-destructive text-destructive-foreground">V koš</AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
@@ -637,6 +677,89 @@ export default function AdminDashboard() {
               </div>
             )}
 
+          </div>
+        </TabsContent>
+
+        {/* TRASH TAB */}
+        <TabsContent value="trash" className="mt-6">
+          <p className="text-sm text-muted-foreground font-inter mb-4">
+            Izbrisane objave ostanejo tu (skrite z javnih strani). Obnovite jih z enim klikom ali jih trajno izbrišite.
+          </p>
+          <div className="space-y-2">
+            {trashedPosts.length === 0 && (
+              <p className="text-muted-foreground text-sm font-inter py-8 text-center">Koš je prazen.</p>
+            )}
+            {trashedPosts.map((post) => (
+              <div key={post.id} className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card">
+                <div className="hidden sm:block w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 opacity-60">
+                  {post.featured_image ? <img src={post.featured_image} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-muted" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="font-inter font-semibold text-sm line-clamp-2 text-muted-foreground">{post.title}</span>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mt-1">
+                    {post.category && <TagBadge tag={post.category} small />}
+                    <span>izbrisano {format(new Date(post.deleted_at), "d. M. yyyy HH:mm")}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <Button variant="outline" size="sm" className="gap-1.5 h-8" onClick={() => restorePost(post.id)}>
+                    <RotateCcw className="h-3.5 w-3.5" /> Obnovi
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" disabled={purgingId === post.id}>
+                        {purgingId === post.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Trajno izbriši objavo?</AlertDialogTitle>
+                        <AlertDialogDescription>Objava in njene slike bodo dokončno izbrisane. Tega ni mogoče razveljaviti.</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Prekliči</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => purgePost(post.id)} className="bg-destructive text-destructive-foreground">Trajno izbriši</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
+            ))}
+          </div>
+        </TabsContent>
+
+        {/* AUDIT LOG TAB */}
+        <TabsContent value="audit" className="mt-6">
+          <p className="text-sm text-muted-foreground font-inter mb-4">
+            Zapis pomembnih dejanj: brisanje in obnovitev objav ter spremembe vlog članov — z avtorjem in časom.
+          </p>
+          <div className="space-y-2">
+            {auditLog.length === 0 && (
+              <p className="text-muted-foreground text-sm font-inter py-8 text-center">Ni zabeleženih dejanj.</p>
+            )}
+            {auditLog.map((e) => {
+              const labels = {
+                post_deleted: "Objava premaknjena v koš",
+                post_restored: "Objava obnovljena",
+                post_purged: "Objava trajno izbrisana",
+                role_change: "Sprememba vloge",
+              };
+              const actor = profiles.find((p) => p.id === e.actor_id)?.display_name || "sistem";
+              return (
+                <div key={e.id} className="flex items-start gap-3 p-3 rounded-xl border border-border bg-card text-sm">
+                  <div className="flex-1 min-w-0">
+                    <span className="font-inter font-medium">{labels[e.action] || e.action}</span>
+                    {e.summary && <span className="text-muted-foreground"> — „{e.summary}“</span>}
+                    {e.action === "role_change" && e.details && (
+                      <span className="text-muted-foreground"> ({e.details.from} → {e.details.to})</span>
+                    )}
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {actor} · {format(new Date(e.created_at), "d. M. yyyy HH:mm")}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </TabsContent>
       </Tabs>

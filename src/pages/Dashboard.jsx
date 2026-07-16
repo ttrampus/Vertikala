@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 import { Loader2, Edit, Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { deletePostsWithImages } from "@/lib/deletePosts";
+import { softDeletePosts } from "@/lib/deletePosts";
 import { format } from "date-fns";
 import { sl } from "date-fns/locale";
 import TagBadge from "../components/TagBadge";
@@ -33,6 +33,7 @@ export default function Dashboard() {
         .from("BlogPost")
         .select("id, title, status, category, featured_image, created_date")
         .eq("created_by_id", user.id)
+        .is("deleted_at", null)
         .order("created_date", { ascending: false })
         .limit(100);
       if (!alive) return;
@@ -45,7 +46,7 @@ export default function Dashboard() {
   }, [isLoadingAuth, user?.id]);
 
   const deletePost = async (id) => {
-    const { error } = await deletePostsWithImages([id]);
+    const { error } = await softDeletePosts([id]);
     if (error) return console.error(error);
     setPosts((prev) => prev.filter((p) => p.id !== id));
     setSelected((prev) => { const n = new Set(prev); n.delete(id); return n; });
@@ -61,7 +62,7 @@ export default function Dashboard() {
 
   const bulkDelete = async () => {
     setBulkDeleting(true);
-    const { error } = await deletePostsWithImages([...selected]);
+    const { error } = await softDeletePosts([...selected]);
     if (error) {
       alert("Brisanje ni uspelo: " + error.message);
     } else {

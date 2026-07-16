@@ -49,7 +49,7 @@ export default function Vzponi() {
   useEffect(() => {
     Promise.all([
       supabase.from("ascents").select("*").order("date", { ascending: false }),
-      supabase.from("BlogPost").select("id,title,summary,featured_image,author_name,created_date,likes_count").eq("status", "published").eq("category", "climbs").order("created_date", { ascending: false }).limit(6),
+      supabase.from("BlogPost").select("id,title,summary,featured_image,author_name,created_date,likes_count").eq("status", "published").eq("category", "climbs").is("deleted_at", null).order("created_date", { ascending: false }).limit(6),
     ]).then(([ascentsRes, postsRes]) => {
       setAscents(ascentsRes.data || []);
       setClimbPosts(postsRes.data || []);

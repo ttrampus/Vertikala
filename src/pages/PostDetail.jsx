@@ -46,7 +46,7 @@ export default function PostDetail() {
       .eq("id", id)
       .single();
 
-    if (error || (!isAdmin && data?.status !== "published")) {
+    if (error || (!isAdmin && (data?.status !== "published" || data?.deleted_at))) {
       console.error("Error loading post:", error);
       setLoading(false);
       return;
