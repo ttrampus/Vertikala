@@ -109,8 +109,14 @@ create policy "Admins can delete invitations"
 -- Politiko "Anyone can read comments" pustimo (komentarji SO javni), a stolpec
 -- author_email umaknemo iz dosega javnega API-ja. E-pošta ostane shranjena in
 -- vidna adminu v Dashboardu (service_role obide stolpčne pravice).
--- Odjemalec (CommentSection.jsx) bere samo potrebne stolpce.
-revoke select (author_email) on public.comments from anon, authenticated;
+--
+-- POZOR: samo "revoke select (author_email)" NE deluje, če ima vloga že
+-- SELECT na celotni tabeli (kar drži) — pravica na ravni tabele pokriva vse
+-- stolpce. Zato najprej odvzamemo tabelni SELECT, nato podelimo SELECT le na
+-- varne stolpce. Odjemalec (CommentSection.jsx) bere natanko te stolpce.
+revoke select on public.comments from anon, authenticated;
+grant select (id, post_id, content, author_id, author_name, created_at)
+  on public.comments to anon, authenticated;
 
 
 -- ============================================================================
