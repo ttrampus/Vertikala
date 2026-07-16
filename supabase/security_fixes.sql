@@ -91,6 +91,10 @@ grant execute on function public.mark_invitation_used(text) to authenticated;
 drop policy if exists "Authenticated users can create invitations" on public.invitations;
 drop policy if exists "Authenticated users can update invitations" on public.invitations;
 drop policy if exists "Authenticated users can delete invitations" on public.invitations;
+-- Drop our own names too, so re-running the script never errors (idempotent).
+drop policy if exists "Admins can create invitations" on public.invitations;
+drop policy if exists "Admins can update invitations" on public.invitations;
+drop policy if exists "Admins can delete invitations" on public.invitations;
 
 create policy "Admins can create invitations"
   on public.invitations for insert to authenticated
@@ -134,9 +138,38 @@ security definer
 set search_path = public
 as $$
 begin
-  if new.role is distinct from old.role and not public.is_admin() then
+  -- Role ni spremenjena → brez omejitev (urejanje imena/avatarja).
+  if new.role is not distinct from old.role then
+    return new;
+  end if;
+
+  -- Zaupanja vreden strežniški kontekst (service_role / SQL Editor: brez
+  -- prijavljenega uporabnika). Pusti mimo — to je varnostni izhod v sili za
+  -- ročno urejanje vlog v bazi. auth.uid() je NULL le pri strežniškem dostopu.
+  if auth.uid() is null then
+    return new;
+  end if;
+
+  -- Od tu naprej gre za spremembo vloge iz aplikacije (prijavljen uporabnik).
+
+  -- 1) Samo admin lahko sploh spreminja vloge.
+  if not public.is_admin() then
     raise exception 'Samo administrator lahko spremeni vlogo uporabnika.';
   end if;
+
+  -- 2) Svoje vloge ne moreš spremeniti (prepreči samo-odvzem/samo-dodelitev).
+  --    Odvzem svojega admina naj opravi drug admin.
+  if new.id = auth.uid() then
+    raise exception 'Svoje lastne vloge ne morete spremeniti.';
+  end if;
+
+  -- 3) Zadnjega admina ni mogoče odstraniti (prepreči zaklep celotne strani).
+  if old.role = 'admin' and new.role is distinct from 'admin' then
+    if (select count(*) from public.profile where role = 'admin') <= 1 then
+      raise exception 'Ne morete odvzeti pravic zadnjemu administratorju.';
+    end if;
+  end if;
+
   return new;
 end;
 $$;
