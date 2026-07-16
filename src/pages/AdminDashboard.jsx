@@ -407,6 +407,7 @@ export default function AdminDashboard() {
             {profiles.map((u) => {
               const isMe = u.id === user.id;
               const isUserAdmin = u.role === "admin";
+              const isOwner = u.is_owner === true;
               return (
                 <div key={u.id} className="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-4 p-4 rounded-xl border border-border bg-card">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -424,10 +425,10 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0 pl-[52px] lg:pl-0">
-                    <span className={`px-3 py-1 rounded-full text-xs font-inter font-medium ${isUserAdmin ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
-                      {isUserAdmin ? "admin" : "član"}
+                    <span className={`px-3 py-1 rounded-full text-xs font-inter font-medium ${isOwner ? "bg-amber-500/15 text-amber-600 dark:text-amber-400" : isUserAdmin ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                      {isOwner ? "lastnik" : isUserAdmin ? "admin" : "član"}
                     </span>
-                    {!isMe && (
+                    {!isMe && !isOwner && (
                       <Button
                         variant="ghost" size="sm"
                         className={`h-8 gap-1.5 text-xs ${isUserAdmin ? "text-muted-foreground hover:text-destructive" : "text-muted-foreground hover:text-primary"}`}

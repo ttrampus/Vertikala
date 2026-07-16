@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/lib/ThemeContext";
 import UserNotRegisteredError from "@/components/UserNotRegisteredError";
 import Layout from "@/components/Layout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import AdminMfaGate from "@/pages/AdminMfaGate";
 
 // Pages are code-split so each route loads its own chunk on demand. This keeps
 // the initial bundle small — e.g. the heavy TipTap editor (~380 KB) only loads
@@ -82,7 +83,9 @@ const AuthenticatedApp = () => {
     // Protected: admin only
     <Route path="admin" element={
       <ProtectedRoute adminOnly>
-        <AdminDashboard />
+        <AdminMfaGate>
+          <AdminDashboard />
+        </AdminMfaGate>
       </ProtectedRoute>
     } />
   </Route>

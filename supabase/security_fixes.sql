@@ -126,11 +126,21 @@ grant select (id, post_id, content, author_id, author_name, created_at)
 -- ============================================================================
 -- 3) PROFILE — prepreči samostojni dvig v admina
 -- ============================================================================
--- Politiki puščamo pri miru — "Users can update own profile" in
--- "Admins can update any profile" sta v redu. Manjka pa zaščita stolpca role:
--- ker "Users can update own profile" nima WITH CHECK, lahko član pri urejanju
--- svojega profila nastavi tudi role='admin'. Sprožilec to prepreči za vse
--- razen adminov (in s tem NE ovira gumba "Naredi admina").
+-- Lastnik (owner): zaščiten račun, ki mu nihče ne more odvzeti admina.
+-- Owner je navaden admin (role='admin') z zastavico is_owner=true. Ker owner
+-- vedno ostane admin, na strani vedno obstaja vsaj en admin — zato posebno
+-- pravilo "zadnji admin" ni potrebno.
+alter table public.profile add column if not exists is_owner boolean not null default false;
+
+-- Označi lastnika po e-pošti (iz auth.users). Če se e-pošta spremeni, prilagodite.
+update public.profile p
+set is_owner = true
+from auth.users u
+where u.id = p.id
+  and lower(u.email) = 'tim.trampus0@gmail.com'
+  and p.is_owner is distinct from true;
+
+-- Sprožilec varuje stolpca role in is_owner:
 create or replace function public.guard_profile_role()
 returns trigger
 language plpgsql
@@ -138,36 +148,35 @@ security definer
 set search_path = public
 as $$
 begin
-  -- Role ni spremenjena → brez omejitev (urejanje imena/avatarja).
-  if new.role is not distinct from old.role then
+  -- Ne role ne is_owner nista spremenjena → brez omejitev (ime/avatar).
+  if new.role is not distinct from old.role
+     and new.is_owner is not distinct from old.is_owner then
     return new;
   end if;
 
   -- Zaupanja vreden strežniški kontekst (service_role / SQL Editor: brez
-  -- prijavljenega uporabnika). Pusti mimo — to je varnostni izhod v sili za
-  -- ročno urejanje vlog v bazi. auth.uid() je NULL le pri strežniškem dostopu.
+  -- prijavljenega uporabnika). Pusti mimo — varnostni izhod v sili za ročno
+  -- urejanje vlog/lastništva v bazi. auth.uid() je NULL le pri strežniku.
   if auth.uid() is null then
     return new;
   end if;
 
-  -- Od tu naprej gre za spremembo vloge iz aplikacije (prijavljen uporabnik).
+  -- Zastavice is_owner iz aplikacije ni mogoče spreminjati (le prek SQL).
+  if new.is_owner is distinct from old.is_owner then
+    raise exception 'Zastavice lastnika ni mogoče spremeniti iz aplikacije.';
+  end if;
 
-  -- 1) Samo admin lahko sploh spreminja vloge.
+  -- Od tu gre za spremembo vloge iz aplikacije (prijavljen uporabnik).
+
+  -- 1) Samo admin lahko spreminja vloge.
   if not public.is_admin() then
     raise exception 'Samo administrator lahko spremeni vlogo uporabnika.';
   end if;
 
-  -- 2) Svoje vloge ne moreš spremeniti (prepreči samo-odvzem/samo-dodelitev).
-  --    Odvzem svojega admina naj opravi drug admin.
-  if new.id = auth.uid() then
-    raise exception 'Svoje lastne vloge ne morete spremeniti.';
-  end if;
-
-  -- 3) Zadnjega admina ni mogoče odstraniti (prepreči zaklep celotne strani).
-  if old.role = 'admin' and new.role is distinct from 'admin' then
-    if (select count(*) from public.profile where role = 'admin') <= 1 then
-      raise exception 'Ne morete odvzeti pravic zadnjemu administratorju.';
-    end if;
+  -- 2) LASTNIKA ni mogoče degradirati — njegove vloge ne more spremeniti nihče
+  --    (razen prek SQL zgoraj). To je vaša zaščita pred zlorabo admin računa.
+  if old.is_owner then
+    raise exception 'Lastniku ni mogoče odvzeti pravic.';
   end if;
 
   return new;
@@ -187,4 +196,6 @@ create trigger profile_guard_role
 --   • E-pošte v komentarjih niso več javno berljive.
 --   • Član si ne more sam dodeliti admina.
 --   • Gumb "Naredi admina" deluje (pravilna is_admin()).
+--   • Lastnik (tim.trampus0@gmail.com) je zaščiten — nihče mu ne more odvzeti
+--     admina; ker vedno ostane admin, stran nikoli ne ostane brez administratorja.
 -- ============================================================================

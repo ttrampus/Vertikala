@@ -16,10 +16,10 @@
 -- Namesto trajnega izbrisa vrstice nastavimo deleted_at. Objava izgine iz
 -- javnih seznamov (odjemalec filtrira deleted_at IS NULL), a ostane v bazi za
 -- obnovitev. Slike se NE brišejo, dokler objava ni trajno izbrisana iz koša.
-alter table public.BlogPost add column if not exists deleted_at timestamptz;
+alter table public."BlogPost" add column if not exists deleted_at timestamptz;
 
 create index if not exists blogpost_not_deleted_idx
-  on public.BlogPost (created_date desc)
+  on public."BlogPost" (created_date desc)
   where deleted_at is null;
 
 
@@ -77,9 +77,9 @@ begin
 end;
 $$;
 
-drop trigger if exists audit_blogpost on public.BlogPost;
+drop trigger if exists audit_blogpost on public."BlogPost";
 create trigger audit_blogpost
-  after update or delete on public.BlogPost
+  after update or delete on public."BlogPost"
   for each row execute function public.audit_blogpost();
 
 
