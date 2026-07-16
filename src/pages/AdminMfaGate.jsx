@@ -105,8 +105,13 @@ export default function AdminMfaGate({ children }) {
               (Google Authenticator, Authy, 1Password …) in vnesite prikazano 6-mestno kodo.
             </p>
             {qrSvg && (
-              <div className="flex justify-center mb-4 bg-white rounded-xl p-4 w-fit mx-auto"
-                   dangerouslySetInnerHTML={{ __html: qrSvg }} />
+              <div className="flex justify-center mb-4">
+                <img
+                  src={qrSvg}
+                  alt="QR koda za dvostopenjsko prijavo"
+                  className="bg-white rounded-xl p-3 w-52 h-52 object-contain"
+                />
+              </div>
             )}
             {secret && (
               <p className="text-xs text-muted-foreground text-center mb-5 break-all">
