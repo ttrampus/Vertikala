@@ -1,8 +1,8 @@
-import React, { lazy } from "react";
+import React, { lazy, useEffect, useRef } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/query-client";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes, useLocation, useNavigationType } from "react-router-dom";
 
 import { AuthProvider, useAuth } from "@/lib/AuthContext";
 import { ThemeProvider } from "@/lib/ThemeContext";
@@ -29,6 +29,37 @@ const CompleteProfile = lazy(() => import("@/pages/CompleteProfile"));
 const Vzponi = lazy(() => import("@/pages/Vzponi"));
 const Profile = lazy(() => import("@/pages/Profile"));
 
+
+// Scroll behavior: start at the top on first load/reload and on normal
+// navigation (so hero animations play from the top); restore the saved
+// position only on browser back/forward, so "open a post → back" keeps its spot.
+function ScrollManager() {
+  const location = useLocation();
+  const navType = useNavigationType(); // POP (back/fwd) | PUSH | REPLACE
+  const firstRun = useRef(true);
+
+  useEffect(() => {
+    if (firstRun.current) {
+      firstRun.current = false;
+      window.scrollTo(0, 0); // initial load / reload → top
+      return;
+    }
+    if (navType === "POP") {
+      const saved = sessionStorage.getItem(`scroll:${location.key}`);
+      window.scrollTo(0, saved ? parseInt(saved, 10) : 0);
+    } else {
+      window.scrollTo(0, 0);
+    }
+  }, [location.key, navType]);
+
+  useEffect(() => {
+    const save = () => sessionStorage.setItem(`scroll:${location.key}`, String(window.scrollY));
+    window.addEventListener("scroll", save, { passive: true });
+    return () => { save(); window.removeEventListener("scroll", save); };
+  }, [location.key]);
+
+  return null;
+}
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, authError } = useAuth(); // remove isLoadingPublicSettings and navigateToLogin
@@ -99,6 +130,7 @@ export default function App() {
       <AuthProvider>
         <QueryClientProvider client={queryClient}>
           <Router>
+            <ScrollManager />
             <AuthenticatedApp />
           </Router>
           <Toaster />
