@@ -143,6 +143,22 @@ where u.id = p.id
   and lower(u.email) = 'tim.trampus0@gmail.com'
   and p.is_owner is distinct from true;
 
+-- Je trenutni uporabnik lastnik? (za pravilo: vloge lahko spreminja le lastnik)
+create or replace function public.is_owner()
+returns boolean
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.profile
+    where id = auth.uid() and is_owner = true
+  );
+$$;
+revoke all on function public.is_owner() from public;
+grant execute on function public.is_owner() to anon, authenticated;
+
 -- Sprožilec varuje stolpce role, is_owner in mfa_exempt:
 create or replace function public.guard_profile_role()
 returns trigger
@@ -178,9 +194,10 @@ begin
 
   -- Od tu gre za spremembo vloge iz aplikacije (prijavljen uporabnik).
 
-  -- 1) Samo admin lahko spreminja vloge.
-  if not public.is_admin() then
-    raise exception 'Samo administrator lahko spremeni vlogo uporabnika.';
+  -- 1) Vloge (dodeljevanje/odvzem admina) lahko spreminja SAMO lastnik.
+  --    Navadni admini urejajo objave itd., NE pa vlog članov.
+  if not public.is_owner() then
+    raise exception 'Vloge lahko spreminja samo lastnik.';
   end if;
 
   -- 2) LASTNIKA ni mogoče degradirati — njegove vloge ne more spremeniti nihče

@@ -18,7 +18,8 @@ import TagBadge from "../components/TagBadge";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const { isAdmin, isLoadingAuth, isLoadingProfile, user } = useAuth();
+  const { isAdmin, isLoadingAuth, isLoadingProfile, user, profile } = useAuth();
+  const viewerIsOwner = profile?.is_owner === true; // only the owner manages roles
 
   const [posts, setPosts] = useState([]);
   const [trashedPosts, setTrashedPosts] = useState([]);
@@ -428,7 +429,7 @@ export default function AdminDashboard() {
                     <span className={`px-3 py-1 rounded-full text-xs font-inter font-medium ${isOwner ? "bg-amber-500/15 text-amber-600 dark:text-amber-400" : isUserAdmin ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
                       {isOwner ? "lastnik" : isUserAdmin ? "admin" : "član"}
                     </span>
-                    {!isMe && !isOwner && (
+                    {viewerIsOwner && !isMe && !isOwner && (
                       <Button
                         variant="ghost" size="sm"
                         className={`h-8 gap-1.5 text-xs ${isUserAdmin ? "text-muted-foreground hover:text-destructive" : "text-muted-foreground hover:text-primary"}`}

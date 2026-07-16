@@ -34,6 +34,14 @@ where u.id = p.id and lower(u.email) = 'tim.trampus0@gmail.com';
 --   where u.id = p.id and lower(u.email) = 'tim.trampus0@gmail.com';
 
 
+-- Lastnik? (self-contained; enako kot v security_fixes.sql)
+create or replace function public.is_owner()
+returns boolean language sql security definer stable set search_path = public
+as $$ select exists (select 1 from public.profile where id = auth.uid() and is_owner = true); $$;
+revoke all on function public.is_owner() from public;
+grant execute on function public.is_owner() to anon, authenticated;
+
+
 -- ── 1) Admin + (preverjena MFA ALI prepustnica) ────────────────────────────
 create or replace function public.is_admin_mfa()
 returns boolean
@@ -95,8 +103,14 @@ begin
     raise exception 'Prepustnice MFA ni mogoče spremeniti iz aplikacije.';
   end if;
 
+  -- Vloge lahko spreminja SAMO lastnik ...
+  if not public.is_owner() then
+    raise exception 'Vloge lahko spreminja samo lastnik.';
+  end if;
+
+  -- ... in le z veljavno MFA (razen ob prepustnici).
   if not public.is_admin_mfa() then
-    raise exception 'Za spreminjanje vlog je potrebna dvostopenjska prijava (admin + MFA).';
+    raise exception 'Za spreminjanje vlog je potrebna dvostopenjska prijava (MFA).';
   end if;
 
   if old.is_owner then
