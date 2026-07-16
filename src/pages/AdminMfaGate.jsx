@@ -28,6 +28,7 @@ export default function AdminMfaGate({ children }) {
     }
     const { data, error: enrollErr } = await supabase.auth.mfa.enroll({
       factorType: "totp",
+      issuer: "Vertikala", // label shown in the authenticator app (domain-independent)
       friendlyName: `admin-${Date.now()}`,
     });
     if (enrollErr) { setError(enrollErr.message); setPhase("error"); return; }

@@ -131,6 +131,9 @@ grant select (id, post_id, content, author_id, author_name, created_at)
 -- vedno ostane admin, na strani vedno obstaja vsaj en admin — zato posebno
 -- pravilo "zadnji admin" ni potrebno.
 alter table public.profile add column if not exists is_owner boolean not null default false;
+-- MFA prepustnica (glej mfa_enforcement.sql). Stolpec dodamo že tu, da ga
+-- sprožilec spodaj lahko varuje ne glede na vrstni red zagona skript.
+alter table public.profile add column if not exists mfa_exempt boolean not null default false;
 
 -- Označi lastnika po e-pošti (iz auth.users). Če se e-pošta spremeni, prilagodite.
 update public.profile p
@@ -140,7 +143,7 @@ where u.id = p.id
   and lower(u.email) = 'tim.trampus0@gmail.com'
   and p.is_owner is distinct from true;
 
--- Sprožilec varuje stolpca role in is_owner:
+-- Sprožilec varuje stolpce role, is_owner in mfa_exempt:
 create or replace function public.guard_profile_role()
 returns trigger
 language plpgsql
@@ -148,15 +151,16 @@ security definer
 set search_path = public
 as $$
 begin
-  -- Ne role ne is_owner nista spremenjena → brez omejitev (ime/avatar).
+  -- Nič od varovanega ni spremenjeno → brez omejitev (ime/avatar).
   if new.role is not distinct from old.role
-     and new.is_owner is not distinct from old.is_owner then
+     and new.is_owner is not distinct from old.is_owner
+     and new.mfa_exempt is not distinct from old.mfa_exempt then
     return new;
   end if;
 
   -- Zaupanja vreden strežniški kontekst (service_role / SQL Editor: brez
   -- prijavljenega uporabnika). Pusti mimo — varnostni izhod v sili za ročno
-  -- urejanje vlog/lastništva v bazi. auth.uid() je NULL le pri strežniku.
+  -- urejanje v bazi. auth.uid() je NULL le pri strežniku.
   if auth.uid() is null then
     return new;
   end if;
@@ -164,6 +168,12 @@ begin
   -- Zastavice is_owner iz aplikacije ni mogoče spreminjati (le prek SQL).
   if new.is_owner is distinct from old.is_owner then
     raise exception 'Zastavice lastnika ni mogoče spremeniti iz aplikacije.';
+  end if;
+
+  -- MFA prepustnice iz aplikacije ni mogoče spreminjati (le prek SQL) — sicer
+  -- bi si zlorabljen admin lahko sam izklopil MFA.
+  if new.mfa_exempt is distinct from old.mfa_exempt then
+    raise exception 'Prepustnice MFA ni mogoče spremeniti iz aplikacije.';
   end if;
 
   -- Od tu gre za spremembo vloge iz aplikacije (prijavljen uporabnik).

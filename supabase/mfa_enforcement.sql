@@ -78,7 +78,8 @@ set search_path = public
 as $$
 begin
   if new.role is not distinct from old.role
-     and new.is_owner is not distinct from old.is_owner then
+     and new.is_owner is not distinct from old.is_owner
+     and new.mfa_exempt is not distinct from old.mfa_exempt then
     return new;
   end if;
 
@@ -88,6 +89,10 @@ begin
 
   if new.is_owner is distinct from old.is_owner then
     raise exception 'Zastavice lastnika ni mogoče spremeniti iz aplikacije.';
+  end if;
+
+  if new.mfa_exempt is distinct from old.mfa_exempt then
+    raise exception 'Prepustnice MFA ni mogoče spremeniti iz aplikacije.';
   end if;
 
   if not public.is_admin_mfa() then
