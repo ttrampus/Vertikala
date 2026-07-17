@@ -11,23 +11,45 @@ import Layout from "@/components/Layout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import AdminMfaGate from "@/pages/AdminMfaGate";
 
+// A failed dynamic import almost always means a stale chunk: a new version was
+// deployed, so the hashed chunk name the loaded page asked for no longer exists
+// (the host returns index.html, hence the "MIME type text/html" error → white
+// screen). Reload once to fetch the fresh index.html with current chunk names.
+// A sessionStorage flag prevents an infinite reload loop on a genuine failure.
+function lazyWithRetry(importer) {
+  return lazy(async () => {
+    try {
+      const mod = await importer();
+      sessionStorage.removeItem("chunk-reload");
+      return mod;
+    } catch (err) {
+      if (!sessionStorage.getItem("chunk-reload")) {
+        sessionStorage.setItem("chunk-reload", "1");
+        window.location.reload();
+        return new Promise(() => {}); // stay pending while the page reloads
+      }
+      throw err; // already retried once — let the error surface
+    }
+  });
+}
+
 // Pages are code-split so each route loads its own chunk on demand. This keeps
 // the initial bundle small — e.g. the heavy TipTap editor (~380 KB) only loads
 // when visiting the create/edit pages, not on the homepage.
-const Home = lazy(() => import("@/pages/Home"));
-const About = lazy(() => import("@/pages/About"));
-const Contact = lazy(() => import("@/pages/Contact"));
-const CreatePost = lazy(() => import("@/pages/CreatePost"));
-const Dashboard = lazy(() => import("@/pages/Dashboard"));
-const School = lazy(() => import("@/pages/AlpineSchool"));
-const Events = lazy(() => import("@/pages/Events"));
-const PostDetail = lazy(() => import("@/pages/PostDetail"));
-const EditPost = lazy(() => import("@/pages/EditPost"));
-const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
-const Login = lazy(() => import("@/pages/Login"));
-const CompleteProfile = lazy(() => import("@/pages/CompleteProfile"));
-const Vzponi = lazy(() => import("@/pages/Vzponi"));
-const Profile = lazy(() => import("@/pages/Profile"));
+const Home = lazyWithRetry(() => import("@/pages/Home"));
+const About = lazyWithRetry(() => import("@/pages/About"));
+const Contact = lazyWithRetry(() => import("@/pages/Contact"));
+const CreatePost = lazyWithRetry(() => import("@/pages/CreatePost"));
+const Dashboard = lazyWithRetry(() => import("@/pages/Dashboard"));
+const School = lazyWithRetry(() => import("@/pages/AlpineSchool"));
+const Events = lazyWithRetry(() => import("@/pages/Events"));
+const PostDetail = lazyWithRetry(() => import("@/pages/PostDetail"));
+const EditPost = lazyWithRetry(() => import("@/pages/EditPost"));
+const AdminDashboard = lazyWithRetry(() => import("@/pages/AdminDashboard"));
+const Login = lazyWithRetry(() => import("@/pages/Login"));
+const CompleteProfile = lazyWithRetry(() => import("@/pages/CompleteProfile"));
+const Vzponi = lazyWithRetry(() => import("@/pages/Vzponi"));
+const Profile = lazyWithRetry(() => import("@/pages/Profile"));
 
 
 // Scroll behavior: start at the top on first load/reload and on normal
