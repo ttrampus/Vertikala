@@ -1,12 +1,14 @@
 import { useState, useEffect, useContext, useRef, useMemo } from "react";
 import { useNavigate, useNavigationType, Link } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
+import { navReady } from "@/lib/navReady";
 import { ThemeCtx } from "@/lib/ThemeContext";
 import { thumbUrl } from "@/lib/thumbs";
 import { format } from "date-fns";
 import WeatherWidget from "../components/WeatherWidget";
 import StatsSection from "../components/StatsSection";
 import CardImage from "../components/CardImage";
+import HeroBg from "../components/HeroBg";
 
 const CATEGORIES = [
   { key: '', label: 'Vse' },
@@ -36,8 +38,9 @@ export default function Home() {
   // Back/forward returns to the list the reader left: same search, category,
   // and number of loaded cards, so the restored scroll lands on the right spot.
   // Any other way of arriving (fresh load, reload, nav link) starts clean.
-  const isBack = useNavigationType() === "POP" &&
-    performance.getEntriesByType?.("navigation")[0]?.type !== "reload";
+  // navReady distinguishes a real POP from the router's initial-render POP —
+  // see navReady.js for why the performance navigation entry can't be used.
+  const isBack = useNavigationType() === "POP" && navReady.done;
   const restored = useRef(
     isBack ? JSON.parse(sessionStorage.getItem("home:state") || "null") : null
   ).current;
@@ -173,7 +176,7 @@ export default function Home() {
       {/* HERO */}
       <div style={{ position: 'relative', height: '100vh', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.5) 60%, rgba(10,10,10,1) 100%)', zIndex: 2 }} />
-        <div ref={heroBgRef} style={{ position: 'absolute', inset: 0, zIndex: 1, backgroundImage: "url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1600&q=80')", backgroundSize: 'cover', backgroundPosition: 'center 30%', willChange: 'transform' }} />
+        <HeroBg src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1600&q=80" position="center 30%" zIndex={1} bgRef={heroBgRef} bgStyle={{ willChange: 'transform' }} />
         <div style={{ position: 'relative', zIndex: 3, textAlign: 'center', padding: '0 24px', maxWidth: '900px' }}>
           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 400, fontSize: '13px', letterSpacing: '0.3em', textTransform: 'uppercase', color: '#E8501A', marginBottom: '20px', opacity: 0, animation: 'fadeUp 0.8s 0.3s cubic-bezier(0.16,1,0.3,1) forwards' }}>EST. 1992 — SLOVENIJA</div>
           <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 'clamp(72px, 12vw, 140px)', lineHeight: 0.9, letterSpacing: '-0.01em', textTransform: 'uppercase', margin: '0 0 24px', color: '#fff', opacity: 0, animation: 'fadeUp 0.8s 0.5s cubic-bezier(0.16,1,0.3,1) forwards' }}>

@@ -5,6 +5,7 @@ import { queryClient } from "@/lib/query-client";
 import { BrowserRouter as Router, Route, Routes, useLocation, useNavigationType } from "react-router-dom";
 
 import { AuthProvider, useAuth } from "@/lib/AuthContext";
+import { navReady } from "@/lib/navReady";
 import { ThemeProvider } from "@/lib/ThemeContext";
 import UserNotRegisteredError from "@/components/UserNotRegisteredError";
 import Layout from "@/components/Layout";
@@ -68,6 +69,7 @@ function ScrollManager() {
   useEffect(() => {
     if (firstRun.current) {
       firstRun.current = false;
+      navReady.done = true; // later POPs are real back/forward navigations
       window.scrollTo(0, 0); // initial load / reload → top
       return;
     }

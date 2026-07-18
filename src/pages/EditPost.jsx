@@ -663,7 +663,9 @@ export default function EditPost() {
         .update({ title: form.title, summary: form.summary, content: form.content, featured_image: form.featured_image, images: form.images, tags: form.tags, category: form.category, climb_metadata: climbMeta, status })
         .eq("id", id);
       if (error) throw error;
-      navigate(`/post/${id}`);
+      // replace: the finished form shouldn't stay in history — back from the
+      // post should return to where the author started, not the stale form.
+      navigate(`/post/${id}`, { replace: true });
     } catch (err) {
       console.error(err);
       alert("Shranjevanje objave ni uspelo");

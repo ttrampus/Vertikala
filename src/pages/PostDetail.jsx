@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import DOMPurify from "dompurify";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/lib/AuthContext";
@@ -18,7 +18,16 @@ import TripSignupButton from "../components/TripSignupButton";
 
 export default function PostDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { isAdmin } = useAuth();
+
+  // Real history back (POP) so the homepage restores the list state and scroll
+  // position; a <Link to="/"> would be a fresh PUSH visit that starts at the
+  // top. Falls back to "/" when the post was opened directly (shared link).
+  const goBack = () => {
+    if (window.history.state?.idx > 0) navigate(-1);
+    else navigate("/");
+  };
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const bodyRef = useRef(null);
@@ -146,13 +155,14 @@ export default function PostDetail() {
 
       {/* Content */}
       <article className="max-w-3xl mx-auto px-6 lg:px-8 py-12">
-        <Link
-          to="/"
+        <button
+          type="button"
+          onClick={goBack}
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8"
         >
           <ArrowLeft className="h-4 w-4" />
           Nazaj na objave
-        </Link>
+        </button>
 
         {/* Tags */}
         {post.tags?.length > 0 && (
