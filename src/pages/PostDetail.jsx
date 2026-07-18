@@ -10,6 +10,7 @@ import TagBadge from "../components/TagBadge";
 import LikeButton from "../components/LikeButton";
 import CommentSection from "../components/CommentSection";
 import ImageGallery from "../components/ImageGallery";
+import CardImage from "../components/CardImage";
 import Lightbox from "../components/Lightbox";
 import ElevationDivider from "../components/ElevationDivider";
 import ClimbMetaCard from "../components/ClimbMetaCard";
@@ -133,10 +134,11 @@ export default function PostDetail() {
 
         {post.featured_image && (
           <div className="max-w-3xl mx-auto px-6 lg:px-8 pb-8">
-            <img
+            <CardImage
               src={post.featured_image}
               alt={post.title}
-              className="w-full rounded-xl object-cover max-h-80"
+              eager
+              className="rounded-xl h-80"
             />
           </div>
         )}

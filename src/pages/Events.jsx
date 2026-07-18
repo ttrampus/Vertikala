@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { ThemeCtx } from "@/lib/ThemeContext";
 import { format, isAfter, subDays } from "date-fns";
 import StatsSection from "@/components/StatsSection";
+import CardImage from "@/components/CardImage";
 
 export default function Events() {
   const theme = useContext(ThemeCtx);
@@ -134,12 +135,13 @@ export default function Events() {
                         <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '13px', letterSpacing: '0.08em', color: '#E8501A', textTransform: 'uppercase' }}>Preberi →</span>
                       </div>
                     </div>
-                    <div style={{
-                      backgroundImage: upcoming.featured_image ? `url('${upcoming.featured_image}')` : "url('https://images.unsplash.com/photo-1551632811-561732d1e306?w=800&q=80')",
-                      backgroundSize: 'cover', backgroundPosition: 'center', minHeight: '300px', position: 'relative',
-                    }}>
+                    <CardImage
+                      src={upcoming.featured_image || 'https://images.unsplash.com/photo-1551632811-561732d1e306?w=800&q=80'}
+                      eager
+                      style={{ minHeight: '300px' }}
+                    >
                       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(20,20,20,0.4), transparent)' }} />
-                    </div>
+                    </CardImage>
                   </div>
                 </Link>
               </div>

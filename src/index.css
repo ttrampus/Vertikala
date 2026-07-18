@@ -427,3 +427,26 @@ img { max-width: 100%; }
   .prose .gallery-columns-5,
   .prose .wp-block-gallery { grid-template-columns: repeat(2, 1fr); }
 }
+/* Loading surface under card images (see components/CardImage.jsx): a quiet
+   shimmer that the loaded image fades in over, instead of a bare gray box. */
+.img-shimmer {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(100deg, transparent 35%, rgba(255, 255, 255, 0.4) 50%, transparent 65%)
+      no-repeat 200% 0 / 250% 100%,
+    rgba(127, 127, 140, 0.12);
+  animation: img-shimmer-slide 1.4s ease-in-out infinite;
+}
+.dark .img-shimmer {
+  background:
+    linear-gradient(100deg, transparent 35%, rgba(255, 255, 255, 0.07) 50%, transparent 65%)
+      no-repeat 200% 0 / 250% 100%,
+    rgba(255, 255, 255, 0.05);
+}
+@keyframes img-shimmer-slide {
+  to { background-position: -100% 0, 0 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .img-shimmer { animation: none; }
+}

@@ -22,20 +22,31 @@ const storagePath = (u) => {
 };
 const thumbPath = (p) => "thumbs/" + p.replace(/\//g, "__").replace(/\.\w+$/, "") + ".jpg";
 
-// Featured images of every post, trash included (restored posts need thumbs too)
+// Featured + gallery images of every post, trash included (restored posts
+// need thumbs too). Inline content images are excluded on purpose — the post
+// body shows them at full article width, so there is nothing to shrink.
 const paths = new Set();
 for (let off = 0; ; off += 200) {
-  const res = await fetch(`${url}/rest/v1/BlogPost?select=featured_image&limit=200&offset=${off}`, { headers: h });
+  const res = await fetch(`${url}/rest/v1/BlogPost?select=featured_image,images&limit=200&offset=${off}`, { headers: h });
   const rows = await res.json();
-  for (const r of rows) { const p = storagePath(r.featured_image); if (p) paths.add(p); }
+  for (const r of rows) {
+    for (const u of [r.featured_image, ...(r.images || [])]) {
+      const p = storagePath(u);
+      if (p) paths.add(p);
+    }
+  }
   if (rows.length < 200) break;
 }
-console.log(`${paths.size} featured images in storage`);
+console.log(`${paths.size} card/gallery images in storage`);
 
 let made = 0, skipped = 0, failed = 0;
 for (const p of paths) {
   if (/\.(gif|svg)$/i.test(p)) { skipped++; continue; }
   try {
+    // Already thumbed on an earlier run? Cheap existence probe, then skip.
+    const destEnc = thumbPath(p).split("/").map(encodeURIComponent).join("/");
+    const head = await fetch(`${url}/storage/v1/object/blog-images/${destEnc}`, { method: "HEAD", headers: h });
+    if (head.ok) { skipped++; continue; }
     const enc = p.split("/").map(encodeURIComponent).join("/");
     const orig = await fetch(`${url}/storage/v1/object/blog-images/${enc}`, { headers: h });
     if (!orig.ok) { console.warn(`fetch ${p}: HTTP ${orig.status}`); failed++; continue; }
@@ -59,4 +70,4 @@ for (const p of paths) {
     failed++;
   }
 }
-console.log(`thumbs created: ${made}, skipped (gif/svg): ${skipped}, failed: ${failed}`);
+console.log(`thumbs created: ${made}, skipped (existing/gif/svg): ${skipped}, failed: ${failed}`);

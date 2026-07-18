@@ -2,10 +2,11 @@ import { useState, useEffect, useContext, useRef, useMemo } from "react";
 import { useNavigate, useNavigationType, Link } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { ThemeCtx } from "@/lib/ThemeContext";
-import { thumbUrl, thumbFallback } from "@/lib/thumbs";
+import { thumbUrl } from "@/lib/thumbs";
 import { format } from "date-fns";
 import WeatherWidget from "../components/WeatherWidget";
 import StatsSection from "../components/StatsSection";
+import CardImage from "../components/CardImage";
 
 const CATEGORIES = [
   { key: '', label: 'Vse' },
@@ -274,37 +275,43 @@ export default function Home() {
                         <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '14px', letterSpacing: '0.08em', color: '#E8501A', textTransform: 'uppercase' }}>Preberi →</span>
                       </div>
                     </div>
-                    <div style={{ minHeight: '360px', position: 'relative', overflow: 'hidden' }}>
-                      <img
-                        src={featuredPost.featured_image || 'https://images.unsplash.com/photo-1551632811-561732d1e306?w=800&q=80'}
-                        alt="" loading="lazy" decoding="async"
-                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
+                    <CardImage
+                      src={featuredPost.featured_image || 'https://images.unsplash.com/photo-1551632811-561732d1e306?w=800&q=80'}
+                      eager
+                      style={{ minHeight: '360px' }}
+                    >
                       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(20,20,20,0.3), transparent)' }} />
-                    </div>
+                    </CardImage>
                   </div>
                 </Link>
               </div>
             )}
 
-            {/* Grid */}
-            <div data-reveal="grid" style={{ ...rev('grid'), display: 'grid', gridTemplateColumns: 'var(--col-3)', gap: '20px' }}>
+            {/* Grid — cards enter with a small stagger; the hover transition
+                itself is delay-free (the old transitionDelay made hover feel
+                laggy). When restoring after "back", cards show instantly. */}
+            <div data-reveal="grid" style={{ display: 'grid', gridTemplateColumns: 'var(--col-3)', gap: '20px' }}>
               {otherPosts.map((post, i) => (
-                <Link key={post.id} to={`/post/${post.id}`} style={{ textDecoration: 'none' }}>
+                <Link
+                  key={post.id}
+                  to={`/post/${post.id}`}
+                  style={restored
+                    ? { textDecoration: 'none' }
+                    : { textDecoration: 'none', opacity: 0, animation: visible.grid ? `fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) ${Math.min(i * 0.05, 0.5)}s forwards` : 'none' }}
+                >
                   <div
-                    style={{ background: theme.bgCard, border: `1px solid ${theme.border}`, borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', transition: 'border-color 0.3s, transform 0.3s, background 0.4s', transitionDelay: `${Math.min(i * 0.06, 0.6)}s`, height: '100%' }}
+                    style={{ background: theme.bgCard, border: `1px solid ${theme.border}`, borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', transition: 'border-color 0.3s, transform 0.3s, background 0.4s', height: '100%' }}
                     onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(232,80,26,0.35)'; e.currentTarget.style.transform = 'translateY(-4px)'; }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = 'translateY(0)'; }}
                   >
-                    <div style={{ height: '180px', position: 'relative', overflow: 'hidden' }}>
-                      <img
-                        src={post.featured_image ? thumbUrl(post.featured_image) : 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=70'}
-                        onError={(e) => thumbFallback(e, post.featured_image)}
-                        alt="" loading="lazy" decoding="async"
-                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
+                    <CardImage
+                      src={post.featured_image ? thumbUrl(post.featured_image) : 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=70'}
+                      fallbackSrc={post.featured_image}
+                      eager={i < 3}
+                      style={{ height: '180px' }}
+                    >
                       <span style={{ position: 'absolute', top: '12px', left: '12px', background: 'rgba(10,10,10,0.75)', backdropFilter: 'blur(8px)', color: '#E8501A', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 10px', borderRadius: '3px' }}>{CAT_LABEL[post.category] || post.category || 'Objava'}</span>
-                    </div>
+                    </CardImage>
                     <div style={{ padding: '24px' }}>
                       <div style={{ color: theme.textLow, fontFamily: "'Inter', sans-serif", fontSize: '12px', marginBottom: '10px' }}>{formatDate(post.created_date)}</div>
                       <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '22px', lineHeight: 1.15, color: theme.text, margin: '0 0 10px' }}>{post.title}</h3>
