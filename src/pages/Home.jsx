@@ -1,7 +1,8 @@
 import { useState, useEffect, useContext, useRef, useMemo } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useNavigationType, Link } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { ThemeCtx } from "@/lib/ThemeContext";
+import { thumbUrl, thumbFallback } from "@/lib/thumbs";
 import { format } from "date-fns";
 import WeatherWidget from "../components/WeatherWidget";
 import StatsSection from "../components/StatsSection";
@@ -23,27 +24,45 @@ const isUuid = (v) => typeof v === "string" && UUID_RE.test(v);
 
 const PAGE_SIZE = 24; // cards rendered initially / added per "show more" click
 
+// Module-level cache: coming BACK to the homepage renders the last-known list
+// instantly (correct page height for scroll restore, no spinner) and refreshes
+// it in the background. Cleared naturally on full page load.
+let postsCache = null;
+
 export default function Home() {
   const theme = useContext(ThemeCtx);
   const navigate = useNavigate();
+  // Back/forward returns to the list the reader left: same search, category,
+  // and number of loaded cards, so the restored scroll lands on the right spot.
+  // Any other way of arriving (fresh load, reload, nav link) starts clean.
+  const isBack = useNavigationType() === "POP" &&
+    performance.getEntriesByType?.("navigation")[0]?.type !== "reload";
+  const restored = useRef(
+    isBack ? JSON.parse(sessionStorage.getItem("home:state") || "null") : null
+  ).current;
 
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [activeCategory, setActiveCategory] = useState('');
-  // Survives navigating into a post and back, so the restored scroll
-  // position still has the same number of cards under it.
-  const [visibleCount, setVisibleCount] = useState(() => parseInt(sessionStorage.getItem("home:visibleCount"), 10) || PAGE_SIZE);
-  const [visible, setVisible] = useState({});
+  const [posts, setPosts] = useState(() => (isBack && postsCache) || []);
+  const [loading, setLoading] = useState(() => !(isBack && postsCache));
+  const [search, setSearch] = useState(restored?.search || '');
+  const [activeCategory, setActiveCategory] = useState(restored?.category || '');
+  const [visibleCount, setVisibleCount] = useState(restored?.visibleCount || PAGE_SIZE);
+  // When returning, show every section immediately — replaying the reveal
+  // fade at a restored scroll position reads as flicker, not polish.
+  const [visible, setVisible] = useState(() =>
+    restored ? { filters: true, featured: true, grid: true, 'school-cta': true } : {}
+  );
   const heroBgRef = useRef(null);
   const firstFilterRun = useRef(true);
 
-  useEffect(() => { sessionStorage.setItem("home:visibleCount", String(visibleCount)); }, [visibleCount]);
+  useEffect(() => {
+    sessionStorage.setItem("home:state",
+      JSON.stringify({ search, category: activeCategory, visibleCount }));
+  }, [search, activeCategory, visibleCount]);
 
   useEffect(() => {
     let alive = true;
     const fetchPosts = async () => {
-      setLoading(true);
+      if (!postsCache) setLoading(true); // cached list stays visible during refresh
       const { data, error } = await supabase
         .from("BlogPost")
         // Only the columns the cards use — avoids transferring the full HTML
@@ -76,9 +95,10 @@ export default function Home() {
             }
           });
         }
+        postsCache = list;
         if (alive) setPosts(list);
       }
-      setLoading(false);
+      if (alive) setLoading(false);
     };
     fetchPosts();
     return () => { alive = false; };
@@ -278,7 +298,8 @@ export default function Home() {
                   >
                     <div style={{ height: '180px', position: 'relative', overflow: 'hidden' }}>
                       <img
-                        src={post.featured_image || 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=70'}
+                        src={post.featured_image ? thumbUrl(post.featured_image) : 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=70'}
+                        onError={(e) => thumbFallback(e, post.featured_image)}
                         alt="" loading="lazy" decoding="async"
                         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
                       />

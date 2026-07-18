@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabaseClient";
+import { thumbPath } from "@/lib/thumbs";
 
 const BUCKET = "blog-images";
 const PUBLIC_MARKER = `/storage/v1/object/public/${BUCKET}/`;
@@ -96,7 +97,11 @@ export async function purgePostsWithImages(ids) {
     const paths = [...new Set((doomed || []).flatMap(collectPaths))];
     if (paths.length) {
       const used = await stillReferenced(paths);
-      const removable = paths.filter((p) => !used.has(p));
+      // A removable original takes its card thumb along; thumbs of files
+      // another post still uses are kept because their original is kept.
+      const removable = paths
+        .filter((p) => !used.has(p))
+        .flatMap((p) => (p.startsWith("thumbs/") ? [p] : [p, thumbPath(p)]));
       let removed = 0;
       for (let i = 0; i < removable.length; i += 100) {
         const batch = removable.slice(i, i + 100);

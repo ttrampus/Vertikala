@@ -55,6 +55,11 @@ const Profile = lazyWithRetry(() => import("@/pages/Profile"));
 // Scroll behavior: start at the top on first load/reload and on normal
 // navigation (so hero animations play from the top); restore the saved
 // position only on browser back/forward, so "open a post → back" keeps its spot.
+// history.scrollRestoration must be "manual", otherwise the browser ALSO
+// restores scroll after reload/back on its own schedule and the page "jumps"
+// once content loads, fighting this component.
+if ("scrollRestoration" in window.history) window.history.scrollRestoration = "manual";
+
 function ScrollManager() {
   const location = useLocation();
   const navType = useNavigationType(); // POP (back/fwd) | PUSH | REPLACE
@@ -66,12 +71,41 @@ function ScrollManager() {
       window.scrollTo(0, 0); // initial load / reload → top
       return;
     }
-    if (navType === "POP") {
-      const saved = sessionStorage.getItem(`scroll:${location.key}`);
-      window.scrollTo(0, saved ? parseInt(saved, 10) : 0);
-    } else {
+    if (navType !== "POP") {
       window.scrollTo(0, 0);
+      return;
     }
+
+    // Back/forward: the target page's content usually hasn't loaded yet, so
+    // the document is too short to scroll to the saved spot. Keep nudging the
+    // scroll as the page grows until the position is reachable (or ~3s pass),
+    // and stop immediately if the user scrolls on their own.
+    const saved = parseInt(sessionStorage.getItem(`scroll:${location.key}`) || "0", 10);
+    if (!saved) { window.scrollTo(0, 0); return; }
+
+    let cancelled = false;
+    const cancel = () => { cancelled = true; };
+    window.addEventListener("wheel", cancel, { passive: true, once: true });
+    window.addEventListener("touchmove", cancel, { passive: true, once: true });
+
+    const deadline = performance.now() + 3000;
+    const attempt = () => {
+      if (cancelled) return cleanup();
+      const reachable = document.documentElement.scrollHeight - window.innerHeight;
+      if (reachable >= saved) {
+        window.scrollTo(0, saved);
+        return cleanup();
+      }
+      window.scrollTo(0, reachable); // best effort while content streams in
+      if (performance.now() < deadline) requestAnimationFrame(attempt);
+      else cleanup();
+    };
+    const cleanup = () => {
+      window.removeEventListener("wheel", cancel);
+      window.removeEventListener("touchmove", cancel);
+    };
+    requestAnimationFrame(attempt);
+    return () => { cancelled = true; cleanup(); };
   }, [location.key, navType]);
 
   useEffect(() => {

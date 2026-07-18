@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { Loader2, Edit, Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { softDeletePosts } from "@/lib/deletePosts";
+import { thumbUrl, thumbFallback } from "@/lib/thumbs";
 import { format } from "date-fns";
 import { sl } from "date-fns/locale";
 import TagBadge from "../components/TagBadge";
@@ -139,7 +140,7 @@ export default function Dashboard() {
             {/* Thumbnail */}
             <div className="hidden sm:block w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
               {post.featured_image
-                ? <img src={post.featured_image} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                ? <img src={thumbUrl(post.featured_image)} onError={(e) => thumbFallback(e, post.featured_image)} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                 : <div className="w-full h-full bg-muted" />}
             </div>
 

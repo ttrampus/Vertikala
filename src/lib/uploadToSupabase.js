@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabaseClient";
+import { thumbPath } from "@/lib/thumbs";
 
 // Cap matches MAX_IMG_WIDTH in scripts/import-wp.mjs so new uploads store the
 // same web-sized variant as the re-hosted WordPress images. The post lightbox
@@ -46,8 +47,42 @@ async function resizeImage(file) {
   }
 }
 
+// Card-sized companion (thumbs/<flat-path>.jpg, max 720px wide) so listing
+// pages never download the full 1600px image just to fill a small card.
+// Best-effort: a missing thumb only means cards fall back to the original.
+const THUMB_MAX_DIM = 720;
+const THUMB_QUALITY = 0.75;
+
+async function uploadThumb(file, fileName) {
+  if (NO_RESIZE_TYPES.includes(file.type)) return;
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error("decode failed"));
+      el.src = objectUrl;
+    });
+    const scale = Math.min(1, THUMB_MAX_DIM / Math.max(img.naturalWidth, img.naturalHeight));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(img.naturalWidth * scale);
+    canvas.height = Math.round(img.naturalHeight * scale);
+    canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", THUMB_QUALITY));
+    if (!blob) return;
+    await supabase.storage
+      .from("blog-images")
+      .upload(thumbPath(fileName), blob, { upsert: true, contentType: "image/jpeg" });
+  } catch {
+    // Undecodable (e.g. HEIC) or upload hiccup — the original still works.
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
 export async function uploadToSupabase(file, folder = "inline") {
-  if (file.type?.startsWith("image/")) file = await resizeImage(file);
+  const isImage = file.type?.startsWith("image/");
+  if (isImage) file = await resizeImage(file);
 
   const ext = file.name.split(".").pop();
   const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
@@ -60,6 +95,7 @@ export async function uploadToSupabase(file, folder = "inline") {
     if (attempt < 3) await new Promise((r) => setTimeout(r, 1000 * attempt));
   }
   if (uploadError) throw new Error(uploadError.message);
+  if (isImage) await uploadThumb(file, fileName);
   const { data } = supabase.storage.from("blog-images").getPublicUrl(fileName);
   return data.publicUrl;
 }

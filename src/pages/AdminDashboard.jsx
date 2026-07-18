@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
+import { thumbUrl, thumbFallback } from "@/lib/thumbs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -68,14 +69,24 @@ export default function AdminDashboard() {
     return all;
   };
 
+  // Trash older than this is purged for real (rows + images) next time an
+  // admin opens the dashboard — the trash is an undo window, not an archive.
+  const TRASH_RETENTION_DAYS = 30;
+
   const loadData = async () => {
     setLoading(true);
-    const [allPosts, profilesRes, ascentsRes, auditRes] = await Promise.all([
+    let [allPosts, profilesRes, ascentsRes, auditRes] = await Promise.all([
       loadAllPosts(),
       supabase.from("profile").select("*").order("created_date", { ascending: false }).limit(1000),
       supabase.from("ascents").select("*").order("date", { ascending: false }).limit(500),
       supabase.from("audit_log").select("*").order("created_at", { ascending: false }).limit(200),
     ]);
+    const cutoff = Date.now() - TRASH_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+    const expired = allPosts.filter((p) => p.deleted_at && new Date(p.deleted_at).getTime() < cutoff);
+    if (expired.length) {
+      const { error } = await purgePostsWithImages(expired.map((p) => p.id));
+      if (!error) allPosts = allPosts.filter((p) => !expired.includes(p));
+    }
     // Split active posts from the trash so a deleted post is recoverable.
     setPosts(allPosts.filter((p) => !p.deleted_at));
     setTrashedPosts(allPosts.filter((p) => p.deleted_at));
@@ -358,7 +369,7 @@ export default function AdminDashboard() {
                   className="flex-shrink-0"
                 />
                 <div className="hidden sm:block w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
-                  {post.featured_image ? <img src={post.featured_image} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-muted" />}
+                  {post.featured_image ? <img src={thumbUrl(post.featured_image)} onError={(e) => thumbFallback(e, post.featured_image)} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-muted" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <Link to={`/post/${post.id}`} className="font-inter font-semibold text-sm line-clamp-2 hover:text-primary block">{post.title}</Link>
@@ -686,6 +697,7 @@ export default function AdminDashboard() {
         <TabsContent value="trash" className="mt-6">
           <p className="text-sm text-muted-foreground font-inter mb-4">
             Izbrisane objave ostanejo tu (skrite z javnih strani). Obnovite jih z enim klikom ali jih trajno izbrišite.
+            Po {TRASH_RETENTION_DAYS} dneh se objave iz koša samodejno trajno izbrišejo, skupaj s slikami.
           </p>
           <div className="space-y-2">
             {trashedPosts.length === 0 && (
@@ -694,7 +706,7 @@ export default function AdminDashboard() {
             {trashedPosts.map((post) => (
               <div key={post.id} className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card">
                 <div className="hidden sm:block w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 opacity-60">
-                  {post.featured_image ? <img src={post.featured_image} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-muted" />}
+                  {post.featured_image ? <img src={thumbUrl(post.featured_image)} onError={(e) => thumbFallback(e, post.featured_image)} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-muted" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <span className="font-inter font-semibold text-sm line-clamp-2 text-muted-foreground">{post.title}</span>

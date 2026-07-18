@@ -68,13 +68,14 @@ export default function PostDetail() {
       }
     }
     setPost(resolvedPost);
+    setLoading(false);
 
-    await supabase
+    // Fire-and-forget: the reader shouldn't wait on the view counter write.
+    supabase
       .from("BlogPost")
       .update({ views_count: (data.views_count || 0) + 1 })
-      .eq("id", id);
-
-    setLoading(false);
+      .eq("id", id)
+      .then(() => {});
   };
 
   if (loading) {

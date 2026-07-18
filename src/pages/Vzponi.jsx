@@ -4,6 +4,7 @@ import { ThemeCtx } from "@/lib/ThemeContext";
 import StatsSection from "@/components/StatsSection";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/lib/AuthContext";
+import { thumbUrl, thumbFallback } from "@/lib/thumbs";
 import { format } from "date-fns";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -274,13 +275,13 @@ export default function Vzponi() {
                 onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(232,80,26,0.4)"; e.currentTarget.style.transform = "translateY(-3px)"; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = "translateY(0)"; }}
               >
-                <div style={{
-                  height: "160px",
-                  backgroundImage: post.featured_image ? `url('${post.featured_image}')` : "url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=70')",
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
-                  position: "relative",
-                }}>
+                <div style={{ height: "160px", position: "relative", overflow: "hidden" }}>
+                  <img
+                    src={post.featured_image ? thumbUrl(post.featured_image) : "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=70"}
+                    onError={(e) => thumbFallback(e, post.featured_image)}
+                    alt="" loading="lazy" decoding="async"
+                    style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                  />
                   <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%)" }} />
                 </div>
                 <div style={{ padding: "16px 18px" }}>
