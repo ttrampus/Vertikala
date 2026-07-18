@@ -1,5 +1,6 @@
 import { useState, useEffect, useContext } from "react";
 import { ThemeCtx } from "@/lib/ThemeContext";
+import HeroBg from "@/components/HeroBg";
 
 export default function Contact() {
   const theme = useContext(ThemeCtx);
@@ -51,7 +52,7 @@ export default function Contact() {
     <div style={{ background: theme.bg, minHeight: '100vh', color: theme.text, transition: 'background 0.4s, color 0.4s' }}>
       {/* Hero */}
       <div style={{ position: 'relative', height: '55vh', overflow: 'hidden', display: 'flex', alignItems: 'flex-end' }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: "url('https://images.unsplash.com/photo-1491555103944-7c647fd857e6?w=1600&q=80')", backgroundSize: 'cover', backgroundPosition: 'center 40%' }} />
+        <HeroBg src="https://images.unsplash.com/photo-1491555103944-7c647fd857e6?w=1600&q=80" position="center 40%" />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(10,10,10,0.97) 100%)' }} />
         <div style={{ position: 'relative', zIndex: 1, padding: '0 var(--page-x) 64px' }}>
           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '12px', letterSpacing: '0.3em', textTransform: 'uppercase', color: '#E8501A', marginBottom: '16px', opacity: 0, animation: 'fadeUp 0.8s 0.3s forwards' }}>Kontakt</div>

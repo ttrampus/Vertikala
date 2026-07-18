@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { ThemeCtx } from "@/lib/ThemeContext";
 import StatsSection from "@/components/StatsSection";
+import HeroBg from "@/components/HeroBg";
 
 const modules = [
   { num: '01', title: 'Osnove alpinizma', desc: 'Oprema in priprava, zgodovina alpinizma, orientacija.', weeks: '2 tedna' },
@@ -41,7 +42,7 @@ export default function AlpineSchool() {
     <div style={{ background: theme.bg, minHeight: '100vh', color: theme.text, transition: 'background 0.4s, color 0.4s' }}>
       {/* Hero */}
       <div style={{ position: 'relative', height: '75vh', overflow: 'hidden', display: 'flex', alignItems: 'flex-end' }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: "url('https://images.unsplash.com/photo-1522163182402-834f871fd851?w=1600&q=80')", backgroundSize: 'cover', backgroundPosition: 'center 35%' }} />
+        <HeroBg src="https://images.unsplash.com/photo-1522163182402-834f871fd851?w=1600&q=80" position="center 35%" />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(10,10,10,0.98) 100%)' }} />
         <div style={{ position: 'relative', zIndex: 1, padding: '0 var(--page-x) 72px', maxWidth: '1100px', width: '100%' }}>
           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '12px', letterSpacing: '0.3em', textTransform: 'uppercase', color: '#E8501A', marginBottom: '16px', opacity: 0, animation: 'fadeUp 0.8s 0.3s forwards' }}>Program 2026</div>
