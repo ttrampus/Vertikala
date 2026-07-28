@@ -88,7 +88,7 @@ export default function WeatherWidget() {
       border: `1px solid ${theme.border}`,
       borderRadius: 16,
       overflow: "hidden",
-      marginBottom: 48,
+      height: "fit-content",
     }}>
       {/* Header row */}
       <button

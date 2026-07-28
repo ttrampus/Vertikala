@@ -6,6 +6,7 @@ import { ThemeCtx } from "@/lib/ThemeContext";
 import { thumbUrl } from "@/lib/thumbs";
 import { format } from "date-fns";
 import WeatherWidget from "../components/WeatherWidget";
+import UsefulLinks from "../components/UsefulLinks";
 import StatsSection from "../components/StatsSection";
 import CardImage from "../components/CardImage";
 import HeroBg from "../components/HeroBg";
@@ -211,8 +212,11 @@ export default function Home() {
 
       {/* POSTS */}
       <div id="posts-section" style={{ maxWidth: '1100px', margin: '0 auto', padding: '80px 24px' }}>
-        {/* Weather widget */}
-        <WeatherWidget />
+        {/* Weather + useful links, side by side on desktop */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'var(--col-2)', gap: '20px', marginBottom: '48px' }}>
+          <WeatherWidget />
+          <UsefulLinks />
+        </div>
 
         {/* Filters */}
         <div data-reveal="filters" style={{ ...rev('filters'), display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '56px' }}>
