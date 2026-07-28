@@ -53,12 +53,30 @@ export default function About() {
         <div style={{ display: 'grid', gridTemplateColumns: 'var(--col-2)', gap: '80px', alignItems: 'start' }}>
           <div data-reveal="mission" style={{ ...rev('mission') }}>
             <div style={{ width: '40px', height: '3px', background: '#E8501A', marginBottom: '32px', borderRadius: '2px' }} />
-            <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 'clamp(30px, 6vw, 48px)', lineHeight: 1, margin: '0 0 28px', letterSpacing: '-0.01em' }}>Naše poslanstvo</h2>
+            <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 'clamp(30px, 6vw, 48px)', lineHeight: 1, margin: '0 0 28px', letterSpacing: '-0.01em' }}>Zgodovina kluba</h2>
             <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '16px', lineHeight: 1.8, color: theme.textMid, marginBottom: '20px' }}>
-              Alpinistični klub Vertikala je skupnost strastnih alpinistov, plezalcev in ljubiteljev gorske narave, ki jih združuje ljubezen do vertikalnega sveta.
+              Klub z imenom "AK Vertikala" je nastal v začetku 90. prejšnjega stoletja na temeljih alpinističnega odseka Planinskega društva Šmarna gora.
+            </p>
+            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '16px', lineHeight: 1.8, color: theme.textMid, marginBottom: '20px' }}>
+              Prvotnih članov, ustanoviteljev, je bilo ob ustanovitvi deset. Klub je nastal v času, ki je odseval "revolucionarni duh" okolja in sprememb, ki so sledile osamosvojitvi Slovenije. Osnovno gibalo ustanoviteljev Kluba je bilo gojenje vrhunskega alpinizma. S primerno organizirano in vodeno alpinistično šolo ter ustreznimi viri financiranja, je članstvo Kluba naglo raslo.
+            </p>
+            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '16px', lineHeight: 1.8, color: theme.textMid, marginBottom: '20px' }}>
+              V začetku leta 1993 sta Klub in Osnovna šola Pirniče sklenila pogodbo o skupnem vlaganju za izgradnjo umetne plezalne stene.
+            </p>
+            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '16px', lineHeight: 1.8, color: theme.textMid, marginBottom: '20px' }}>
+              Plezalna stena je našim članom omogočila celoletno in kakovostno plezalno vadbo. Dejavnost kluba pa ni zgolj in samo alpinistična, saj sta se ustanovila tudi odsek športnega plezanja in otroško plezalno šolo. V sredini 90. let smo organizirali tudi nekaj posamičnih tekem v športnem plezanju v okviru državnega prvenstva.
+            </p>
+            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '16px', lineHeight: 1.8, color: theme.textMid, marginBottom: '20px' }}>
+              V Klubu je prišlo do cikličnega razvoja, priča smo bili vzponom in padcem. Posebej boleči sta bili dve usodni nesreči in izguba naših članov, prijateljev in vrhunskih alpinistov.
+            </p>
+            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '16px', lineHeight: 1.8, color: theme.textMid, marginBottom: '20px' }}>
+              Ob koncu 90. let je zaradi različnih razlogov prišlo do osipa članstva in zamenjave generacij. Nekateri alpinisti so se zaradi družine, kariere ipd. razlogov prenehali ukvarjati z alpinizmom, novih mlajših članov pa takrat na žalost ni bilo. Vzgoji novih rodov alpinistov smo zato posvetili veliko truda, energije in strokovnosti. S primernim vodenjem Kluba, pridobivanjem novih članov in odlično alpinistično šolo, smo članstvo v Klubu nato zelo povečali.
+            </p>
+            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '16px', lineHeight: 1.8, color: theme.textMid, marginBottom: '20px' }}>
+              Leta 2006 je bilo tako v Klubu že preko 60 članov, kar predstavlja dobro osnovo za nadaljen uspešen razvoj.
             </p>
             <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '16px', lineHeight: 1.8, color: theme.textMid }}>
-              Naše poslanstvo je ohraniti duha alpinizma, krepiti skupnostne vezi in deliti zgodbe, ki nastanejo v gorah. Vsak dosežen vrh postane del naše skupne dediščine.
+              Zavedamo se, da se ukvarjamo s športom, ki nima ustrezne finančne podpore v našem okolju. Zato tej problematiki namenjamo posebno pozornost. Osnovni viri financiranja so urejeni, tako da z optimizmom zremo v prihodnost. Družijo nas enaki oz. podobni interesi: veselje do plezanja, druženja in prijateljstva.
             </p>
           </div>
           <div data-reveal="mission-stats" style={{ ...rev('mission-stats', 0.15) }}>
