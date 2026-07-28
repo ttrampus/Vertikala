@@ -79,7 +79,7 @@ export default function Contact() {
                 },
                 {
                   icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E8501A" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
-                  label: 'Naslov', val: 'Pločnarska 8, Tačen\n1000 Ljubljana, Slovenija',
+                  label: 'Naslov', val: 'Pločanska 8, Tačen\n1000 Ljubljana, Slovenija',
                 },
               ].map((c, i) => (
                 <div key={i} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
