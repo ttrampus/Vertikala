@@ -30,23 +30,17 @@ export default function LikeButton({ postId, initialCount = 0, onCountChange }) 
   const toggleLike = async () => {
     if (!user) return;
 
-    if (liked) {
-      await supabase.from("likes").delete()
-        .eq("post_id", postId)
-        .eq("user_id", user.id);
-      const newCount = Math.max(0, count - 1);
-      setCount(newCount);
-      setLiked(false);
-      await supabase.from("BlogPost").update({ likes_count: newCount }).eq("id", postId);
-      onCountChange?.(newCount);
-    } else {
-      await supabase.from("likes").insert({ post_id: postId, user_id: user.id });
-      const newCount = count + 1;
-      setCount(newCount);
-      setLiked(true);
-      await supabase.from("BlogPost").update({ likes_count: newCount }).eq("id", postId);
-      onCountChange?.(newCount);
-    }
+    // toggle_like() decides the new state from what's actually in the
+    // database (not whatever this tab last thought it was), so two tabs or
+    // a slow network can't leave "liked" and likes_count out of sync — and
+    // it can only ever move the count by exactly 1, atomically. See
+    // supabase/toggle_post_likes.sql.
+    const { data: nowLiked, error } = await supabase.rpc("toggle_like", { p_post_id: postId });
+    if (error) { console.error("Error toggling like:", error); return; }
+    const newCount = nowLiked ? count + 1 : Math.max(0, count - 1);
+    setLiked(!!nowLiked);
+    setCount(newCount);
+    onCountChange?.(newCount);
   };
 
   return (

@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function CommentSection({ postId, onCountChange }) {
-  const { user, profile, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [comments, setComments] = useState([]);
   const [authors, setAuthors] = useState({}); // { author_id: { display_name, avatar_url } }
   const [content, setContent] = useState("");
@@ -56,13 +56,12 @@ export default function CommentSection({ postId, onCountChange }) {
     if (!content.trim() || !isAuthenticated) return;
     setSubmitting(true);
 
-    const { error } = await supabase.from("comments").insert({
-      post_id: postId,
-      content: content.trim(),
-      author_id: user.id,
-      author_name: profile?.display_name || user.email,
-      author_email: user.email,
-    });
+    // add_comment() inserts the comment and increments comments_count in
+    // one atomic, server-side step — the count can only move in lockstep
+    // with a real comment actually being saved, and the author's name is
+    // read from their profile server-side rather than trusted from the
+    // client. See supabase/add_post_comments.sql.
+    const { error } = await supabase.rpc("add_comment", { p_post_id: postId, p_content: content.trim() });
 
     if (error) {
       console.error("Error posting comment:", error);
@@ -70,12 +69,7 @@ export default function CommentSection({ postId, onCountChange }) {
       return;
     }
 
-    const newCount = comments.length + 1;
-    await supabase
-      .from("BlogPost")
-      .update({ comments_count: newCount })
-      .eq("id", postId);
-    onCountChange?.(newCount);
+    onCountChange?.(comments.length + 1);
 
     setContent("");
     setSubmitting(false);

@@ -17,10 +17,24 @@ import ElevationDivider from "../components/ElevationDivider";
 import ClimbMetaCard from "../components/ClimbMetaCard";
 import TripSignupButton from "../components/TripSignupButton";
 
+// Anonymous readers need a stable per-browser id so the server can dedupe
+// their views (one per post per day) without an account — same idea as an
+// analytics cookie, just simpler. Logged-in readers use auth.uid() instead
+// (see record_post_view in supabase/track_post_views.sql).
+function getAnonViewerId() {
+  const KEY = "vertikala_viewer_id";
+  let id = localStorage.getItem(KEY);
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(KEY, id);
+  }
+  return id;
+}
+
 export default function PostDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   // Real history back (POP) so the homepage restores the list state and scroll
   // position; a <Link to="/"> would be a fresh PUSH visit that starts at the
@@ -86,10 +100,12 @@ export default function PostDetail() {
     setLoading(false);
 
     // Fire-and-forget: the reader shouldn't wait on the view counter write.
+    // Goes through a SECURITY DEFINER RPC rather than a raw update — it
+    // dedupes per viewer per day server-side (so refreshing doesn't inflate
+    // the count) and can only ever add 1, unlike a direct
+    // update({ views_count: N }) which would let a caller set any value.
     supabase
-      .from("BlogPost")
-      .update({ views_count: (data.views_count || 0) + 1 })
-      .eq("id", id)
+      .rpc("record_post_view", { p_post_id: id, p_anon_key: user ? null : getAnonViewerId() })
       .then(() => {});
   };
 
