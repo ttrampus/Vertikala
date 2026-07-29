@@ -9,7 +9,6 @@ export default function Footer() {
   const links = [
     { path: '/', label: 'Domov' },
     { path: '/about', label: 'O nas' },
-    { path: '/events', label: 'Dogodki' },
     { path: '/alpine-school', label: 'Šola' },
     { path: '/contact', label: 'Kontakt' },
   ];

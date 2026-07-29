@@ -43,7 +43,6 @@ const Contact = lazyWithRetry(() => import("@/pages/Contact"));
 const CreatePost = lazyWithRetry(() => import("@/pages/CreatePost"));
 const Dashboard = lazyWithRetry(() => import("@/pages/Dashboard"));
 const School = lazyWithRetry(() => import("@/pages/AlpineSchool"));
-const Events = lazyWithRetry(() => import("@/pages/Events"));
 const PostDetail = lazyWithRetry(() => import("@/pages/PostDetail"));
 const EditPost = lazyWithRetry(() => import("@/pages/EditPost"));
 const AdminDashboard = lazyWithRetry(() => import("@/pages/AdminDashboard"));
@@ -144,7 +143,6 @@ const AuthenticatedApp = () => {
     <Route path="login" element={<Login />} />
     <Route path="complete-profile" element={<CompleteProfile />} />
     <Route path="alpine-school" element={<School />} />
-    <Route path="events" element={<Events />} />
     <Route path="vzponi" element={<Vzponi />} />
     <Route path="tabori" element={<Tabori />} />
 
