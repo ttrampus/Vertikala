@@ -37,7 +37,7 @@ export default function Layout() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Pages with a full-bleed dark hero image at the top
-  const heroPages = ['/', '/about', '/events', '/alpine-school', '/contact', '/vzponi'];
+  const heroPages = ['/', '/about', '/events', '/alpine-school', '/contact', '/vzponi', '/tabori'];
   const hasHero = heroPages.includes(location.pathname);
   const isTransparent = hasHero && !scrolled;
 
@@ -93,6 +93,7 @@ export default function Layout() {
     { path: '/about', label: 'O nas' },
     { path: '/events', label: 'Dogodki' },
     { path: '/vzponi', label: 'Vzponi' },
+    { path: '/tabori', label: 'Tabori' },
     { path: '/alpine-school', label: 'Šola' },
     { path: '/contact', label: 'Kontakt' },
   ];
@@ -143,7 +144,7 @@ export default function Layout() {
             src="/logo.png"
             alt="AK Vertikala"
             style={{
-              height: '38px',
+              height: '54px',
               width: 'auto',
               display: 'block',
               filter: (isTransparent || theme.isDark) ? 'brightness(0) invert(1)' : 'none',

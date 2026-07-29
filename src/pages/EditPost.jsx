@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import ImageUploader from "../components/ImageUploader";
 import ClimbMetaForm from "../components/ClimbMetaForm";
 
@@ -557,7 +558,7 @@ export default function EditPost() {
   const [initialContent, setInitialContent] = useState(null);
 
   const [form, setForm] = useState({
-    title: "", summary: "", content: "", featured_image: "", images: [], tags: [], category: "climbs", status: "published", climb_metadata: {},
+    title: "", summary: "", content: "", featured_image: "", images: [], tags: [], category: "climbs", status: "published", climb_metadata: {}, is_public: true,
   });
   const [tagInput, setTagInput] = useState("");
 
@@ -598,7 +599,14 @@ export default function EditPost() {
 
   const loadPost = async () => {
     setLoading(true);
-    const { data, error } = await supabase.from("BlogPost").select("*").eq("id", id).single();
+    // Explicit column list — see the same note in PostDetail.jsx's loadPost:
+    // author_email is revoked from anon/authenticated, and select("*") errors
+    // against a table that only has column-level grants.
+    const { data, error } = await supabase
+      .from("BlogPost")
+      .select("id, title, summary, content, featured_image, images, tags, category, climb_metadata, status, author_name, created_by, created_by_id, created_date, updated_date, deleted_at, is_public, is_sample, likes_count, comments_count, views_count, wp_id")
+      .eq("id", id)
+      .single();
     if (error) { console.error(error); navigate("/dashboard"); return; }
     if (data.created_by_id !== user.id && !isAdmin) { alert("Te objave ne morete urejati."); navigate("/dashboard"); return; }
     setForm({
@@ -611,6 +619,7 @@ export default function EditPost() {
       category: data.category || "climbs",
       status: data.status || "published",
       climb_metadata: data.climb_metadata || {},
+      is_public: data.is_public !== false,
     });
     setInitialContent(data.content || "");
     setLoading(false);
@@ -660,7 +669,7 @@ export default function EditPost() {
       const climbMeta = form.category === "climbs" && Object.keys(form.climb_metadata || {}).length > 0
         ? form.climb_metadata : null;
       const { error } = await supabase.from("BlogPost")
-        .update({ title: form.title, summary: form.summary, content: form.content, featured_image: form.featured_image, images: form.images, tags: form.tags, category: form.category, climb_metadata: climbMeta, status })
+        .update({ title: form.title, summary: form.summary, content: form.content, featured_image: form.featured_image, images: form.images, tags: form.tags, category: form.category, climb_metadata: climbMeta, is_public: form.is_public, status })
         .eq("id", id);
       if (error) throw error;
       // replace: the finished form shouldn't stay in history — back from the
@@ -668,7 +677,7 @@ export default function EditPost() {
       navigate(`/post/${id}`, { replace: true });
     } catch (err) {
       console.error(err);
-      alert("Shranjevanje objave ni uspelo");
+      alert("Shranjevanje objave ni uspelo: " + (err?.message || "neznana napaka"));
     } finally {
       setSaving(false);
     }
@@ -728,6 +737,14 @@ export default function EditPost() {
               {categories.map((cat) => <SelectItem key={cat} value={cat}>{categoryLabels[cat] || cat}</SelectItem>)}
             </SelectContent>
           </Select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-inter font-medium mb-2">Vidnost</label>
+          <label className="flex items-center gap-2.5 cursor-pointer w-fit">
+            <Switch checked={form.is_public} onCheckedChange={(v) => updateForm("is_public", v)} />
+            <span className="text-sm text-muted-foreground font-inter">{form.is_public ? "Javno vidno vsem obiskovalcem" : "Vidno samo prijavljenim članom"}</span>
+          </label>
         </div>
 
         <div>

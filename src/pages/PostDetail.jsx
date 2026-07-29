@@ -7,6 +7,7 @@ import { Loader2, ArrowLeft, Calendar, User, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { sl } from "date-fns/locale";
 import TagBadge from "../components/TagBadge";
+import PrivateBadge from "../components/PrivateBadge";
 import LikeButton from "../components/LikeButton";
 import CommentSection from "../components/CommentSection";
 import ImageGallery from "../components/ImageGallery";
@@ -50,9 +51,13 @@ export default function PostDetail() {
   const loadPost = async () => {
     setLoading(true);
 
+    // Explicit column list — author_email is revoked from anon/authenticated
+    // (see supabase/restrict_blogpost_email.sql), and Postgres errors on
+    // `select("*")` against a table with only column-level grants (the
+    // wildcard requires table-level SELECT, unlike an explicit column list).
     const { data, error } = await supabase
       .from("BlogPost")
-      .select("*")
+      .select("id, title, summary, content, featured_image, images, tags, category, climb_metadata, status, author_name, created_by, created_by_id, created_date, updated_date, deleted_at, is_public, is_sample, likes_count, comments_count, views_count, wp_id")
       .eq("id", id)
       .single();
 
@@ -68,7 +73,7 @@ export default function PostDetail() {
     // when the post was written.
     if (data.created_by_id) {
       const { data: authorProfile } = await supabase
-        .from("profile")
+        .from("profile_public")
         .select("display_name, avatar_url")
         .eq("id", data.created_by_id)
         .single();
@@ -110,9 +115,10 @@ export default function PostDetail() {
       {/* Header */}
       <div className="border-b border-border">
         <div className="max-w-3xl mx-auto px-6 lg:px-8 pt-10 pb-8">
-          {post.category && (
-            <div className="mb-3">
-              <TagBadge tag={post.category} />
+          {(post.category || post.is_public === false) && (
+            <div className="mb-3 flex items-center gap-2">
+              {post.category && <TagBadge tag={post.category} />}
+              {post.is_public === false && <PrivateBadge />}
             </div>
           )}
           <h1 className="font-inter font-extrabold text-3xl lg:text-4xl tracking-tighter leading-tight mb-3">

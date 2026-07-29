@@ -50,6 +50,7 @@ const AdminDashboard = lazyWithRetry(() => import("@/pages/AdminDashboard"));
 const Login = lazyWithRetry(() => import("@/pages/Login"));
 const CompleteProfile = lazyWithRetry(() => import("@/pages/CompleteProfile"));
 const Vzponi = lazyWithRetry(() => import("@/pages/Vzponi"));
+const Tabori = lazyWithRetry(() => import("@/pages/Tabori"));
 const Profile = lazyWithRetry(() => import("@/pages/Profile"));
 
 
@@ -145,6 +146,7 @@ const AuthenticatedApp = () => {
     <Route path="alpine-school" element={<School />} />
     <Route path="events" element={<Events />} />
     <Route path="vzponi" element={<Vzponi />} />
+    <Route path="tabori" element={<Tabori />} />
 
  
     // Protected: must be logged in

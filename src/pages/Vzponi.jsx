@@ -8,7 +8,8 @@ import { thumbUrl } from "@/lib/thumbs";
 import CardImage from "@/components/CardImage";
 import HeroBg from "@/components/HeroBg";
 import { format } from "date-fns";
-import { Trash2 } from "lucide-react";
+import ExcelJS from "exceljs";
+import { Trash2, Lock, Search, Download, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -19,17 +20,86 @@ import {
 const CATEGORIES = [
   { key: "vse", label: "Vsi" },
   { key: "alpinistični", label: "Alpinistični vzponi" },
+  { key: "večraztežajne", label: "Večraztežajne smeri" },
+  { key: "turni", label: "Turni smuki" },
   { key: "športnoplezalni", label: "Športnoplezalni vzponi" },
-  { key: "turni", label: "Turni in smuki" },
+  { key: "frikanje", label: "Frikanje" },
 ];
 
 const CATEGORY_LABELS = {
   "alpinistični": "Alpinistični",
+  "večraztežajne": "Večraztežajne smeri",
   "športnoplezalni": "Športnoplezalni",
   "turni": "Turni / smuk",
+  "frikanje": "Frikanje",
 };
 
-const EMPTY_FORM = { date: "", climber_name: "", category: "alpinistični", location: "", route_name: "", difficulty: "", altitude: "", notes: "" };
+const EMPTY_FORM = { date: "", climber_name: "", co_climber: "", category: "alpinistični", location: "", route_name: "", difficulty: "", altitude: "", notes: "", is_public: true };
+
+// Real .xlsx (not CSV) so diacritics (č/š/ž) round-trip cleanly through any
+// viewer, dates keep their own type instead of Excel guessing at parsed
+// text, and column widths/alignment can be set explicitly.
+async function exportAscentsToExcel(rows) {
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet("Vzponi", { views: [{ state: "frozen", ySplit: 1 }] });
+
+  sheet.columns = [
+    { header: "Datum", key: "date", width: 12, style: { numFmt: "dd. mm. yyyy" } },
+    { header: "Plezalec", key: "climber_name", width: 10 },
+    { header: "Soplezalec", key: "co_climber", width: 10 },
+    { header: "Kategorija", key: "category", width: 10 },
+    { header: "Lokacija", key: "location", width: 10 },
+    { header: "Smer", key: "route_name", width: 10 },
+    { header: "Ocena", key: "difficulty", width: 8 },
+    { header: "Višina (m)", key: "altitude", width: 10 },
+    { header: "Opomba", key: "notes", width: 10 },
+  ];
+
+  rows.forEach((a) => {
+    sheet.addRow({
+      date: a.date ? new Date(a.date + "T12:00:00") : null,
+      climber_name: a.climber_name || "",
+      co_climber: a.co_climber || "",
+      category: CATEGORY_LABELS[a.category] || a.category || "",
+      location: a.location || "",
+      route_name: a.route_name || "",
+      difficulty: a.difficulty || "",
+      altitude: a.altitude ?? "",
+      notes: a.notes || "",
+    });
+  });
+
+  // Auto-width: widen each column to fit its longest cell (header included),
+  // so nothing needs manual stretching after opening the file.
+  sheet.columns.forEach((col) => {
+    let max = col.header.length;
+    col.eachCell({ includeEmpty: false }, (cell) => {
+      const text = cell.type === ExcelJS.ValueType.Date
+        ? format(cell.value, "dd. MM. yyyy")
+        : String(cell.value ?? "");
+      max = Math.max(max, text.length);
+    });
+    col.width = Math.min(Math.max(max + 2, 8), 40);
+  });
+
+  sheet.eachRow((row) => {
+    row.eachCell({ includeEmpty: true }, (cell) => {
+      cell.alignment = { horizontal: "left", vertical: "middle" };
+    });
+  });
+  sheet.getRow(1).font = { bold: true };
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `vzponi-${new Date().toISOString().slice(0, 10)}.xlsx`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
 
 export default function Vzponi() {
   const theme = useContext(ThemeCtx);
@@ -52,7 +122,7 @@ export default function Vzponi() {
   useEffect(() => {
     Promise.all([
       supabase.from("ascents").select("*").order("date", { ascending: false }),
-      supabase.from("BlogPost").select("id,title,summary,featured_image,author_name,created_date,likes_count").eq("status", "published").eq("category", "climbs").is("deleted_at", null).order("created_date", { ascending: false }).limit(6),
+      supabase.from("BlogPost").select("id,title,summary,featured_image,author_name,created_date,likes_count,is_public").eq("status", "published").eq("category", "climbs").is("deleted_at", null).order("created_date", { ascending: false }).limit(6),
     ]).then(([ascentsRes, postsRes]) => {
       setAscents(ascentsRes.data || []);
       setClimbPosts(postsRes.data || []);
@@ -77,12 +147,14 @@ export default function Vzponi() {
     const payload = {
       date: form.date,
       climber_name: form.climber_name.trim(),
+      co_climber: form.co_climber.trim() || null,
       category: form.category,
       location: form.location.trim() || null,
       route_name: form.route_name.trim() || null,
       difficulty: form.difficulty.trim() || null,
       altitude: form.altitude ? parseInt(form.altitude) : null,
       notes: form.notes.trim() || null,
+      is_public: form.is_public,
       created_by_id: user.id,
     };
     const { data, error } = await supabase.from("ascents").insert(payload).select().single();
@@ -167,8 +239,10 @@ export default function Vzponi() {
         items={[
           { val: ascents.length, label: "Skupaj" },
           { val: ascents.filter((a) => a.category === "alpinistični").length, label: "Alpinistični" },
+          { val: ascents.filter((a) => a.category === "večraztežajne").length, label: "Večraztežajne smeri" },
+          { val: ascents.filter((a) => a.category === "turni").length, label: "Turni smuki" },
           { val: ascents.filter((a) => a.category === "športnoplezalni").length, label: "Športnoplezalni" },
-          { val: ascents.filter((a) => a.category === "turni").length, label: "Turni in smuki" },
+          { val: ascents.filter((a) => a.category === "frikanje").length, label: "Frikanje" },
         ]}
       />
 
@@ -176,51 +250,79 @@ export default function Vzponi() {
       <div className="vzponi-content" style={{ maxWidth: "1100px", margin: "0 auto", padding: "56px var(--page-x)" }}>
 
         {/* Tabs + Search + Add */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "center", marginBottom: "28px", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
-            {CATEGORIES.map((c) => (
-              <button
-                key={c.key}
-                onClick={() => setActiveTab(c.key)}
-                style={{
-                  background: activeTab === c.key ? "#E8501A" : "transparent",
-                  border: activeTab === c.key ? "1px solid #E8501A" : `1px solid ${theme.border}`,
-                  borderRadius: "6px", padding: "7px 16px", cursor: "pointer",
-                  fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600,
-                  fontSize: "13px", letterSpacing: "0.08em", textTransform: "uppercase",
-                  color: activeTab === c.key ? "#fff" : theme.textMid,
-                  transition: "all 0.2s",
-                }}
-              >{c.label}</button>
-            ))}
+        <div style={{ background: theme.bgCard, border: `1px solid ${theme.border}`, borderRadius: "16px", padding: "20px 22px", marginBottom: "28px", display: "flex", flexDirection: "column", gap: "18px" }}>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            {CATEGORIES.map((c) => {
+              const active = activeTab === c.key;
+              return (
+                <button
+                  key={c.key}
+                  onClick={() => setActiveTab(c.key)}
+                  style={{
+                    background: active ? "#E8501A" : (theme.isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.045)"),
+                    border: active ? "1px solid #E8501A" : "1px solid transparent",
+                    borderRadius: "999px", padding: "8px 16px", cursor: "pointer",
+                    fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600,
+                    fontSize: "12.5px", letterSpacing: "0.07em", textTransform: "uppercase",
+                    color: active ? "#fff" : theme.textMid,
+                    transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = theme.isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.07)"; }}
+                  onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = theme.isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.045)"; }}
+                >{c.label}</button>
+              );
+            })}
           </div>
-          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Išči po plezalcu, smeri…"
-              style={{
-                background: theme.inputBg, border: `1px solid ${theme.border}`,
-                borderRadius: "8px", padding: "8px 14px",
-                color: theme.text, fontFamily: "'Inter', sans-serif", fontSize: "13px",
-                outline: "none", width: "min(220px, 42vw)", transition: "border-color 0.2s, background 0.4s",
-              }}
-              onFocus={(e) => (e.target.style.borderColor = "rgba(232,80,26,0.5)")}
-              onBlur={(e) => (e.target.style.borderColor = theme.border)}
-            />
-            {user && (
-              <button
-                onClick={openForm}
+
+          <div style={{ height: "1px", background: theme.border }} />
+
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ position: "relative", flex: "1 1 220px", maxWidth: "320px" }}>
+              <Search size={15} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: theme.textLow, pointerEvents: "none" }} />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Išči po plezalcu, smeri…"
                 style={{
-                  background: "#E8501A", color: "#fff", border: "none", cursor: "pointer",
+                  background: theme.inputBg, border: `1px solid ${theme.border}`,
+                  borderRadius: "8px", padding: "9px 14px 9px 36px", width: "100%", boxSizing: "border-box",
+                  color: theme.text, fontFamily: "'Inter', sans-serif", fontSize: "13px",
+                  outline: "none", transition: "border-color 0.2s, background 0.4s",
+                }}
+                onFocus={(e) => (e.target.style.borderColor = "rgba(232,80,26,0.5)")}
+                onBlur={(e) => (e.target.style.borderColor = theme.border)}
+              />
+            </div>
+            <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+              <button
+                onClick={() => exportAscentsToExcel(sorted)}
+                disabled={sorted.length === 0}
+                style={{
+                  display: "flex", alignItems: "center", gap: "7px",
+                  background: "transparent", color: theme.textMid, border: `1px solid ${theme.border}`,
+                  cursor: sorted.length === 0 ? "default" : "pointer", opacity: sorted.length === 0 ? 0.5 : 1,
                   fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "13px",
                   letterSpacing: "0.08em", textTransform: "uppercase", padding: "9px 18px",
-                  borderRadius: "8px", whiteSpace: "nowrap", transition: "background 0.2s",
+                  borderRadius: "8px", whiteSpace: "nowrap", transition: "border-color 0.2s, color 0.2s",
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "#c73d10")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "#E8501A")}
-              >+ Dodaj vzpon</button>
-            )}
+                onMouseEnter={(e) => { if (sorted.length) { e.currentTarget.style.borderColor = "#E8501A"; e.currentTarget.style.color = "#E8501A"; } }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.textMid; }}
+              ><Download size={14} /> Izvozi v Excel</button>
+              {user && (
+                <button
+                  onClick={openForm}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "6px",
+                    background: "#E8501A", color: "#fff", border: "none", cursor: "pointer",
+                    fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "13px",
+                    letterSpacing: "0.08em", textTransform: "uppercase", padding: "9px 18px",
+                    borderRadius: "8px", whiteSpace: "nowrap", transition: "background 0.2s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "#c73d10")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "#E8501A")}
+                ><Plus size={15} /> Dodaj vzpon</button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -289,6 +391,11 @@ export default function Vzponi() {
                     {format(new Date(post.created_date), "d. MMM yyyy")}
                   </div>
                   <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "18px", lineHeight: 1.2, color: theme.text, margin: "0 0 6px" }}>{post.title}</h3>
+                  {post.is_public === false && (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", marginBottom: "6px", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "10px", letterSpacing: "0.05em", textTransform: "uppercase", background: theme.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)", color: theme.textLow, padding: "2px 7px", borderRadius: "999px" }}>
+                      <Lock size={9} /> Zasebno
+                    </span>
+                  )}
                   {post.summary && (
                     <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "12px", color: theme.textMid, lineHeight: 1.5, margin: "0 0 12px", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{post.summary}</p>
                   )}
@@ -328,6 +435,10 @@ export default function Vzponi() {
                 <label style={labelStyle}>Plezalec *</label>
                 <input required placeholder="Ime Priimek" value={form.climber_name} onChange={(e) => setForm((f) => ({ ...f, climber_name: e.target.value }))} style={inputStyle} />
               </div>
+              <div>
+                <label style={labelStyle}>Soplezalec</label>
+                <input placeholder="Ime Priimek" value={form.co_climber} onChange={(e) => setForm((f) => ({ ...f, co_climber: e.target.value }))} style={inputStyle} />
+              </div>
               <div style={{ gridColumn: "1 / -1" }}>
                 <label style={labelStyle}>Kategorija *</label>
                 <select
@@ -337,8 +448,10 @@ export default function Vzponi() {
                 >
                   {[
                     { v: "alpinistični", l: "Alpinistični vzponi" },
+                    { v: "večraztežajne", l: "Večraztežajne smeri" },
+                    { v: "turni", l: "Turni smuki" },
                     { v: "športnoplezalni", l: "Športnoplezalni vzponi" },
-                    { v: "turni", l: "Turni in smuki" },
+                    { v: "frikanje", l: "Frikanje" },
                   ].map((o) => (
                     <option key={o.v} value={o.v} style={{ background: theme.isDark ? "#1a1a1a" : "#fff", color: theme.text }}>{o.l}</option>
                   ))}
@@ -353,7 +466,7 @@ export default function Vzponi() {
                 <input placeholder="Trois Monts, Botoks…" value={form.route_name} onChange={(e) => setForm((f) => ({ ...f, route_name: e.target.value }))} style={inputStyle} />
               </div>
               <div>
-                <label style={labelStyle}>Težavnost</label>
+                <label style={labelStyle}>Ocena</label>
                 <input placeholder="7a+, TD-, D+/5c…" value={form.difficulty} onChange={(e) => setForm((f) => ({ ...f, difficulty: e.target.value }))} style={inputStyle} />
               </div>
               <div>
@@ -364,6 +477,12 @@ export default function Vzponi() {
                 <label style={labelStyle}>Opomba</label>
                 <input placeholder="Neobvezno…" value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} style={inputStyle} />
               </div>
+              <label style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", marginTop: "4px" }}>
+                <input type="checkbox" checked={form.is_public} onChange={(e) => setForm((f) => ({ ...f, is_public: e.target.checked }))} style={{ width: "16px", height: "16px", accentColor: "#E8501A", cursor: "pointer" }} />
+                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", color: theme.textMid }}>
+                  {form.is_public ? "Javno viden vsem obiskovalcem" : "Viden samo prijavljenim članom"}
+                </span>
+              </label>
             </div>
 
             {formError && (
@@ -420,11 +539,10 @@ function AscentTable({ rows, theme, sort, onSort, canDelete, onDelete }) {
         <thead>
           <tr>
             {th("date", "Datum")}
-            {th("climber_name", "Plezalec")}
+            {th("climber_name", "Plezalec / Soplezalec")}
             {th("category", "Kategorija", "col-opt")}
-            {th("location", "Lokacija / smer")}
-            {th("difficulty", "Težavnost", "col-opt")}
-            {th("altitude", "Višina", "col-opt")}
+            {th("location", "Lokacija / Smer")}
+            {th("difficulty", "Ocena", "col-opt")}
             <th style={{ borderBottom: `2px solid ${theme.border}`, width: "36px" }} />
           </tr>
         </thead>
@@ -439,7 +557,23 @@ function AscentTable({ rows, theme, sort, onSort, canDelete, onDelete }) {
               <td style={{ ...td, whiteSpace: "nowrap", color: "#E8501A", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "13px", letterSpacing: "0.04em" }}>
                 {format(new Date(a.date + "T12:00:00"), "dd. MMM yyyy")}
               </td>
-              <td style={{ ...td, fontWeight: 600, color: theme.text, whiteSpace: "nowrap" }}>{a.climber_name}</td>
+              <td style={{ ...td, fontWeight: 600, color: theme.text, whiteSpace: "nowrap" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                  <span>{a.climber_name}{a.co_climber ? ` / ${a.co_climber}` : ""}</span>
+                  {a.is_public === false && (
+                    <span
+                      title="Vidno samo prijavljenim članom"
+                      style={{
+                        display: "inline-flex", alignItems: "center", gap: "3px", flexShrink: 0,
+                        fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "10px",
+                        letterSpacing: "0.05em", textTransform: "uppercase",
+                        background: theme.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+                        color: theme.textLow, padding: "2px 7px", borderRadius: "999px",
+                      }}
+                    ><Lock size={9} /> Zasebno</span>
+                  )}
+                </span>
+              </td>
               <td className="col-opt" style={{ ...td, color: theme.textMid }}>{CATEGORY_LABELS[a.category] || a.category}</td>
               <td style={{ ...td, color: theme.textMid }}>
                 {a.location && <span style={{ color: theme.text, fontWeight: 500 }}>{a.location}</span>}
@@ -452,7 +586,6 @@ function AscentTable({ rows, theme, sort, onSort, canDelete, onDelete }) {
                   <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "12px", letterSpacing: "0.06em", background: "rgba(232,80,26,0.12)", color: "#E8501A", padding: "3px 10px", borderRadius: "4px", whiteSpace: "nowrap" }}>{a.difficulty}</span>
                 )}
               </td>
-              <td className="col-opt" style={{ ...td, color: theme.textMid, whiteSpace: "nowrap" }}>{a.altitude ? `${a.altitude} m` : ""}</td>
               <td style={{ ...td, textAlign: "right" }}>
                 {canDelete(a) && (
                   <AlertDialog>

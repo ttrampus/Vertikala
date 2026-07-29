@@ -40,7 +40,7 @@ export default function CommentSection({ postId, onCountChange }) {
     const ids = [...new Set(list.map((c) => c.author_id).filter(Boolean))];
     if (ids.length) {
       const { data: profs } = await supabase
-        .from("profile")
+        .from("profile_public")
         .select("id, display_name, avatar_url")
         .in("id", ids);
       const map = {};

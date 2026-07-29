@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from "react";
 import { ThemeCtx } from "@/lib/ThemeContext";
-import { Cloud, Wind, Thermometer, ChevronDown, ChevronUp } from "lucide-react";
+import { Cloud, Wind, Thermometer, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 
 const LOCATIONS = [
   { name: "Triglav", lat: 46.3793, lon: 13.8396, elevation: 2864 },
@@ -222,9 +222,23 @@ export default function WeatherWidget() {
             </div>
           )}
 
-          <p style={{ fontSize: 11, color: theme.textFaint, marginTop: 12, textAlign: "right" }}>
-            Podatki: Open-Meteo.com · Posodobljeno samodejno
-          </p>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12, flexWrap: "wrap", gap: 8 }}>
+            <a
+              href="https://vremehribi.si/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 5,
+                fontSize: 12, color: "#E8501A", textDecoration: "none",
+                fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600, letterSpacing: "0.02em",
+              }}
+            >
+              Podrobna gorska napoved na vremehribi.si <ExternalLink size={11} />
+            </a>
+            <p style={{ fontSize: 11, color: theme.textFaint, margin: 0 }}>
+              Podatki: Open-Meteo.com · Posodobljeno samodejno
+            </p>
+          </div>
         </div>
       )}
     </div>

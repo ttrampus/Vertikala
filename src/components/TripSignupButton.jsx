@@ -23,9 +23,12 @@ export default function TripSignupButton({ postId }) {
   }, [signups, user]);
 
   const loadSignups = async () => {
+    // Explicit column list — user_email is revoked from anon/authenticated
+    // (see supabase/restrict_trip_signups_email.sql), and select("*") errors
+    // against a table that only has column-level grants.
     const { data } = await supabase
       .from("trip_signups")
-      .select("*")
+      .select("id, post_id, user_id, user_name, created_at")
       .eq("post_id", postId)
       .order("created_at", { ascending: true });
     setSignups(data || []);
@@ -53,7 +56,7 @@ export default function TripSignupButton({ postId }) {
             user_name: profile?.display_name || user.user_metadata?.full_name || "Udeleženec",
             user_email: user.email,
           })
-          .select()
+          .select("id, post_id, user_id, user_name, created_at")
           .single();
         if (data) {
           setSignups((prev) => [...prev, data]);

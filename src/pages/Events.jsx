@@ -6,6 +6,7 @@ import { format, isAfter, subDays } from "date-fns";
 import StatsSection from "@/components/StatsSection";
 import CardImage from "@/components/CardImage";
 import HeroBg from "@/components/HeroBg";
+import PrivateBadge from "@/components/PrivateBadge";
 
 export default function Events() {
   const theme = useContext(ThemeCtx);
@@ -21,7 +22,7 @@ export default function Events() {
       const { data, error } = await supabase
         .from("BlogPost")
         // List columns only — full `content` HTML isn't used by the cards
-        .select("id, title, summary, featured_image, author_name, created_by, category, tags, created_date, likes_count")
+        .select("id, title, summary, featured_image, author_name, created_by, category, tags, created_date, likes_count, is_public")
         .eq("status", "published")
         .eq("category", "events")
         .is("deleted_at", null)
@@ -73,7 +74,7 @@ export default function Events() {
         <div style={{ position: 'relative', zIndex: 1, padding: '0 var(--page-x) 64px', maxWidth: '1100px' }}>
           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '12px', letterSpacing: '0.3em', textTransform: 'uppercase', color: '#E8501A', marginBottom: '16px', opacity: 0, animation: 'fadeUp 0.8s 0.3s forwards' }}>Koledar</div>
           <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 'clamp(56px,8vw,96px)', lineHeight: 0.95, margin: '0 0 16px', color: '#fff', opacity: 0, animation: 'fadeUp 0.8s 0.5s forwards' }}>
-            Dogodki &amp;<br /><span style={{ color: '#E8501A' }}>Prireditve</span>
+            <span style={{ color: '#E8501A' }}>Dogodki</span>
           </h1>
           <p style={{ fontFamily: "'Inter', sans-serif", fontWeight: 300, fontSize: '17px', color: 'rgba(255,255,255,0.55)', opacity: 0, animation: 'fadeUp 0.8s 0.7s forwards' }}>Vse kar se dogaja v klubu — ture, predavanja, srečanja in več.</p>
         </div>
@@ -127,6 +128,7 @@ export default function Events() {
                     <div style={{ padding: '48px' }}>
                       <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '24px' }}>
                         <span style={{ background: '#E8501A', color: '#fff', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 10px', borderRadius: '3px' }}>Dogodek</span>
+                        {upcoming.is_public === false && <PrivateBadge small />}
                         <span style={{ color: theme.textLow, fontFamily: "'Inter', sans-serif", fontSize: '13px' }}>{formatDate(upcoming.created_date)}</span>
                       </div>
                       <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: '38px', lineHeight: 1.05, margin: '0 0 16px', color: theme.text }}>{upcoming.title}</h2>
@@ -167,7 +169,10 @@ export default function Events() {
                           <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', color: theme.textLow, marginTop: '2px' }}>{formatDate(ev.created_date)}</div>
                         </div>
                         <div>
-                          <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '22px', margin: '0 0 6px', color: theme.text }}>{ev.title}</h3>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                            <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '22px', margin: 0, color: theme.text }}>{ev.title}</h3>
+                            {ev.is_public === false && <PrivateBadge small />}
+                          </div>
                           {ev.summary && <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: theme.textMid, margin: 0, lineHeight: 1.5 }}>{ev.summary}</p>}
                           <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: theme.textLow, marginTop: '4px', display: 'block' }}>{ev.author_name || 'Klub'}</span>
                         </div>

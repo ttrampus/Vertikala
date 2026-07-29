@@ -10,6 +10,8 @@ import UsefulLinks from "../components/UsefulLinks";
 import StatsSection from "../components/StatsSection";
 import CardImage from "../components/CardImage";
 import HeroBg from "../components/HeroBg";
+import PrivateBadge from "../components/PrivateBadge";
+import { Lock } from "lucide-react";
 
 const CATEGORIES = [
   { key: '', label: 'Vse' },
@@ -72,7 +74,7 @@ export default function Home() {
         .from("BlogPost")
         // Only the columns the cards use — avoids transferring the full HTML
         // `content` and large jsonb fields for every post on the landing page.
-        .select("id, title, summary, featured_image, author_name, category, created_date, likes_count, created_by, created_by_id")
+        .select("id, title, summary, featured_image, author_name, category, created_date, likes_count, created_by, created_by_id, is_public")
         .eq("status", "published")
         .is("deleted_at", null)
         .order("created_date", { ascending: false });
@@ -87,7 +89,7 @@ export default function Home() {
         const ids = [...new Set(list.map((p) => p.created_by_id).filter(isUuid))];
         if (ids.length) {
           const { data: profs } = await supabase
-            .from("profile")
+            .from("profile_public")
             .select("id, display_name, avatar_url")
             .in("id", ids);
           const map = {};
@@ -180,9 +182,11 @@ export default function Home() {
         <HeroBg src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1600&q=80" position="center 30%" zIndex={1} bgRef={heroBgRef} bgStyle={{ willChange: 'transform' }} />
         <div style={{ position: 'relative', zIndex: 3, textAlign: 'center', padding: '0 24px', maxWidth: '900px' }}>
           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 400, fontSize: '13px', letterSpacing: '0.3em', textTransform: 'uppercase', color: '#E8501A', marginBottom: '20px', opacity: 0, animation: 'fadeUp 0.8s 0.3s cubic-bezier(0.16,1,0.3,1) forwards' }}>EST. 1992 — SLOVENIJA</div>
-          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 'clamp(72px, 12vw, 140px)', lineHeight: 0.9, letterSpacing: '-0.01em', textTransform: 'uppercase', margin: '0 0 24px', color: '#fff', opacity: 0, animation: 'fadeUp 0.8s 0.5s cubic-bezier(0.16,1,0.3,1) forwards' }}>
-            AK<br /><span style={{ color: '#E8501A' }}>VERTIKALA</span>
-          </h1>
+          <img
+            src="/logo.png"
+            alt="AK Vertikala"
+            style={{ width: 'clamp(280px, 40vw, 560px)', height: 'auto', display: 'block', margin: '0 auto 24px', filter: 'brightness(0) invert(1)', opacity: 0, animation: 'fadeUp 0.8s 0.5s cubic-bezier(0.16,1,0.3,1) forwards' }}
+          />
           <p style={{ fontFamily: "'Inter', sans-serif", fontWeight: 300, fontSize: '18px', lineHeight: 1.6, color: 'rgba(255,255,255,0.75)', maxWidth: '480px', margin: '0 auto 40px', opacity: 0, animation: 'fadeUp 0.8s 0.7s cubic-bezier(0.16,1,0.3,1) forwards' }}>
             Zgodbe z vrhov — plezalci, raziskovalci &amp; ljubitelji gora
           </p>
@@ -272,6 +276,7 @@ export default function Home() {
                       <div>
                         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '20px' }}>
                           <span style={{ background: '#E8501A', color: '#fff', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 10px', borderRadius: '3px' }}>{CAT_LABEL[featuredPost.category] || featuredPost.category || 'Objava'}</span>
+                          {featuredPost.is_public === false && <PrivateBadge small />}
                           <span style={{ color: theme.textLow, fontFamily: "'Inter', sans-serif", fontSize: '13px' }}>{formatDate(featuredPost.created_date)}</span>
                         </div>
                         <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 'clamp(28px, 5.5vw, 42px)', lineHeight: 1.05, letterSpacing: '-0.01em', margin: '0 0 16px', color: theme.text }}>{featuredPost.title}</h2>
@@ -318,6 +323,11 @@ export default function Home() {
                       style={{ height: '180px' }}
                     >
                       <span style={{ position: 'absolute', top: '12px', left: '12px', background: 'rgba(10,10,10,0.75)', backdropFilter: 'blur(8px)', color: '#E8501A', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 10px', borderRadius: '3px' }}>{CAT_LABEL[post.category] || post.category || 'Objava'}</span>
+                      {post.is_public === false && (
+                        <span style={{ position: 'absolute', top: '12px', right: '12px', display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(10,10,10,0.75)', backdropFilter: 'blur(8px)', color: '#fff', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '4px 10px', borderRadius: '3px' }}>
+                          <Lock size={10} /> Zasebno
+                        </span>
+                      )}
                     </CardImage>
                     <div style={{ padding: '24px' }}>
                       <div style={{ color: theme.textLow, fontFamily: "'Inter', sans-serif", fontSize: '12px', marginBottom: '10px' }}>{formatDate(post.created_date)}</div>

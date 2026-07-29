@@ -6,7 +6,7 @@ import { thumbUrl, thumbFallback } from "@/lib/thumbs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Trash2, Eye, Users, FileText, Shield, Edit, Mail, UserPlus, ShieldCheck, ShieldOff, CheckCircle2, XCircle, List, Mountain, Plus, RotateCcw, ScrollText } from "lucide-react";
+import { Loader2, Trash2, Eye, Users, FileText, Shield, Edit, Mail, UserPlus, ShieldCheck, ShieldOff, CheckCircle2, XCircle, List, Mountain, Tent, Plus, RotateCcw, ScrollText, Lock } from "lucide-react";
 import { format } from "date-fns";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -14,8 +14,20 @@ import {
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { softDeletePosts, restorePosts, purgePostsWithImages } from "@/lib/deletePosts";
 import TagBadge from "../components/TagBadge";
+import PrivateBadge from "../components/PrivateBadge";
+
+const EMPTY_ASCENT_FORM = { date: "", climber_name: "", co_climber: "", category: "alpinistični", location: "", route_name: "", difficulty: "", altitude: "", notes: "", is_public: true };
+const ASCENT_CATEGORY_LABELS = {
+  "alpinistični": "Alpinistični",
+  "večraztežajne": "Večraztežajne smeri",
+  "športnoplezalni": "Športnoplezalni",
+  "turni": "Turni",
+  "frikanje": "Frikanje",
+};
+const EMPTY_CAMP_FORM = { title: "", date_from: "", date_to: "", location: "", summary: "", description: "" };
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -49,18 +61,28 @@ export default function AdminDashboard() {
   // Ascents
   const [ascents, setAscents] = useState([]);
   const [addingAscent, setAddingAscent] = useState(false);
-  const [ascentForm, setAscentForm] = useState({ date: "", climber_name: "", category: "alpinistični", location: "", route_name: "", difficulty: "", altitude: "", notes: "" });
+  const [editingAscentId, setEditingAscentId] = useState(null);
+  const [ascentForm, setAscentForm] = useState(EMPTY_ASCENT_FORM);
   const [savingAscent, setSavingAscent] = useState(false);
 
+  // Camps (Tabori)
+  const [camps, setCamps] = useState([]);
+  const [addingCamp, setAddingCamp] = useState(false);
+  const [editingCampId, setEditingCampId] = useState(null);
+  const [campForm, setCampForm] = useState(EMPTY_CAMP_FORM);
+  const [savingCamp, setSavingCamp] = useState(false);
+
   // All posts, paged past PostgREST's 1000-row cap (586+ after the WP import).
-  // Only list columns — `content` across hundreds of posts is megabytes.
+  // author_email is revoked from the "authenticated" Postgres role at the
+  // table level (see supabase/restrict_blogpost_email.sql — it's a public
+  // column grant, so it can't distinguish admin from a regular member).
+  // admin_list_posts() is a SECURITY DEFINER function that checks is_admin()
+  // internally and returns full rows only for actual admins.
   const loadAllPosts = async () => {
-    const cols = "id, title, status, featured_image, author_name, author_email, created_by, category, created_date, deleted_at";
     const all = [];
     for (let from = 0; ; from += 1000) {
       const { data, error } = await supabase
-        .from("BlogPost").select(cols)
-        .order("created_date", { ascending: false })
+        .rpc("admin_list_posts")
         .range(from, from + 999);
       if (error) { console.error(error); break; }
       all.push(...(data || []));
@@ -75,10 +97,11 @@ export default function AdminDashboard() {
 
   const loadData = async () => {
     setLoading(true);
-    let [allPosts, profilesRes, ascentsRes, auditRes] = await Promise.all([
+    let [allPosts, profilesRes, ascentsRes, campsRes, auditRes] = await Promise.all([
       loadAllPosts(),
       supabase.from("profile").select("*").order("created_date", { ascending: false }).limit(1000),
       supabase.from("ascents").select("*").order("date", { ascending: false }).limit(500),
+      supabase.from("camps").select("*").order("date_from", { ascending: false }).limit(500),
       supabase.from("audit_log").select("*").order("created_at", { ascending: false }).limit(200),
     ]);
     const cutoff = Date.now() - TRASH_RETENTION_DAYS * 24 * 60 * 60 * 1000;
@@ -92,6 +115,7 @@ export default function AdminDashboard() {
     setTrashedPosts(allPosts.filter((p) => p.deleted_at));
     setProfiles(profilesRes.data || []);
     setAscents(ascentsRes.data || []);
+    setCamps(campsRes.data || []); // empty if create_camps.sql hasn't been run yet
     setAuditLog(auditRes.data || []); // empty if the audit migration isn't applied yet
     setLoading(false);
   };
@@ -158,24 +182,45 @@ export default function AdminDashboard() {
     setPurgingId(null);
   };
 
+  const openAddAscent = () => {
+    setEditingAscentId(null);
+    setAscentForm(EMPTY_ASCENT_FORM);
+    setAddingAscent(true);
+  };
+
+  const openEditAscent = (a) => {
+    setEditingAscentId(a.id);
+    setAscentForm({
+      date: a.date || "", climber_name: a.climber_name || "", co_climber: a.co_climber || "",
+      category: a.category || "alpinistični", location: a.location || "", route_name: a.route_name || "",
+      difficulty: a.difficulty || "", altitude: a.altitude != null ? String(a.altitude) : "", notes: a.notes || "",
+      is_public: a.is_public !== false,
+    });
+    setAddingAscent(true);
+  };
+
   const saveAscent = async (e) => {
     e.preventDefault();
     setSavingAscent(true);
     const payload = {
       date: ascentForm.date,
       climber_name: ascentForm.climber_name.trim(),
+      co_climber: ascentForm.co_climber.trim() || null,
       category: ascentForm.category,
       location: ascentForm.location.trim() || null,
       route_name: ascentForm.route_name.trim() || null,
       difficulty: ascentForm.difficulty.trim() || null,
       altitude: ascentForm.altitude ? parseInt(ascentForm.altitude) : null,
       notes: ascentForm.notes.trim() || null,
-      created_by_id: user.id,
+      is_public: ascentForm.is_public,
     };
-    const { data, error } = await supabase.from("ascents").insert(payload).select().single();
+    const { data, error } = editingAscentId
+      ? await supabase.from("ascents").update(payload).eq("id", editingAscentId).select().single()
+      : await supabase.from("ascents").insert({ ...payload, created_by_id: user.id }).select().single();
     if (!error && data) {
-      setAscents((prev) => [data, ...prev].sort((a, b) => new Date(b.date) - new Date(a.date)));
-      setAscentForm({ date: "", climber_name: "", category: "alpinistični", location: "", route_name: "", difficulty: "", altitude: "", notes: "" });
+      setAscents((prev) => (editingAscentId ? prev.map((a) => (a.id === editingAscentId ? data : a)) : [data, ...prev]).sort((a, b) => new Date(b.date) - new Date(a.date)));
+      setAscentForm(EMPTY_ASCENT_FORM);
+      setEditingAscentId(null);
       setAddingAscent(false);
     } else {
       alert("Napaka: " + (error?.message || "Neznana napaka"));
@@ -187,6 +232,55 @@ export default function AdminDashboard() {
     const { error } = await supabase.from("ascents").delete().eq("id", id);
     if (!error) {
       setAscents((prev) => prev.filter((a) => a.id !== id));
+    } else {
+      alert("Brisanje ni uspelo: " + error.message);
+    }
+  };
+
+  const openAddCamp = () => {
+    setEditingCampId(null);
+    setCampForm(EMPTY_CAMP_FORM);
+    setAddingCamp(true);
+  };
+
+  const openEditCamp = (c) => {
+    setEditingCampId(c.id);
+    setCampForm({
+      title: c.title || "", date_from: c.date_from || "", date_to: c.date_to || "",
+      location: c.location || "", summary: c.summary || "", description: c.description || "",
+    });
+    setAddingCamp(true);
+  };
+
+  const saveCamp = async (e) => {
+    e.preventDefault();
+    setSavingCamp(true);
+    const payload = {
+      title: campForm.title.trim(),
+      date_from: campForm.date_from,
+      date_to: campForm.date_to || null,
+      location: campForm.location.trim() || null,
+      summary: campForm.summary.trim() || null,
+      description: campForm.description.trim() || null,
+    };
+    const { data, error } = editingCampId
+      ? await supabase.from("camps").update(payload).eq("id", editingCampId).select().single()
+      : await supabase.from("camps").insert({ ...payload, created_by_id: user.id }).select().single();
+    if (!error && data) {
+      setCamps((prev) => (editingCampId ? prev.map((c) => (c.id === editingCampId ? data : c)) : [data, ...prev]).sort((a, b) => new Date(b.date_from) - new Date(a.date_from)));
+      setCampForm(EMPTY_CAMP_FORM);
+      setEditingCampId(null);
+      setAddingCamp(false);
+    } else {
+      alert("Napaka: " + (error?.message || "Neznana napaka"));
+    }
+    setSavingCamp(false);
+  };
+
+  const deleteCamp = async (id) => {
+    const { error } = await supabase.from("camps").delete().eq("id", id);
+    if (!error) {
+      setCamps((prev) => prev.filter((c) => c.id !== id));
     } else {
       alert("Brisanje ni uspelo: " + error.message);
     }
@@ -321,6 +415,7 @@ export default function AdminDashboard() {
           <TabsTrigger value="posts" className="gap-1 shrink-0 whitespace-nowrap"><FileText className="h-4 w-4" /> Objave</TabsTrigger>
           <TabsTrigger value="users" className="gap-1 shrink-0 whitespace-nowrap"><Users className="h-4 w-4" /> Člani</TabsTrigger>
           <TabsTrigger value="ascents" className="gap-1 shrink-0 whitespace-nowrap"><Mountain className="h-4 w-4" /> Vzponi</TabsTrigger>
+          <TabsTrigger value="camps" className="gap-1 shrink-0 whitespace-nowrap"><Tent className="h-4 w-4" /> Tabori</TabsTrigger>
           <TabsTrigger value="invite" className="gap-1 shrink-0 whitespace-nowrap"><UserPlus className="h-4 w-4" /> Povabi člana</TabsTrigger>
           <TabsTrigger value="trash" className="gap-1 shrink-0 whitespace-nowrap"><Trash2 className="h-4 w-4" /> Koš{trashedPosts.length > 0 ? ` (${trashedPosts.length})` : ""}</TabsTrigger>
           <TabsTrigger value="audit" className="gap-1 shrink-0 whitespace-nowrap"><ScrollText className="h-4 w-4" /> Dnevnik</TabsTrigger>
@@ -382,6 +477,7 @@ export default function AdminDashboard() {
                     </button>
                     <span className="truncate max-w-[45%]">{post.author_name || post.author_email || post.created_by || "—"}</span>
                     {post.category && <TagBadge tag={post.category} small />}
+                    {post.is_public === false && <PrivateBadge small />}
                     <span className="flex-shrink-0">{format(new Date(post.created_date), "d. M. yyyy")}</span>
                   </div>
                 </div>
@@ -467,14 +563,14 @@ export default function AdminDashboard() {
         <TabsContent value="ascents" className="mt-6">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm text-muted-foreground font-inter">{ascents.length} vnosov</p>
-            <Button size="sm" className="gap-1.5" onClick={() => setAddingAscent((v) => !v)}>
+            <Button size="sm" className="gap-1.5" onClick={() => (addingAscent ? setAddingAscent(false) : openAddAscent())}>
               <Plus className="h-4 w-4" /> Dodaj vzpon
             </Button>
           </div>
 
           {addingAscent && (
             <form onSubmit={saveAscent} className="p-5 rounded-xl border border-border bg-card mb-4 space-y-3">
-              <h3 className="font-inter font-semibold text-sm mb-1">Nov vnos</h3>
+              <h3 className="font-inter font-semibold text-sm mb-1">{editingAscentId ? "Uredi vnos" : "Nov vnos"}</h3>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <div className="col-span-1">
                   <label className="text-xs text-muted-foreground font-inter block mb-1">Datum *</label>
@@ -485,6 +581,10 @@ export default function AdminDashboard() {
                   <Input required placeholder="Ime Priimek" value={ascentForm.climber_name} onChange={(e) => setAscentForm((f) => ({ ...f, climber_name: e.target.value }))} />
                 </div>
                 <div className="col-span-1">
+                  <label className="text-xs text-muted-foreground font-inter block mb-1">Soplezalec</label>
+                  <Input placeholder="Ime Priimek" value={ascentForm.co_climber} onChange={(e) => setAscentForm((f) => ({ ...f, co_climber: e.target.value }))} />
+                </div>
+                <div className="col-span-1">
                   <label className="text-xs text-muted-foreground font-inter block mb-1">Kategorija *</label>
                   <select
                     value={ascentForm.category}
@@ -492,8 +592,10 @@ export default function AdminDashboard() {
                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-inter"
                   >
                     <option value="alpinistični">Alpinistični vzponi</option>
+                    <option value="večraztežajne">Večraztežajne smeri</option>
+                    <option value="turni">Turni smuki</option>
                     <option value="športnoplezalni">Športnoplezalni vzponi</option>
-                    <option value="turni">Turni in smuki</option>
+                    <option value="frikanje">Frikanje</option>
                   </select>
                 </div>
                 <div className="col-span-1">
@@ -505,7 +607,7 @@ export default function AdminDashboard() {
                   <Input placeholder="Trois Monts route, Botoks…" value={ascentForm.route_name} onChange={(e) => setAscentForm((f) => ({ ...f, route_name: e.target.value }))} />
                 </div>
                 <div className="col-span-1">
-                  <label className="text-xs text-muted-foreground font-inter block mb-1">Težavnost</label>
+                  <label className="text-xs text-muted-foreground font-inter block mb-1">Ocena</label>
                   <Input placeholder="7a+, TD-, D+/5c…" value={ascentForm.difficulty} onChange={(e) => setAscentForm((f) => ({ ...f, difficulty: e.target.value }))} />
                 </div>
                 <div className="col-span-1">
@@ -516,12 +618,16 @@ export default function AdminDashboard() {
                   <label className="text-xs text-muted-foreground font-inter block mb-1">Opomba</label>
                   <Input placeholder="Neobvezno…" value={ascentForm.notes} onChange={(e) => setAscentForm((f) => ({ ...f, notes: e.target.value }))} />
                 </div>
+                <label className="col-span-2 sm:col-span-3 flex items-center gap-2.5 cursor-pointer">
+                  <Switch checked={ascentForm.is_public} onCheckedChange={(v) => setAscentForm((f) => ({ ...f, is_public: v }))} />
+                  <span className="text-xs text-muted-foreground font-inter">{ascentForm.is_public ? "Javno viden vsem obiskovalcem" : "Viden samo prijavljenim članom"}</span>
+                </label>
               </div>
               <div className="flex gap-2 pt-1">
                 <Button type="submit" size="sm" disabled={savingAscent} className="gap-1.5">
                   {savingAscent && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Shrani
                 </Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => setAddingAscent(false)}>Prekliči</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => { setAddingAscent(false); setEditingAscentId(null); }}>Prekliči</Button>
               </div>
             </form>
           )}
@@ -533,17 +639,25 @@ export default function AdminDashboard() {
                 <div className="flex-shrink-0 w-16 text-xs font-inter text-primary font-semibold">{a.date}</div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-inter font-semibold text-sm">{a.climber_name}</span>
+                    <span className="font-inter font-semibold text-sm">{a.climber_name}{a.co_climber ? ` / ${a.co_climber}` : ""}</span>
                     {a.location && <span className="text-sm text-muted-foreground truncate">{a.location}{a.route_name ? ` — ${a.route_name}` : ""}</span>}
                   </div>
                   <div className="flex gap-2 mt-1 flex-wrap">
                     <span className="text-[10px] font-inter px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                      {a.category === "alpinistični" ? "Alpinistični" : a.category === "športnoplezalni" ? "Športnoplezalni" : "Turni"}
+                      {ASCENT_CATEGORY_LABELS[a.category] || a.category}
                     </span>
+                    {a.is_public === false && (
+                      <span className="text-[10px] font-inter px-2 py-0.5 rounded-full bg-muted text-muted-foreground flex items-center gap-1" title="Vidno samo prijavljenim članom">
+                        <Lock className="h-2.5 w-2.5" /> Zasebno
+                      </span>
+                    )}
                     {a.difficulty && <span className="text-[10px] font-inter px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">{a.difficulty}</span>}
                     {a.altitude && <span className="text-[10px] font-inter px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{a.altitude} m</span>}
                   </div>
                 </div>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground flex-shrink-0" onClick={() => openEditAscent(a)}>
+                  <Edit className="h-4 w-4" />
+                </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive flex-shrink-0">
@@ -558,6 +672,87 @@ export default function AdminDashboard() {
                     <AlertDialogFooter>
                       <AlertDialogCancel>Prekliči</AlertDialogCancel>
                       <AlertDialogAction onClick={() => deleteAscent(a.id)} className="bg-destructive text-destructive-foreground">Izbriši</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="camps" className="mt-6">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm text-muted-foreground font-inter">{camps.length} taborov</p>
+            <Button size="sm" className="gap-1.5" onClick={() => (addingCamp ? setAddingCamp(false) : openAddCamp())}>
+              <Plus className="h-4 w-4" /> Dodaj tabor
+            </Button>
+          </div>
+
+          {addingCamp && (
+            <form onSubmit={saveCamp} className="p-5 rounded-xl border border-border bg-card mb-4 space-y-3">
+              <h3 className="font-inter font-semibold text-sm mb-1">{editingCampId ? "Uredi tabor" : "Nov tabor"}</h3>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="text-xs text-muted-foreground font-inter block mb-1">Naziv *</label>
+                  <Input required placeholder="Poletni tabor Paklenica" value={campForm.title} onChange={(e) => setCampForm((f) => ({ ...f, title: e.target.value }))} />
+                </div>
+                <div className="col-span-1">
+                  <label className="text-xs text-muted-foreground font-inter block mb-1">Datum od *</label>
+                  <Input type="date" required value={campForm.date_from} onChange={(e) => setCampForm((f) => ({ ...f, date_from: e.target.value }))} />
+                </div>
+                <div className="col-span-1">
+                  <label className="text-xs text-muted-foreground font-inter block mb-1">Datum do</label>
+                  <Input type="date" value={campForm.date_to} onChange={(e) => setCampForm((f) => ({ ...f, date_to: e.target.value }))} />
+                </div>
+                <div className="col-span-2 sm:col-span-3">
+                  <label className="text-xs text-muted-foreground font-inter block mb-1">Lokacija</label>
+                  <Input placeholder="Paklenica, Hrvaška…" value={campForm.location} onChange={(e) => setCampForm((f) => ({ ...f, location: e.target.value }))} />
+                </div>
+                <div className="col-span-2 sm:col-span-3">
+                  <label className="text-xs text-muted-foreground font-inter block mb-1">Opis (prikazan na kartici)</label>
+                  <Input placeholder="Kratek opis…" value={campForm.summary} onChange={(e) => setCampForm((f) => ({ ...f, summary: e.target.value }))} />
+                </div>
+                <div className="col-span-2 sm:col-span-3">
+                  <label className="text-xs text-muted-foreground font-inter block mb-1">Podrobnosti</label>
+                  <textarea rows={4} placeholder="Kje se začne in konča, kaj s seboj, pravila, program… (neobvezno)" value={campForm.description} onChange={(e) => setCampForm((f) => ({ ...f, description: e.target.value }))} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-inter resize-vertical" />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground font-inter">Za nalaganje slike uredite tabor na strani /tabori.</p>
+              <div className="flex gap-2 pt-1">
+                <Button type="submit" size="sm" disabled={savingCamp} className="gap-1.5">
+                  {savingCamp && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Shrani
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => { setAddingCamp(false); setEditingCampId(null); }}>Prekliči</Button>
+              </div>
+            </form>
+          )}
+
+          <div className="space-y-2">
+            {camps.length === 0 && <p className="text-muted-foreground text-sm font-inter py-8 text-center">Še ni taborov.</p>}
+            {camps.map((c) => (
+              <div key={c.id} className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card">
+                <div className="flex-shrink-0 w-24 text-xs font-inter text-primary font-semibold">{c.date_from}{c.date_to ? ` – ${c.date_to}` : ""}</div>
+                <div className="flex-1 min-w-0">
+                  <span className="font-inter font-semibold text-sm">{c.title}</span>
+                  {c.location && <span className="text-sm text-muted-foreground truncate ml-2">{c.location}</span>}
+                </div>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground flex-shrink-0" onClick={() => openEditCamp(c)}>
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive flex-shrink-0">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Izbriši tabor?</AlertDialogTitle>
+                      <AlertDialogDescription>{c.title}</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Prekliči</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => deleteCamp(c.id)} className="bg-destructive text-destructive-foreground">Izbriši</AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>

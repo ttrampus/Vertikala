@@ -9,6 +9,7 @@ import { thumbUrl, thumbFallback } from "@/lib/thumbs";
 import { format } from "date-fns";
 import { sl } from "date-fns/locale";
 import TagBadge from "../components/TagBadge";
+import PrivateBadge from "../components/PrivateBadge";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -32,7 +33,7 @@ export default function Dashboard() {
       setLoading(true);
       const { data, error } = await supabase
         .from("BlogPost")
-        .select("id, title, status, category, featured_image, created_date")
+        .select("id, title, status, category, featured_image, created_date, is_public")
         .eq("created_by_id", user.id)
         .is("deleted_at", null)
         .order("created_date", { ascending: false })
@@ -165,6 +166,7 @@ export default function Dashboard() {
               </div>
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 {post.category && <TagBadge tag={post.category} small />}
+                {post.is_public === false && <PrivateBadge small />}
                 <span>{format(new Date(post.created_date), "d. MMM yyyy", { locale: sl })}</span>
               </div>
             </div>

@@ -7,7 +7,6 @@ const LINKS = [
   { label: "Gore in ljudje", url: "http://www.gore-ljudje.net/" },
   { label: "KA PZS", url: "http://ka.pzs.si/" },
   { label: "Ledno-snežne razmere", url: "http://razmere.ice-climbing.net/" },
-  { label: "Radarska slika padavin za EU", url: "http://www.radareu.cz/" },
   { label: "Slo-alp", url: "http://www.slo-alp.com/" },
   { label: "Turna smuka", url: "http://razmere.turni-klub-gora.si/RazmereVsebina.php?Obv=Vse#ObvRazmere9118" },
   { label: "Vreme", url: "http://www.meteoblue.com/en_US/weather/forecast/week/ljubljana_si_3002" },

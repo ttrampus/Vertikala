@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import ImageUploader from "../components/ImageUploader";
 import ClimbMetaForm from "../components/ClimbMetaForm";
 
@@ -590,7 +591,7 @@ export default function CreatePost() {
   const [showSideBySide, setShowSideBySide] = useState(false);
 
   const [form, setForm] = useState({
-    title: "", summary: "", content: "", featured_image: "", images: [], tags: [], category: "climbs", climb_metadata: {},
+    title: "", summary: "", content: "", featured_image: "", images: [], tags: [], category: "climbs", climb_metadata: {}, is_public: true,
   });
   const [tagInput, setTagInput] = useState("");
 
@@ -659,16 +660,21 @@ export default function CreatePost() {
     try {
       const climbMeta = form.category === "climbs" && Object.keys(form.climb_metadata || {}).length > 0
         ? form.climb_metadata : null;
+      // .select("id") — author_email is revoked from anon/authenticated (see
+      // supabase/restrict_blogpost_email.sql), and a bare select() defaults
+      // to select=* on the insert's return representation, which errors
+      // against a table that only has column-level grants. We only need the
+      // new row's id anyway, to navigate to it below.
       const { data, error } = await supabase.from("BlogPost")
-        .insert([{ title: form.title, summary: form.summary, content: form.content, featured_image: form.featured_image, images: form.images, tags: form.tags, category: form.category, climb_metadata: climbMeta, status, created_by_id: user.id, created_by: user.email, author_email: user.email, author_name: profile?.display_name || user.email }])
-        .select().single();
+        .insert([{ title: form.title, summary: form.summary, content: form.content, featured_image: form.featured_image, images: form.images, tags: form.tags, category: form.category, climb_metadata: climbMeta, is_public: form.is_public, status, created_by_id: user.id, created_by: user.email, author_email: user.email, author_name: profile?.display_name || user.email }])
+        .select("id").single();
       if (error) throw error;
       // replace: the finished form shouldn't stay in history — back from the
       // new post should return to where the author started, not the stale form.
       navigate(`/post/${data.id}`, { replace: true });
     } catch (err) {
       console.error(err);
-      alert("Shranjevanje objave ni uspelo");
+      alert("Shranjevanje objave ni uspelo: " + (err?.message || "neznana napaka"));
     } finally {
       setSaving(false);
     }
@@ -733,6 +739,15 @@ export default function CreatePost() {
               {categories.map((cat) => <SelectItem key={cat} value={cat}>{categoryLabels[cat]}</SelectItem>)}
             </SelectContent>
           </Select>
+        </div>
+
+        {/* Visibility */}
+        <div>
+          <label className="block text-sm font-inter font-medium mb-2">Vidnost</label>
+          <label className="flex items-center gap-2.5 cursor-pointer w-fit">
+            <Switch checked={form.is_public} onCheckedChange={(v) => updateForm("is_public", v)} />
+            <span className="text-sm text-muted-foreground font-inter">{form.is_public ? "Javno vidno vsem obiskovalcem" : "Vidno samo prijavljenim članom"}</span>
+          </label>
         </div>
 
         {/* Tags */}
