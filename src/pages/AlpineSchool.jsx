@@ -97,7 +97,7 @@ export default function AlpineSchool() {
                 </div>
                 <div>
                   <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '18px', marginBottom: '8px', color: theme.text }}>Četrtek, 06.03.2025</div>
-                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '14px', color: theme.textMid, lineHeight: 1.6 }}>Klubski prostori v Tačnu<br />Pločnarska 8, 1000 Ljubljana<br />Število udeležencev bo omejeno.</div>
+                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '14px', color: theme.textMid, lineHeight: 1.6 }}>Klubski prostori v Tacnu<br />Pločanska 8, 1000 Ljubljana<br />Število udeležencev bo omejeno.</div>
                 </div>
               </div>
             </div>
@@ -148,7 +148,7 @@ export default function AlpineSchool() {
               {[
                 { icon: '✉', text: 'gregor.trampus@siol.net' },
                 { icon: '📞', text: '041 377 159' },
-                { icon: '📍', text: 'Pločnarska 8, Tačen, Ljubljana' },
+                { icon: '📍', text: 'Pločanska 8, Tacen, Ljubljana' },
               ].map((c, i) => (
                 <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: i < 2 ? '14px' : 0 }}>
                   <span style={{ fontSize: '14px', marginTop: '1px', opacity: 0.6 }}>{c.icon}</span>
