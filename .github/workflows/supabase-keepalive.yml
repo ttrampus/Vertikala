@@ -18,16 +18,18 @@ jobs:
     steps:
       - name: Query Supabase
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           set -euo pipefail
+          echo "Target: $SUPABASE_URL"
+          rc=0
           code=$(curl -sS -o /tmp/body -w '%{http_code}' \
             --retry 5 --retry-delay 30 --retry-all-errors --max-time 60 \
             -H "apikey: $SUPABASE_ANON_KEY" \
             -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
-            "$SUPABASE_URL/rest/v1/camps?select=id&limit=1")
-          echo "HTTP $code"
+            "$SUPABASE_URL/rest/v1/camps?select=id&limit=1") || rc=$?
+          echo "curl exit $rc, HTTP $code"
           head -c 500 /tmp/body; echo
           if [ "$code" != "200" ]; then
             echo "::error::Supabase keepalive query failed with HTTP $code"
