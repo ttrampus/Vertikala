@@ -16,14 +16,13 @@ import { Lock } from "lucide-react";
 const CATEGORIES = [
   { key: '', label: 'Vse' },
   { key: 'climbs', label: 'Vzponi' },
-  { key: 'trips', label: 'Odprave' },
+  { key: 'trips', label: 'Izleti' },
   { key: 'events', label: 'Dogodki' },
-  { key: 'gear', label: 'Oprema' },
   { key: 'training', label: 'Trening' },
   { key: 'news', label: 'Novice' },
 ];
 
-const CAT_LABEL = { climbs: 'Vzponi', trips: 'Izleti', events: 'Dogodki', gear: 'Oprema', training: 'Trening', news: 'Novice' };
+const CAT_LABEL = { climbs: 'Vzponi', trips: 'Izleti', events: 'Dogodki', training: 'Trening', news: 'Novice' };
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const isUuid = (v) => typeof v === "string" && UUID_RE.test(v);

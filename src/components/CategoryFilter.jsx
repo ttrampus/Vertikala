@@ -1,4 +1,4 @@
-const categories = ["all", "climbs", "trips", "events", "gear", "training", "news"];
+const categories = ["all", "climbs", "trips", "events", "training", "news"];
 
 export default function CategoryFilter({ selected, onSelect }) {
   return (
