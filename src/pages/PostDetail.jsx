@@ -53,7 +53,9 @@ export default function PostDetail() {
     const img = e.target.closest("img");
     if (!img || !bodyRef.current?.contains(img)) return;
     if (img.closest("a")) return; // linked images keep their link behavior
-    const imgs = [...bodyRef.current.querySelectorAll("img")].filter((el) => !el.closest("a"));
+    if (img.matches(".wp-smiley, .emoji")) return; // inline emoji, not content
+    const imgs = [...bodyRef.current.querySelectorAll("img")]
+      .filter((el) => !el.closest("a") && !el.matches(".wp-smiley, .emoji"));
     setBodyLightbox({ images: imgs.map((el) => el.src), index: imgs.indexOf(img) });
   };
 
@@ -211,7 +213,7 @@ export default function PostDetail() {
           className="font-serif text-lg leading-[1.65] prose prose-slate dark:prose-invert max-w-none
             prose-headings:font-inter prose-headings:tracking-tight
             prose-h2:text-2xl prose-h3:text-xl
-            prose-a:text-primary prose-img:rounded-xl prose-img:cursor-pointer"
+            prose-a:text-primary"
           dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content, {
             ADD_TAGS: ["iframe"],
             ADD_ATTR: ["allow", "allowfullscreen", "frameborder", "src", "width", "height", "data-type", "data-video-type", "data-youtube-id", "controls"],

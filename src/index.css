@@ -350,6 +350,18 @@ img { max-width: 100%; }
   max-width: 100%;
   height: auto;
   float: none;
+  /* Clicking a content image opens the lightbox (see PostDetail's
+     handleBodyClick), so it has to look clickable. This lives here rather than
+     as a `prose-img:` utility because @tailwindcss/typography is not installed
+     — that modifier compiles to nothing. */
+  cursor: pointer;
+}
+/* Linked images keep their link behaviour, and emoji are inline text, not
+   something to open — neither should advertise the lightbox. */
+.prose a img,
+.prose img.wp-smiley,
+.prose img.emoji {
+  cursor: inherit;
 }
 /* WP emoji/smiley images must keep flowing with the text */
 .prose img.wp-smiley,
