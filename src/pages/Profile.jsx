@@ -12,6 +12,21 @@ function initials(name) {
   return name.trim().split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase()).join("");
 }
 
+// Module scope, not inside the component: a component defined in the render
+// body is a new type every render and remounts its subtree each time.
+function Banner({ msg }) {
+  if (!msg) return null;
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: "8px", marginTop: "16px",
+      fontFamily: "'Inter', sans-serif", fontSize: "13px",
+      color: msg.ok ? "#16a34a" : "#ef4444",
+    }}>
+      {msg.ok ? <Check size={15} /> : <AlertCircle size={15} />} {msg.text}
+    </div>
+  );
+}
+
 export default function Profile() {
   const theme = useContext(ThemeCtx);
   const { user, profile, setProfile } = useAuth();
@@ -71,16 +86,6 @@ export default function Profile() {
     letterSpacing: "0.08em", textTransform: "uppercase", padding: "12px 28px",
     borderRadius: "8px", display: "inline-flex", alignItems: "center", gap: "8px",
   });
-
-  const Banner = ({ msg }) => msg ? (
-    <div style={{
-      display: "flex", alignItems: "center", gap: "8px", marginTop: "16px",
-      fontFamily: "'Inter', sans-serif", fontSize: "13px",
-      color: msg.ok ? "#16a34a" : "#ef4444",
-    }}>
-      {msg.ok ? <Check size={15} /> : <AlertCircle size={15} />} {msg.text}
-    </div>
-  ) : null;
 
   // ── Avatar upload ───────────────────────────────────────────────
   const onPickFile = async (e) => {

@@ -4,6 +4,14 @@ import { uploadToSupabase } from "@/lib/uploadToSupabase";
 import DateField from "@/components/DateField";
 import { DEFAULT_SCHOOL } from "@/lib/schoolContent";
 
+// Defined at module scope on purpose. A component declared inside the render
+// body is a NEW component type on every render, so React unmounts and remounts
+// its subtree — which destroys the focused <input> and drops the caret after
+// every single keystroke.
+function Field({ lbl, labelStyle, children }) {
+  return <div><label style={labelStyle}>{lbl}</label>{children}</div>;
+}
+
 // Edit panel for the whole Alpine school page. Deliberately a form of labelled
 // fields rather than free rich text: the content changes once a year, and a
 // fixed shape means a paste can't break the page layout.
@@ -62,10 +70,6 @@ export default function SchoolEditForm({ initial, theme, onSave, onClose, saving
     letterSpacing: "0.08em", textTransform: "uppercase", padding: "8px 14px", borderRadius: "6px",
   };
 
-  const Field = ({ lbl, children }) => (
-    <div><label style={label}>{lbl}</label>{children}</div>
-  );
-
   return (
     <div
       onClick={() => !saving && onClose()}
@@ -87,17 +91,17 @@ export default function SchoolEditForm({ initial, theme, onSave, onClose, saving
         {/* ── Hero ── */}
         <h3 style={section}>Naslovni del</h3>
         <div style={{ display: "grid", gap: "12px" }}>
-          <Field lbl="Nadnaslov"><input value={form.hero.eyebrow} onChange={(e) => setSection("hero", "eyebrow", e.target.value)} style={input} /></Field>
+          <Field labelStyle={label} lbl="Nadnaslov"><input value={form.hero.eyebrow} onChange={(e) => setSection("hero", "eyebrow", e.target.value)} style={input} /></Field>
           <div style={{ display: "grid", gridTemplateColumns: "var(--col-2)", gap: "12px" }}>
-            <Field lbl="Naslov"><input value={form.hero.title} onChange={(e) => setSection("hero", "title", e.target.value)} style={input} /></Field>
-            <Field lbl="Naslov — oranžni del"><input value={form.hero.titleAccent} onChange={(e) => setSection("hero", "titleAccent", e.target.value)} style={input} /></Field>
+            <Field labelStyle={label} lbl="Naslov"><input value={form.hero.title} onChange={(e) => setSection("hero", "title", e.target.value)} style={input} /></Field>
+            <Field labelStyle={label} lbl="Naslov — oranžni del"><input value={form.hero.titleAccent} onChange={(e) => setSection("hero", "titleAccent", e.target.value)} style={input} /></Field>
           </div>
-          <Field lbl="Podnaslov"><textarea rows={2} value={form.hero.subtitle} onChange={(e) => setSection("hero", "subtitle", e.target.value)} style={{ ...input, resize: "vertical" }} /></Field>
+          <Field labelStyle={label} lbl="Podnaslov"><textarea rows={2} value={form.hero.subtitle} onChange={(e) => setSection("hero", "subtitle", e.target.value)} style={{ ...input, resize: "vertical" }} /></Field>
           <div style={{ display: "grid", gridTemplateColumns: "var(--col-2)", gap: "12px" }}>
-            <Field lbl="Besedilo gumba"><input value={form.hero.ctaLabel} onChange={(e) => setSection("hero", "ctaLabel", e.target.value)} style={input} /></Field>
-            <Field lbl="E-pošta za prijave"><input type="email" value={form.hero.ctaEmail} onChange={(e) => setSection("hero", "ctaEmail", e.target.value)} style={input} /></Field>
+            <Field labelStyle={label} lbl="Besedilo gumba"><input value={form.hero.ctaLabel} onChange={(e) => setSection("hero", "ctaLabel", e.target.value)} style={input} /></Field>
+            <Field labelStyle={label} lbl="E-pošta za prijave"><input type="email" value={form.hero.ctaEmail} onChange={(e) => setSection("hero", "ctaEmail", e.target.value)} style={input} /></Field>
           </div>
-          <Field lbl="Naslovna slika">
+          <Field labelStyle={label} lbl="Naslovna slika">
             {form.hero.image ? (
               <div style={{ position: "relative", borderRadius: "8px", overflow: "hidden", height: "150px" }}>
                 <img src={form.hero.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
@@ -131,7 +135,7 @@ export default function SchoolEditForm({ initial, theme, onSave, onClose, saving
         {/* ── About ── */}
         <h3 style={section}>O šoli</h3>
         <div style={{ display: "grid", gap: "12px" }}>
-          <Field lbl="Naslov razdelka"><input value={form.about.title} onChange={(e) => setSection("about", "title", e.target.value)} style={input} /></Field>
+          <Field labelStyle={label} lbl="Naslov razdelka"><input value={form.about.title} onChange={(e) => setSection("about", "title", e.target.value)} style={input} /></Field>
           {form.about.paragraphs.map((p, i) => (
             <div key={i} style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
               <textarea rows={3} value={p}
@@ -152,17 +156,17 @@ export default function SchoolEditForm({ initial, theme, onSave, onClose, saving
         <h3 style={section}>Uvodni sestanek</h3>
         <div style={{ display: "grid", gap: "12px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "var(--col-2)", gap: "12px" }}>
-            <Field lbl="Naslov razdelka"><input value={form.meeting.title} onChange={(e) => setSection("meeting", "title", e.target.value)} style={input} /></Field>
-            <Field lbl="Datum"><DateField value={form.meeting.date} onChange={(v) => setSection("meeting", "date", v)} style={input} /></Field>
+            <Field labelStyle={label} lbl="Naslov razdelka"><input value={form.meeting.title} onChange={(e) => setSection("meeting", "title", e.target.value)} style={input} /></Field>
+            <Field labelStyle={label} lbl="Datum"><DateField value={form.meeting.date} onChange={(v) => setSection("meeting", "date", v)} style={input} /></Field>
           </div>
-          <Field lbl="Kraj"><input value={form.meeting.venue} onChange={(e) => setSection("meeting", "venue", e.target.value)} style={input} /></Field>
-          <Field lbl="Naslov"><input value={form.meeting.address} onChange={(e) => setSection("meeting", "address", e.target.value)} style={input} /></Field>
-          <Field lbl="Opomba"><input value={form.meeting.note} onChange={(e) => setSection("meeting", "note", e.target.value)} style={input} /></Field>
+          <Field labelStyle={label} lbl="Kraj"><input value={form.meeting.venue} onChange={(e) => setSection("meeting", "venue", e.target.value)} style={input} /></Field>
+          <Field labelStyle={label} lbl="Naslov"><input value={form.meeting.address} onChange={(e) => setSection("meeting", "address", e.target.value)} style={input} /></Field>
+          <Field labelStyle={label} lbl="Opomba"><input value={form.meeting.note} onChange={(e) => setSection("meeting", "note", e.target.value)} style={input} /></Field>
         </div>
 
         {/* ── Modules ── */}
         <h3 style={section}>{form.modulesTitle || "Program šole"}</h3>
-        <Field lbl="Naslov razdelka"><input value={form.modulesTitle} onChange={(e) => setForm((f) => ({ ...f, modulesTitle: e.target.value }))} style={{ ...input, marginBottom: "12px" }} /></Field>
+        <Field labelStyle={label} lbl="Naslov razdelka"><input value={form.modulesTitle} onChange={(e) => setForm((f) => ({ ...f, modulesTitle: e.target.value }))} style={{ ...input, marginBottom: "12px" }} /></Field>
         {form.modules.map((m, i) => (
           <div key={i} style={rowCard}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -182,7 +186,7 @@ export default function SchoolEditForm({ initial, theme, onSave, onClose, saving
 
         {/* ── Instructors ── */}
         <h3 style={section}>{form.instructorsTitle || "Inštruktorji"}</h3>
-        <Field lbl="Naslov razdelka"><input value={form.instructorsTitle} onChange={(e) => setForm((f) => ({ ...f, instructorsTitle: e.target.value }))} style={{ ...input, marginBottom: "12px" }} /></Field>
+        <Field labelStyle={label} lbl="Naslov razdelka"><input value={form.instructorsTitle} onChange={(e) => setForm((f) => ({ ...f, instructorsTitle: e.target.value }))} style={{ ...input, marginBottom: "12px" }} /></Field>
         {form.instructors.map((p, i) => (
           <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: "8px", marginBottom: "8px" }}>
             <input placeholder="Ime in priimek" value={p.name} onChange={(e) => setListItem("instructors", i, "name", e.target.value)} style={input} />
@@ -197,16 +201,16 @@ export default function SchoolEditForm({ initial, theme, onSave, onClose, saving
         {/* ── Sidebar ── */}
         <h3 style={section}>Stranski stolpec</h3>
         <div style={{ display: "grid", gap: "12px" }}>
-          <Field lbl="Naslov kontakta"><input value={form.sidebar.contactTitle} onChange={(e) => setSection("sidebar", "contactTitle", e.target.value)} style={input} /></Field>
+          <Field labelStyle={label} lbl="Naslov kontakta"><input value={form.sidebar.contactTitle} onChange={(e) => setSection("sidebar", "contactTitle", e.target.value)} style={input} /></Field>
           <div style={{ display: "grid", gridTemplateColumns: "var(--col-2)", gap: "12px" }}>
-            <Field lbl="E-pošta"><input type="email" value={form.sidebar.email} onChange={(e) => setSection("sidebar", "email", e.target.value)} style={input} /></Field>
-            <Field lbl="Telefon"><input value={form.sidebar.phone} onChange={(e) => setSection("sidebar", "phone", e.target.value)} style={input} /></Field>
+            <Field labelStyle={label} lbl="E-pošta"><input type="email" value={form.sidebar.email} onChange={(e) => setSection("sidebar", "email", e.target.value)} style={input} /></Field>
+            <Field labelStyle={label} lbl="Telefon"><input value={form.sidebar.phone} onChange={(e) => setSection("sidebar", "phone", e.target.value)} style={input} /></Field>
           </div>
-          <Field lbl="Naslov"><input value={form.sidebar.address} onChange={(e) => setSection("sidebar", "address", e.target.value)} style={input} /></Field>
-          <Field lbl="Naslov akreditacije"><input value={form.sidebar.accreditationTitle} onChange={(e) => setSection("sidebar", "accreditationTitle", e.target.value)} style={input} /></Field>
-          <Field lbl="Besedilo akreditacije"><textarea rows={2} value={form.sidebar.accreditationText} onChange={(e) => setSection("sidebar", "accreditationText", e.target.value)} style={{ ...input, resize: "vertical" }} /></Field>
-          <Field lbl="Naslov opozorila"><input value={form.sidebar.noticeTitle} onChange={(e) => setSection("sidebar", "noticeTitle", e.target.value)} style={input} /></Field>
-          <Field lbl="Besedilo opozorila"><textarea rows={2} value={form.sidebar.noticeText} onChange={(e) => setSection("sidebar", "noticeText", e.target.value)} style={{ ...input, resize: "vertical" }} /></Field>
+          <Field labelStyle={label} lbl="Naslov"><input value={form.sidebar.address} onChange={(e) => setSection("sidebar", "address", e.target.value)} style={input} /></Field>
+          <Field labelStyle={label} lbl="Naslov akreditacije"><input value={form.sidebar.accreditationTitle} onChange={(e) => setSection("sidebar", "accreditationTitle", e.target.value)} style={input} /></Field>
+          <Field labelStyle={label} lbl="Besedilo akreditacije"><textarea rows={2} value={form.sidebar.accreditationText} onChange={(e) => setSection("sidebar", "accreditationText", e.target.value)} style={{ ...input, resize: "vertical" }} /></Field>
+          <Field labelStyle={label} lbl="Naslov opozorila"><input value={form.sidebar.noticeTitle} onChange={(e) => setSection("sidebar", "noticeTitle", e.target.value)} style={input} /></Field>
+          <Field labelStyle={label} lbl="Besedilo opozorila"><textarea rows={2} value={form.sidebar.noticeText} onChange={(e) => setSection("sidebar", "noticeText", e.target.value)} style={{ ...input, resize: "vertical" }} /></Field>
         </div>
 
         {error && <div style={{ marginTop: "16px", color: "#E8501A", fontSize: "13px", fontFamily: "'Inter', sans-serif" }}>{error}</div>}
