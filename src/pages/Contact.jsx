@@ -126,7 +126,7 @@ export default function Contact() {
                 </div>
                 <div>
                   <label style={labelStyle}>Sporočilo *</label>
-                  <textarea required value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} placeholder="Vaše sporočilo..." rows={6}
+                  <textarea required value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} placeholder="Vaše sporočilo…" rows={6}
                     style={{ ...inputStyle, resize: 'vertical', minHeight: '140px' }}
                     onFocus={e => e.target.style.borderColor = 'rgba(232,80,26,0.5)'} onBlur={e => e.target.style.borderColor = theme.border} />
                 </div>

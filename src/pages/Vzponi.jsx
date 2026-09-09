@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { thumbUrl } from "@/lib/thumbs";
 import CardImage from "@/components/CardImage";
 import HeroBg from "@/components/HeroBg";
+import DateField from "@/components/DateField";
 import { formatDate, toDate } from "@/lib/dates";
 import ExcelJS from "exceljs";
 import { Trash2, Lock, Search, Download, Plus } from "lucide-react";
@@ -28,7 +29,7 @@ const CATEGORIES = [
 const CATEGORY_LABELS = {
   "alpinistični": "Alpinistični",
   "večraztežajne": "Večraztežajne smeri",
-  "turni": "Turni / smuk",
+  "turni": "Turni smuki",
   "frikanje": "Frikanje",
 };
 
@@ -426,7 +427,7 @@ export default function Vzponi() {
             <div style={{ display: "grid", gridTemplateColumns: "var(--col-2)", gap: "16px" }}>
               <div>
                 <label style={labelStyle}>Datum *</label>
-                <input type="date" required value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))} style={inputStyle} />
+                <DateField required value={form.date} onChange={(v) => setForm((f) => ({ ...f, date: v }))} style={inputStyle} />
               </div>
               <div>
                 <label style={labelStyle}>Plezalec *</label>

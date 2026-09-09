@@ -23,7 +23,7 @@ const CATEGORIES = [
   { key: 'news', label: 'Novice' },
 ];
 
-const CAT_LABEL = { climbs: 'Vzponi', trips: 'Odprave', events: 'Dogodki', gear: 'Oprema', training: 'Trening', news: 'Novice' };
+const CAT_LABEL = { climbs: 'Vzponi', trips: 'Izleti', events: 'Dogodki', gear: 'Oprema', training: 'Trening', news: 'Novice' };
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const isUuid = (v) => typeof v === "string" && UUID_RE.test(v);
@@ -225,7 +225,7 @@ export default function Home() {
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Išči objave..."
+              placeholder="Išči objave…"
               style={{ width: '100%', boxSizing: 'border-box', background: theme.inputBg, border: `1px solid ${theme.border}`, borderRadius: '6px', padding: '11px 14px 11px 40px', color: theme.text, fontFamily: "'Inter', sans-serif", fontSize: '14px', outline: 'none', transition: 'border-color 0.2s, background 0.4s' }}
               onFocus={e => e.target.style.borderColor = 'rgba(232,80,26,0.5)'}
               onBlur={e => e.target.style.borderColor = theme.border}

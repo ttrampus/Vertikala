@@ -18,12 +18,13 @@ import { Switch } from "@/components/ui/switch";
 import { softDeletePosts, restorePosts, purgePostsWithImages } from "@/lib/deletePosts";
 import TagBadge from "../components/TagBadge";
 import PrivateBadge from "../components/PrivateBadge";
+import DateField from "@/components/DateField";
 
 const EMPTY_ASCENT_FORM = { date: "", climber_name: "", co_climber: "", category: "alpinistični", location: "", route_name: "", difficulty: "", altitude: "", notes: "", is_public: true };
 const ASCENT_CATEGORY_LABELS = {
   "alpinistični": "Alpinistični",
   "večraztežajne": "Večraztežajne smeri",
-  "turni": "Turni",
+  "turni": "Turni smuki",
   "frikanje": "Frikanje",
 };
 const EMPTY_CAMP_FORM = { title: "", date_from: "", date_to: "", location: "", summary: "", description: "" };
@@ -579,7 +580,7 @@ export default function AdminDashboard() {
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <div className="col-span-1">
                   <label className="text-xs text-muted-foreground font-inter block mb-1">Datum *</label>
-                  <Input type="date" required value={ascentForm.date} onChange={(e) => setAscentForm((f) => ({ ...f, date: e.target.value }))} />
+                  <DateField required value={ascentForm.date} onChange={(v) => setAscentForm((f) => ({ ...f, date: v }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-inter" />
                 </div>
                 <div className="col-span-1">
                   <label className="text-xs text-muted-foreground font-inter block mb-1">Plezalec *</label>
@@ -702,11 +703,11 @@ export default function AdminDashboard() {
                 </div>
                 <div className="col-span-1">
                   <label className="text-xs text-muted-foreground font-inter block mb-1">Datum od *</label>
-                  <Input type="date" required value={campForm.date_from} onChange={(e) => setCampForm((f) => ({ ...f, date_from: e.target.value }))} />
+                  <DateField required value={campForm.date_from} onChange={(v) => setCampForm((f) => ({ ...f, date_from: v }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-inter" />
                 </div>
                 <div className="col-span-1">
                   <label className="text-xs text-muted-foreground font-inter block mb-1">Datum do</label>
-                  <Input type="date" value={campForm.date_to} onChange={(e) => setCampForm((f) => ({ ...f, date_to: e.target.value }))} />
+                  <DateField value={campForm.date_to} onChange={(v) => setCampForm((f) => ({ ...f, date_to: v }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-inter" />
                 </div>
                 <div className="col-span-2 sm:col-span-3">
                   <label className="text-xs text-muted-foreground font-inter block mb-1">Lokacija</label>
@@ -732,7 +733,7 @@ export default function AdminDashboard() {
           )}
 
           <div className="space-y-2">
-            {camps.length === 0 && <p className="text-muted-foreground text-sm font-inter py-8 text-center">Še ni taborov.</p>}
+            {camps.length === 0 && <p className="text-muted-foreground text-sm font-inter py-8 text-center">Še ni taborov ali dogodkov.</p>}
             {camps.map((c) => (
               <div key={c.id} className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card">
                 <div className="flex-shrink-0 w-24 text-xs font-inter text-primary font-semibold">{c.date_from}{c.date_to ? ` – ${c.date_to}` : ""}</div>
@@ -751,7 +752,7 @@ export default function AdminDashboard() {
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Izbriši tabor?</AlertDialogTitle>
+                      <AlertDialogTitle>Izbriši tabor / dogodek?</AlertDialogTitle>
                       <AlertDialogDescription>{c.title}</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -849,7 +850,7 @@ export default function AdminDashboard() {
                     {/* Progress bar */}
                     <div className="mb-4">
                       <div className="flex justify-between text-xs font-inter text-muted-foreground mb-1.5">
-                        <span>{bulkRunning ? "Pošiljam..." : "Končano"}</span>
+                        <span>{bulkRunning ? "Pošiljam…" : "Končano"}</span>
                         <span>{bulkProgress.sent} / {bulkProgress.total}</span>
                       </div>
                       <div className="h-1.5 rounded-full bg-muted overflow-hidden">

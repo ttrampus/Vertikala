@@ -8,6 +8,7 @@ import { thumbUrl } from "@/lib/thumbs";
 import HeroBg from "@/components/HeroBg";
 import CardImage from "@/components/CardImage";
 import StatsSection from "@/components/StatsSection";
+import DateField from "@/components/DateField";
 import { formatDate } from "@/lib/dates";
 import { Trash2, Upload, Loader2, X, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -327,11 +328,11 @@ export default function Tabori() {
               </div>
               <div>
                 <label style={labelStyle}>Datum od *</label>
-                <input type="date" required value={form.date_from} onChange={(e) => setForm((f) => ({ ...f, date_from: e.target.value }))} style={inputStyle} />
+                <DateField required value={form.date_from} onChange={(v) => setForm((f) => ({ ...f, date_from: v }))} style={inputStyle} />
               </div>
               <div>
                 <label style={labelStyle}>Datum do</label>
-                <input type="date" value={form.date_to} onChange={(e) => setForm((f) => ({ ...f, date_to: e.target.value }))} style={inputStyle} />
+                <DateField value={form.date_to} onChange={(v) => setForm((f) => ({ ...f, date_to: v }))} style={inputStyle} />
               </div>
               <div style={{ gridColumn: "1 / -1" }}>
                 <label style={labelStyle}>Lokacija</label>

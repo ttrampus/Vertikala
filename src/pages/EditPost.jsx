@@ -726,13 +726,13 @@ export default function EditPost() {
         <div>
           <label className="block text-sm font-inter font-medium mb-2">Naslov</label>
           <Input value={form.title} onChange={(e) => updateForm("title", e.target.value)}
-            placeholder="Naslov vaše objave..." className="text-xl font-inter font-bold h-14 border-border" />
+            placeholder="Naslov vaše objave…" className="text-xl font-inter font-bold h-14 border-border" />
         </div>
 
         <div>
           <label className="block text-sm font-inter font-medium mb-2">Povzetek</label>
           <Textarea value={form.summary} onChange={(e) => updateForm("summary", e.target.value)}
-            placeholder="Kratek opis vaše objave..." className="font-serif resize-none" rows={3} />
+            placeholder="Kratek opis vaše objave…" className="font-serif resize-none" rows={3} />
         </div>
 
         <div>
@@ -766,7 +766,7 @@ export default function EditPost() {
           <div className="flex gap-2">
             <Input value={tagInput} onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
-              placeholder="Dodaj oznako..." className="max-w-xs" />
+              placeholder="Dodaj oznako…" className="max-w-xs" />
             <Button variant="outline" onClick={addTag} size="sm">Dodaj</Button>
           </div>
         </div>
