@@ -65,7 +65,10 @@ begin
   end if;
 
   -- ── Vsebina kluba ostane, le odveže se od računa ────────────────────────
-  update public."BlogPost" set created_by_id = null where created_by_id = p_user_id;
+  -- POZOR: "BlogPost".created_by_id ni uuid ampak TEXT (ostanek uvoza iz
+  -- prejšnjega sistema), zato je potreben izrecen ::text — brez njega Postgres
+  -- javi "operator does not exist: text = uuid". Vse druge tabele imajo uuid.
+  update public."BlogPost" set created_by_id = null where created_by_id = p_user_id::text;
   update public.ascents   set created_by_id = null where created_by_id = p_user_id;
   update public.camps     set created_by_id = null where created_by_id = p_user_id;
   update public.invitations set invited_by  = null where invited_by   = p_user_id;
