@@ -211,7 +211,7 @@ export default function PostDetail() {
           className="font-serif text-lg leading-[1.65] prose prose-slate dark:prose-invert max-w-none
             prose-headings:font-inter prose-headings:tracking-tight
             prose-h2:text-2xl prose-h3:text-xl
-            prose-a:text-primary prose-img:rounded-xl prose-img:cursor-zoom-in"
+            prose-a:text-primary prose-img:rounded-xl prose-img:cursor-pointer"
           dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content, {
             ADD_TAGS: ["iframe"],
             ADD_ATTR: ["allow", "allowfullscreen", "frameborder", "src", "width", "height", "data-type", "data-video-type", "data-youtube-id", "controls"],
