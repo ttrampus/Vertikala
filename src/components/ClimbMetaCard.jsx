@@ -1,4 +1,5 @@
 import { Mountain, Clock, Ruler, TrendingUp, MapPin, Navigation } from "lucide-react";
+import { formatNumber } from "@/lib/numbers";
 
 const CONDITIONS_LABEL = {
   excellent: { label: "Odlični", color: "text-green-500", bg: "bg-green-500/10" },
@@ -41,16 +42,16 @@ export default function ClimbMetaCard({ meta }) {
           <StatCell icon={Mountain} label="Vrh" value={meta.peak} accent="text-primary" />
         )}
         {meta.elevation_m && (
-          <StatCell icon={TrendingUp} label="Nadmorska višina" value={`${meta.elevation_m} m`} />
+          <StatCell icon={TrendingUp} label="Nadmorska višina" value={`${formatNumber(meta.elevation_m)} m`} />
         )}
         {meta.grade && (
           <StatCell icon={Navigation} label="Težavnost" value={meta.grade} />
         )}
         {meta.duration_h && (
-          <StatCell icon={Clock} label="Čas vzpona" value={`${meta.duration_h} h`} />
+          <StatCell icon={Clock} label="Čas vzpona" value={`${formatNumber(meta.duration_h)} h`} />
         )}
         {meta.distance_km && (
-          <StatCell icon={Ruler} label="Razdalja" value={`${meta.distance_km} km`} />
+          <StatCell icon={Ruler} label="Razdalja" value={`${formatNumber(meta.distance_km)} km`} />
         )}
         {meta.route_name && (
           <StatCell icon={Navigation} label="Smer" value={meta.route_name} />

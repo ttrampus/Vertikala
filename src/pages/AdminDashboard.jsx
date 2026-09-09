@@ -19,6 +19,7 @@ import { softDeletePosts, restorePosts, purgePostsWithImages } from "@/lib/delet
 import TagBadge from "../components/TagBadge";
 import PrivateBadge from "../components/PrivateBadge";
 import DateField from "@/components/DateField";
+import { formatNumber } from "@/lib/numbers";
 
 const EMPTY_ASCENT_FORM = { date: "", climber_name: "", co_climber: "", category: "alpinistični", location: "", route_name: "", difficulty: "", altitude: "", notes: "", is_public: true };
 const ASCENT_CATEGORY_LABELS = {
@@ -657,7 +658,7 @@ export default function AdminDashboard() {
                       </span>
                     )}
                     {a.difficulty && <span className="text-[10px] font-inter px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">{a.difficulty}</span>}
-                    {a.altitude && <span className="text-[10px] font-inter px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{a.altitude} m</span>}
+                    {a.altitude && <span className="text-[10px] font-inter px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{formatNumber(a.altitude)} m</span>}
                   </div>
                 </div>
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground flex-shrink-0" onClick={() => openEditAscent(a)}>

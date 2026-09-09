@@ -3,6 +3,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Mountain } from "lucide-react";
+import DecimalField from "@/components/DecimalField";
 
 const CONDITIONS = [
   { value: "excellent", label: "Odlični" },
@@ -82,12 +83,11 @@ export default function ClimbMetaForm({ value = {}, onChange }) {
           <label className="block text-xs font-inter font-medium text-muted-foreground mb-1.5">
             Čas vzpona (ure)
           </label>
-          <Input
-            type="number"
-            step="0.5"
-            value={value.duration_h || ""}
-            onChange={(e) => update("duration_h", e.target.value ? Number(e.target.value) : "")}
-            placeholder="npr. 4.5"
+          <DecimalField
+            value={value.duration_h ?? ""}
+            onChange={(v) => update("duration_h", v)}
+            placeholder="npr. 4,5"
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           />
         </div>
 
@@ -95,12 +95,11 @@ export default function ClimbMetaForm({ value = {}, onChange }) {
           <label className="block text-xs font-inter font-medium text-muted-foreground mb-1.5">
             Razdalja (km)
           </label>
-          <Input
-            type="number"
-            step="0.1"
-            value={value.distance_km || ""}
-            onChange={(e) => update("distance_km", e.target.value ? Number(e.target.value) : "")}
-            placeholder="npr. 12"
+          <DecimalField
+            value={value.distance_km ?? ""}
+            onChange={(v) => update("distance_km", v)}
+            placeholder="npr. 12,5"
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           />
         </div>
 
