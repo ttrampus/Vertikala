@@ -3,6 +3,7 @@ import { Loader2, Upload, X, Plus, Trash2 } from "lucide-react";
 import { uploadToSupabase } from "@/lib/uploadToSupabase";
 import DateField from "@/components/DateField";
 import DraggableList from "@/components/DraggableList";
+import AutoTextarea from "@/components/AutoTextarea";
 import { withKeys } from "@/lib/pageContent";
 import { DEFAULT_SCHOOL } from "@/lib/schoolContent";
 
@@ -98,7 +99,7 @@ export default function SchoolEditForm({ initial, theme, onSave, onClose, saving
             <Field labelStyle={label} lbl="Naslov"><input value={form.hero.title} onChange={(e) => setSection("hero", "title", e.target.value)} style={input} /></Field>
             <Field labelStyle={label} lbl="Naslov — oranžni del"><input value={form.hero.titleAccent} onChange={(e) => setSection("hero", "titleAccent", e.target.value)} style={input} /></Field>
           </div>
-          <Field labelStyle={label} lbl="Podnaslov"><textarea rows={2} value={form.hero.subtitle} onChange={(e) => setSection("hero", "subtitle", e.target.value)} style={{ ...input, resize: "vertical" }} /></Field>
+          <Field labelStyle={label} lbl="Podnaslov"><AutoTextarea minRows={2} value={form.hero.subtitle} onChange={(e) => setSection("hero", "subtitle", e.target.value)} style={input} /></Field>
           <div style={{ display: "grid", gridTemplateColumns: "var(--col-2)", gap: "12px" }}>
             <Field labelStyle={label} lbl="Besedilo gumba"><input value={form.hero.ctaLabel} onChange={(e) => setSection("hero", "ctaLabel", e.target.value)} style={input} /></Field>
             <Field labelStyle={label} lbl="E-pošta za prijave"><input type="email" value={form.hero.ctaEmail} onChange={(e) => setSection("hero", "ctaEmail", e.target.value)} style={input} /></Field>
@@ -140,9 +141,9 @@ export default function SchoolEditForm({ initial, theme, onSave, onClose, saving
           <Field labelStyle={label} lbl="Naslov razdelka"><input value={form.about.title} onChange={(e) => setSection("about", "title", e.target.value)} style={input} /></Field>
           {form.about.paragraphs.map((p, i) => (
             <div key={i} style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
-              <textarea rows={3} value={p}
+              <AutoTextarea minRows={3} value={p}
                 onChange={(e) => setForm((f) => ({ ...f, about: { ...f.about, paragraphs: f.about.paragraphs.map((x, ix) => (ix === i ? e.target.value : x)) } }))}
-                style={{ ...input, resize: "vertical" }} aria-label={`Odstavek ${i + 1}`} />
+                style={input} aria-label={`Odstavek ${i + 1}`} />
               <button type="button" aria-label="Odstrani odstavek"
                 onClick={() => setForm((f) => ({ ...f, about: { ...f.about, paragraphs: f.about.paragraphs.filter((_, ix) => ix !== i) } }))}
                 style={{ ...smallBtn, padding: "9px" }}><Trash2 className="h-3.5 w-3.5" /></button>
@@ -185,7 +186,7 @@ export default function SchoolEditForm({ initial, theme, onSave, onClose, saving
                 <input placeholder="Naziv" value={m.title} onChange={(e) => setListItem("modules", i, "title", e.target.value)} style={input} />
                 <input placeholder="Trajanje (npr. 2 tedna)" value={m.weeks} onChange={(e) => setListItem("modules", i, "weeks", e.target.value)} style={input} />
               </div>
-              <textarea rows={2} placeholder="Opis" value={m.desc} onChange={(e) => setListItem("modules", i, "desc", e.target.value)} style={{ ...input, resize: "vertical" }} />
+              <AutoTextarea minRows={2} placeholder="Opis" value={m.desc} onChange={(e) => setListItem("modules", i, "desc", e.target.value)} style={input} />
             </div>
           )}
         />
@@ -223,9 +224,9 @@ export default function SchoolEditForm({ initial, theme, onSave, onClose, saving
           </div>
           <Field labelStyle={label} lbl="Naslov"><input value={form.sidebar.address} onChange={(e) => setSection("sidebar", "address", e.target.value)} style={input} /></Field>
           <Field labelStyle={label} lbl="Naslov akreditacije"><input value={form.sidebar.accreditationTitle} onChange={(e) => setSection("sidebar", "accreditationTitle", e.target.value)} style={input} /></Field>
-          <Field labelStyle={label} lbl="Besedilo akreditacije"><textarea rows={2} value={form.sidebar.accreditationText} onChange={(e) => setSection("sidebar", "accreditationText", e.target.value)} style={{ ...input, resize: "vertical" }} /></Field>
+          <Field labelStyle={label} lbl="Besedilo akreditacije"><AutoTextarea minRows={2} value={form.sidebar.accreditationText} onChange={(e) => setSection("sidebar", "accreditationText", e.target.value)} style={input} /></Field>
           <Field labelStyle={label} lbl="Naslov opozorila"><input value={form.sidebar.noticeTitle} onChange={(e) => setSection("sidebar", "noticeTitle", e.target.value)} style={input} /></Field>
-          <Field labelStyle={label} lbl="Besedilo opozorila"><textarea rows={2} value={form.sidebar.noticeText} onChange={(e) => setSection("sidebar", "noticeText", e.target.value)} style={{ ...input, resize: "vertical" }} /></Field>
+          <Field labelStyle={label} lbl="Besedilo opozorila"><AutoTextarea minRows={2} value={form.sidebar.noticeText} onChange={(e) => setSection("sidebar", "noticeText", e.target.value)} style={input} /></Field>
         </div>
 
         {error && <div style={{ marginTop: "16px", color: "#E8501A", fontSize: "13px", fontFamily: "'Inter', sans-serif" }}>{error}</div>}

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Loader2, Upload, X, Plus, Trash2 } from "lucide-react";
 import { uploadToSupabase } from "@/lib/uploadToSupabase";
 import DraggableList from "@/components/DraggableList";
+import AutoTextarea from "@/components/AutoTextarea";
 import { withKeys } from "@/lib/pageContent";
 import { DEFAULT_ABOUT } from "@/lib/aboutContent";
 
@@ -127,11 +128,11 @@ export default function AboutEditForm({ initial, theme, onSave, onClose, saving,
           onReorder={(next) => setSection("history", "paragraphs", next)}
           renderItem={(p, i) => (
             <div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
-              <textarea
-                rows={3}
+              <AutoTextarea
+                minRows={3}
                 value={p.text}
                 onChange={(e) => setForm((f) => ({ ...f, history: { ...f.history, paragraphs: f.history.paragraphs.map((x, ix) => (ix === i ? { ...x, text: e.target.value } : x)) } }))}
-                style={{ ...input, resize: "vertical" }}
+                style={input}
                 aria-label={`Odstavek ${i + 1}`}
               />
               <button type="button" aria-label="Odstrani odstavek" style={iconBtn}
@@ -180,7 +181,7 @@ export default function AboutEditForm({ initial, theme, onSave, onClose, saving,
                 <input placeholder="Naziv" value={a.title} onChange={(e) => setNestedItem("activities", i, "title", e.target.value)} style={input} />
                 <button type="button" aria-label="Odstrani aktivnost" style={iconBtn} onClick={() => removeItem("activities", i)}><Trash2 className="h-3.5 w-3.5" /></button>
               </div>
-              <textarea rows={2} placeholder="Opis" value={a.desc} onChange={(e) => setNestedItem("activities", i, "desc", e.target.value)} style={{ ...input, resize: "vertical" }} />
+              <AutoTextarea minRows={2} placeholder="Opis" value={a.desc} onChange={(e) => setNestedItem("activities", i, "desc", e.target.value)} style={input} />
             </div>
           )}
         />
@@ -206,7 +207,7 @@ export default function AboutEditForm({ initial, theme, onSave, onClose, saving,
                 <input placeholder="Vloga" value={m.role} onChange={(e) => setNestedItem("team", i, "role", e.target.value)} style={input} />
                 <button type="button" aria-label="Odstrani člana" style={iconBtn} onClick={() => removeItem("team", i)}><Trash2 className="h-3.5 w-3.5" /></button>
               </div>
-              <textarea rows={2} placeholder="Opis" value={m.desc} onChange={(e) => setNestedItem("team", i, "desc", e.target.value)} style={{ ...input, resize: "vertical" }} />
+              <AutoTextarea minRows={2} placeholder="Opis" value={m.desc} onChange={(e) => setNestedItem("team", i, "desc", e.target.value)} style={input} />
             </div>
           )}
         />
