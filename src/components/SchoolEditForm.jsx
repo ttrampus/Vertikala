@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Loader2, Upload, X, Plus, Trash2 } from "lucide-react";
 import { uploadToSupabase } from "@/lib/uploadToSupabase";
 import DateField from "@/components/DateField";
+import DraggableList from "@/components/DraggableList";
+import { withKeys } from "@/lib/pageContent";
 import { DEFAULT_SCHOOL } from "@/lib/schoolContent";
 
 // Defined at module scope on purpose. A component declared inside the render
@@ -16,7 +18,7 @@ function Field({ lbl, labelStyle, children }) {
 // fields rather than free rich text: the content changes once a year, and a
 // fixed shape means a paste can't break the page layout.
 export default function SchoolEditForm({ initial, theme, onSave, onClose, saving, error }) {
-  const [form, setForm] = useState(() => structuredClone(initial));
+  const [form, setForm] = useState(() => withKeys(structuredClone(initial)));
   const [uploading, setUploading] = useState(false);
 
   const setSection = (section, field, value) =>
@@ -25,7 +27,7 @@ export default function SchoolEditForm({ initial, theme, onSave, onClose, saving
   const setListItem = (key, i, field, value) =>
     setForm((f) => ({ ...f, [key]: f[key].map((row, ix) => (ix === i ? { ...row, [field]: value } : row)) }));
 
-  const addListItem = (key, blank) => setForm((f) => ({ ...f, [key]: [...f[key], blank] }));
+  const addListItem = (key, blank) => setForm((f) => ({ ...f, [key]: [...f[key], withKeys([blank])[0]] }));
   const removeListItem = (key, i) => setForm((f) => ({ ...f, [key]: f[key].filter((_, ix) => ix !== i) }));
 
   const handleImage = async (e) => {
@@ -85,7 +87,7 @@ export default function SchoolEditForm({ initial, theme, onSave, onClose, saving
           <button type="button" onClick={onClose} style={{ background: "none", border: "none", color: theme.textLow, fontSize: "24px", cursor: "pointer", lineHeight: 1 }}>×</button>
         </div>
         <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", color: theme.textLow, margin: "0 0 8px" }}>
-          Spremembe so vidne vsem takoj po shranjevanju.
+          Module in inštruktorje lahko prevlečete za spremembo vrstnega reda. Spremembe so vidne vsem takoj po shranjevanju.
         </p>
 
         {/* ── Hero ── */}
@@ -167,19 +169,26 @@ export default function SchoolEditForm({ initial, theme, onSave, onClose, saving
         {/* ── Modules ── */}
         <h3 style={section}>{form.modulesTitle || "Program šole"}</h3>
         <Field labelStyle={label} lbl="Naslov razdelka"><input value={form.modulesTitle} onChange={(e) => setForm((f) => ({ ...f, modulesTitle: e.target.value }))} style={{ ...input, marginBottom: "12px" }} /></Field>
-        {form.modules.map((m, i) => (
-          <div key={i} style={rowCard}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ ...label, marginBottom: 0 }}>Modul {String(i + 1).padStart(2, "0")}</span>
-              <button type="button" onClick={() => removeListItem("modules", i)} aria-label="Odstrani modul" style={{ ...smallBtn, padding: "6px 8px" }}><Trash2 className="h-3.5 w-3.5" /></button>
+        <DraggableList
+          theme={theme}
+          droppableId="school-modules"
+          items={form.modules}
+          onReorder={(next) => setForm((f) => ({ ...f, modules: next }))}
+          renderItem={(m, i) => (
+            <div style={rowCard}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                {/* Numbered by position, so dragging renumbers them automatically. */}
+                <span style={{ ...label, marginBottom: 0 }}>Modul {String(i + 1).padStart(2, "0")}</span>
+                <button type="button" onClick={() => removeListItem("modules", i)} aria-label="Odstrani modul" style={{ ...smallBtn, padding: "6px 8px" }}><Trash2 className="h-3.5 w-3.5" /></button>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "var(--col-2)", gap: "10px" }}>
+                <input placeholder="Naziv" value={m.title} onChange={(e) => setListItem("modules", i, "title", e.target.value)} style={input} />
+                <input placeholder="Trajanje (npr. 2 tedna)" value={m.weeks} onChange={(e) => setListItem("modules", i, "weeks", e.target.value)} style={input} />
+              </div>
+              <textarea rows={2} placeholder="Opis" value={m.desc} onChange={(e) => setListItem("modules", i, "desc", e.target.value)} style={{ ...input, resize: "vertical" }} />
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "var(--col-2)", gap: "10px" }}>
-              <input placeholder="Naziv" value={m.title} onChange={(e) => setListItem("modules", i, "title", e.target.value)} style={input} />
-              <input placeholder="Trajanje (npr. 2 tedna)" value={m.weeks} onChange={(e) => setListItem("modules", i, "weeks", e.target.value)} style={input} />
-            </div>
-            <textarea rows={2} placeholder="Opis" value={m.desc} onChange={(e) => setListItem("modules", i, "desc", e.target.value)} style={{ ...input, resize: "vertical" }} />
-          </div>
-        ))}
+          )}
+        />
         <button type="button" style={smallBtn} onClick={() => addListItem("modules", { title: "", desc: "", weeks: "" })}>
           <Plus className="h-3.5 w-3.5" /> Dodaj modul
         </button>
@@ -187,13 +196,19 @@ export default function SchoolEditForm({ initial, theme, onSave, onClose, saving
         {/* ── Instructors ── */}
         <h3 style={section}>{form.instructorsTitle || "Inštruktorji"}</h3>
         <Field labelStyle={label} lbl="Naslov razdelka"><input value={form.instructorsTitle} onChange={(e) => setForm((f) => ({ ...f, instructorsTitle: e.target.value }))} style={{ ...input, marginBottom: "12px" }} /></Field>
-        {form.instructors.map((p, i) => (
-          <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: "8px", marginBottom: "8px" }}>
-            <input placeholder="Ime in priimek" value={p.name} onChange={(e) => setListItem("instructors", i, "name", e.target.value)} style={input} />
-            <input placeholder="Vloga" value={p.role} onChange={(e) => setListItem("instructors", i, "role", e.target.value)} style={input} />
-            <button type="button" onClick={() => removeListItem("instructors", i)} aria-label="Odstrani inštruktorja" style={{ ...smallBtn, padding: "9px" }}><Trash2 className="h-3.5 w-3.5" /></button>
-          </div>
-        ))}
+        <DraggableList
+          theme={theme}
+          droppableId="school-instructors"
+          items={form.instructors}
+          onReorder={(next) => setForm((f) => ({ ...f, instructors: next }))}
+          renderItem={(p, i) => (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: "8px" }}>
+              <input placeholder="Ime in priimek" value={p.name} onChange={(e) => setListItem("instructors", i, "name", e.target.value)} style={input} />
+              <input placeholder="Vloga" value={p.role} onChange={(e) => setListItem("instructors", i, "role", e.target.value)} style={input} />
+              <button type="button" onClick={() => removeListItem("instructors", i)} aria-label="Odstrani inštruktorja" style={{ ...smallBtn, padding: "9px" }}><Trash2 className="h-3.5 w-3.5" /></button>
+            </div>
+          )}
+        />
         <button type="button" style={smallBtn} onClick={() => addListItem("instructors", { name: "", role: "" })}>
           <Plus className="h-3.5 w-3.5" /> Dodaj inštruktorja
         </button>
@@ -221,7 +236,7 @@ export default function SchoolEditForm({ initial, theme, onSave, onClose, saving
             {saving ? "Shranjujem…" : "Shrani"}
           </button>
           <button type="button" onClick={onClose} style={{ ...smallBtn, fontSize: "14px", padding: "12px 24px" }}>Prekliči</button>
-          <button type="button" onClick={() => setForm(structuredClone(DEFAULT_SCHOOL))} style={{ ...smallBtn, fontSize: "14px", padding: "12px 24px", marginLeft: "auto" }}>
+          <button type="button" onClick={() => setForm(withKeys(structuredClone(DEFAULT_SCHOOL)))} style={{ ...smallBtn, fontSize: "14px", padding: "12px 24px", marginLeft: "auto" }}>
             Ponastavi
           </button>
         </div>

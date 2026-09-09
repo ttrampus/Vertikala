@@ -75,19 +75,3 @@ export function initialsFrom(name) {
     .map((w) => w[0]?.toUpperCase() || "")
     .join("");
 }
-
-// Shallow-merge per section: a saved section replaces the default one field at
-// a time, while arrays (modules, instructors, stats) are taken whole so a
-// deleted row actually disappears instead of reappearing from the defaults.
-export function mergeSchoolContent(saved) {
-  if (!saved || typeof saved !== "object") return DEFAULT_SCHOOL;
-  const out = { ...DEFAULT_SCHOOL };
-  for (const [key, def] of Object.entries(DEFAULT_SCHOOL)) {
-    const val = saved[key];
-    if (val === undefined || val === null) continue;
-    if (Array.isArray(def)) out[key] = Array.isArray(val) ? val : def;
-    else if (def && typeof def === "object") out[key] = { ...def, ...val };
-    else out[key] = val;
-  }
-  return out;
-}

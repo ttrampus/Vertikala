@@ -3,11 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { ThemeCtx } from "@/lib/ThemeContext";
 import StatsSection from "@/components/StatsSection";
 import HeroBg from "@/components/HeroBg";
-import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/lib/AuthContext";
 import { Pencil } from "lucide-react";
 import SchoolEditForm from "@/components/SchoolEditForm";
-import { DEFAULT_SCHOOL, mergeSchoolContent, initialsFrom } from "@/lib/schoolContent";
+import { DEFAULT_SCHOOL, initialsFrom } from "@/lib/schoolContent";
+import { usePageContent } from "@/lib/pageContent";
 import { formatDate, toDate } from "@/lib/dates";
 import { format } from "date-fns";
 import { sl } from "date-fns/locale";
@@ -27,40 +27,9 @@ export default function AlpineSchool() {
   const [visible, setVisible] = useState({});
 
   // Content lives in site_content; the defaults in code are what renders until
-  // an admin saves an edit, and what we fall back to if the fetch fails — the
-  // page must never come up empty.
-  const [content, setContent] = useState(DEFAULT_SCHOOL);
-  const [editing, setEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState("");
-
-  useEffect(() => {
-    let cancelled = false;
-    supabase.from("site_content").select("content").eq("id", "alpine-school").maybeSingle()
-      .then(({ data, error }) => {
-        if (cancelled || error || !data?.content) return;
-        setContent(mergeSchoolContent(data.content));
-      });
-    return () => { cancelled = true; };
-  }, []);
-
-  const saveContent = async (next) => {
-    setSaving(true);
-    setSaveError("");
-    // .select(): an RLS-blocked write returns no error and no rows, so without
-    // it a member without rights would see "saved" and lose their edit.
-    const { data, error } = await supabase
-      .from("site_content")
-      .upsert({ id: "alpine-school", content: next }, { onConflict: "id" })
-      .select("id");
-    setSaving(false);
-    if (error || !data?.length) {
-      setSaveError(error?.message || "Shranjevanje ni uspelo — nimate pravic za urejanje te strani.");
-      return;
-    }
-    setContent(mergeSchoolContent(next));
-    setEditing(false);
-  };
+  // an admin saves an edit, and what we fall back to if the fetch fails.
+  const { content, editing, setEditing, saving, error: saveError, setError, save } =
+    usePageContent("alpine-school", DEFAULT_SCHOOL);
 
   useEffect(() => {
     const els = document.querySelectorAll('[data-reveal]');
@@ -222,8 +191,8 @@ export default function AlpineSchool() {
           theme={theme}
           saving={saving}
           error={saveError}
-          onSave={saveContent}
-          onClose={() => { setEditing(false); setSaveError(''); }}
+          onSave={save}
+          onClose={() => { setEditing(false); setError(''); }}
         />
       )}
 
