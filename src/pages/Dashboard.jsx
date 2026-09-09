@@ -6,8 +6,7 @@ import { Loader2, Edit, Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { softDeletePosts } from "@/lib/deletePosts";
 import { thumbUrl, thumbFallback } from "@/lib/thumbs";
-import { format } from "date-fns";
-import { sl } from "date-fns/locale";
+import { formatDate } from "@/lib/dates";
 import TagBadge from "../components/TagBadge";
 import PrivateBadge from "../components/PrivateBadge";
 import { Button } from "@/components/ui/button";
@@ -167,7 +166,7 @@ export default function Dashboard() {
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 {post.category && <TagBadge tag={post.category} small />}
                 {post.is_public === false && <PrivateBadge small />}
-                <span>{format(new Date(post.created_date), "d. MMM yyyy", { locale: sl })}</span>
+                <span>{formatDate(post.created_date)}</span>
               </div>
             </div>
 

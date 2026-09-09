@@ -4,8 +4,7 @@ import DOMPurify from "dompurify";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/lib/AuthContext";
 import { Loader2, ArrowLeft, Calendar, User, Eye } from "lucide-react";
-import { format } from "date-fns";
-import { sl } from "date-fns/locale";
+import { formatDate } from "@/lib/dates";
 import TagBadge from "../components/TagBadge";
 import PrivateBadge from "../components/PrivateBadge";
 import LikeButton from "../components/LikeButton";
@@ -154,7 +153,7 @@ export default function PostDetail() {
             </span>
             <span className="flex items-center gap-1.5">
               <Calendar className="h-4 w-4" />
-              {format(new Date(post.created_date), "d. MMMM yyyy", { locale: sl })}
+              {formatDate(post.created_date)}
             </span>
             <span className="flex items-center gap-1.5">
               <Eye className="h-4 w-4" />

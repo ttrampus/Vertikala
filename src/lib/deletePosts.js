@@ -53,11 +53,19 @@ export async function softDeletePosts(ids) {
   if (!ids?.length) return { error: null };
   const stamp = new Date().toISOString();
   for (let i = 0; i < ids.length; i += 100) {
-    const { error } = await supabase
+    const chunk = ids.slice(i, i + 100);
+    // .select(): RLS rejects rows silently (no error, 0 rows updated), so
+    // compare what came back against what we asked for — otherwise a blocked
+    // delete reports success and the post stays put.
+    const { data, error } = await supabase
       .from("BlogPost")
       .update({ deleted_at: stamp })
-      .in("id", ids.slice(i, i + 100));
+      .in("id", chunk)
+      .select("id");
     if (error) return { error };
+    if ((data?.length || 0) < chunk.length) {
+      return { error: new Error("Baza je zavrnila brisanje (premalo pravic).") };
+    }
   }
   return { error: null };
 }
@@ -66,11 +74,16 @@ export async function softDeletePosts(ids) {
 export async function restorePosts(ids) {
   if (!ids?.length) return { error: null };
   for (let i = 0; i < ids.length; i += 100) {
-    const { error } = await supabase
+    const chunk = ids.slice(i, i + 100);
+    const { data, error } = await supabase
       .from("BlogPost")
       .update({ deleted_at: null })
-      .in("id", ids.slice(i, i + 100));
+      .in("id", chunk)
+      .select("id");
     if (error) return { error };
+    if ((data?.length || 0) < chunk.length) {
+      return { error: new Error("Baza je zavrnila obnovitev (premalo pravic).") };
+    }
   }
   return { error: null };
 }

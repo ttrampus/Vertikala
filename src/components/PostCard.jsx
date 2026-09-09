@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Heart, MessageCircle, Eye, Calendar } from "lucide-react";
-import { format } from "date-fns";
+import { formatDate } from "@/lib/dates";
 import TagBadge from "./TagBadge";
 
 export default function PostCard({ post, featured = false }) {
@@ -26,7 +26,7 @@ export default function PostCard({ post, featured = false }) {
             {post.category && <TagBadge tag={post.category} />}
             <span className="text-white/70 text-sm flex items-center gap-1.5">
               <Calendar className="h-3.5 w-3.5" />
-              {format(new Date(post.created_date), "MMM d, yyyy")}
+              {formatDate(post.created_date)}
             </span>
           </div>
           <h2 className="font-inter font-extrabold text-2xl lg:text-4xl text-white leading-tight mb-2 tracking-tight">
@@ -65,7 +65,7 @@ export default function PostCard({ post, featured = false }) {
       <div className="flex items-center gap-2 mb-2">
         {post.category && <TagBadge tag={post.category} small />}
         <span className="text-muted-foreground text-xs">
-          {format(new Date(post.created_date), "MMM d, yyyy")}
+          {formatDate(post.created_date)}
         </span>
       </div>
       <h3 className="font-inter font-bold text-lg leading-snug mb-1.5 group-hover:text-primary transition-colors tracking-tight">

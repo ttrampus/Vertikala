@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { thumbUrl } from "@/lib/thumbs";
 import CardImage from "@/components/CardImage";
 import HeroBg from "@/components/HeroBg";
-import { format } from "date-fns";
+import { formatDate, toDate } from "@/lib/dates";
 import ExcelJS from "exceljs";
 import { Trash2, Lock, Search, Download, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,14 +22,12 @@ const CATEGORIES = [
   { key: "alpinistični", label: "Alpinistični vzponi" },
   { key: "večraztežajne", label: "Večraztežajne smeri" },
   { key: "turni", label: "Turni smuki" },
-  { key: "športnoplezalni", label: "Športnoplezalni vzponi" },
   { key: "frikanje", label: "Frikanje" },
 ];
 
 const CATEGORY_LABELS = {
   "alpinistični": "Alpinistični",
   "večraztežajne": "Večraztežajne smeri",
-  "športnoplezalni": "Športnoplezalni",
   "turni": "Turni / smuk",
   "frikanje": "Frikanje",
 };
@@ -44,7 +42,7 @@ async function exportAscentsToExcel(rows) {
   const sheet = workbook.addWorksheet("Vzponi", { views: [{ state: "frozen", ySplit: 1 }] });
 
   sheet.columns = [
-    { header: "Datum", key: "date", width: 12, style: { numFmt: "dd. mm. yyyy" } },
+    { header: "Datum", key: "date", width: 12, style: { numFmt: "dd/mm/yyyy" } },
     { header: "Plezalec", key: "climber_name", width: 10 },
     { header: "Soplezalec", key: "co_climber", width: 10 },
     { header: "Kategorija", key: "category", width: 10 },
@@ -57,7 +55,7 @@ async function exportAscentsToExcel(rows) {
 
   rows.forEach((a) => {
     sheet.addRow({
-      date: a.date ? new Date(a.date + "T12:00:00") : null,
+      date: a.date ? toDate(a.date) : null,
       climber_name: a.climber_name || "",
       co_climber: a.co_climber || "",
       category: CATEGORY_LABELS[a.category] || a.category || "",
@@ -75,7 +73,7 @@ async function exportAscentsToExcel(rows) {
     let max = col.header.length;
     col.eachCell({ includeEmpty: false }, (cell) => {
       const text = cell.type === ExcelJS.ValueType.Date
-        ? format(cell.value, "dd. MM. yyyy")
+        ? formatDate(cell.value)
         : String(cell.value ?? "");
       max = Math.max(max, text.length);
     });
@@ -241,7 +239,6 @@ export default function Vzponi() {
           { val: ascents.filter((a) => a.category === "alpinistični").length, label: "Alpinistični" },
           { val: ascents.filter((a) => a.category === "večraztežajne").length, label: "Večraztežajne smeri" },
           { val: ascents.filter((a) => a.category === "turni").length, label: "Turni smuki" },
-          { val: ascents.filter((a) => a.category === "športnoplezalni").length, label: "Športnoplezalni" },
           { val: ascents.filter((a) => a.category === "frikanje").length, label: "Frikanje" },
         ]}
       />
@@ -388,7 +385,7 @@ export default function Vzponi() {
                 </CardImage>
                 <div style={{ padding: "16px 18px" }}>
                   <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "11px", color: theme.textLow, marginBottom: "6px" }}>
-                    {format(new Date(post.created_date), "d. MMM yyyy")}
+                    {formatDate(post.created_date)}
                   </div>
                   <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "18px", lineHeight: 1.2, color: theme.text, margin: "0 0 6px" }}>{post.title}</h3>
                   {post.is_public === false && (
@@ -450,7 +447,6 @@ export default function Vzponi() {
                     { v: "alpinistični", l: "Alpinistični vzponi" },
                     { v: "večraztežajne", l: "Večraztežajne smeri" },
                     { v: "turni", l: "Turni smuki" },
-                    { v: "športnoplezalni", l: "Športnoplezalni vzponi" },
                     { v: "frikanje", l: "Frikanje" },
                   ].map((o) => (
                     <option key={o.v} value={o.v} style={{ background: theme.isDark ? "#1a1a1a" : "#fff", color: theme.text }}>{o.l}</option>
@@ -555,7 +551,7 @@ function AscentTable({ rows, theme, sort, onSort, canDelete, onDelete }) {
               onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
             >
               <td style={{ ...td, whiteSpace: "nowrap", color: "#E8501A", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "13px", letterSpacing: "0.04em" }}>
-                {format(new Date(a.date + "T12:00:00"), "dd. MMM yyyy")}
+                {formatDate(a.date)}
               </td>
               <td style={{ ...td, fontWeight: 600, color: theme.text, whiteSpace: "nowrap" }}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>

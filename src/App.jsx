@@ -2,7 +2,7 @@ import React, { lazy, useEffect, useRef } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/query-client";
-import { BrowserRouter as Router, Route, Routes, useLocation, useNavigationType } from "react-router-dom";
+import { BrowserRouter as Router, Navigate, Route, Routes, useLocation, useNavigationType } from "react-router-dom";
 
 import { AuthProvider, useAuth } from "@/lib/AuthContext";
 import { navReady } from "@/lib/navReady";
@@ -144,7 +144,10 @@ const AuthenticatedApp = () => {
     <Route path="complete-profile" element={<CompleteProfile />} />
     <Route path="alpine-school" element={<School />} />
     <Route path="vzponi" element={<Vzponi />} />
-    <Route path="tabori" element={<Tabori />} />
+    <Route path="tabori-in-dogodki" element={<Tabori />} />
+    {/* The page was called just "Tabori" until it also covered events —
+        keep the old path working for links already out in the wild. */}
+    <Route path="tabori" element={<Navigate to="/tabori-in-dogodki" replace />} />
 
  
     // Protected: must be logged in

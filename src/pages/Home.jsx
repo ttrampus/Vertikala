@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { navReady } from "@/lib/navReady";
 import { ThemeCtx } from "@/lib/ThemeContext";
 import { thumbUrl } from "@/lib/thumbs";
-import { format } from "date-fns";
+import { formatDate } from "@/lib/dates";
 import WeatherWidget from "../components/WeatherWidget";
 import UsefulLinks from "../components/UsefulLinks";
 import StatsSection from "../components/StatsSection";
@@ -169,10 +169,6 @@ export default function Home() {
     transition: 'opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1)',
     ...extra,
   });
-
-  const formatDate = (d) => {
-    try { return format(new Date(d), 'd. MMM yyyy'); } catch { return ''; }
-  };
 
   return (
     <div style={{ background: theme.bg, minHeight: '100vh', color: theme.text, transition: 'background 0.4s, color 0.4s' }}>

@@ -8,7 +8,7 @@ import { thumbUrl } from "@/lib/thumbs";
 import HeroBg from "@/components/HeroBg";
 import CardImage from "@/components/CardImage";
 import StatsSection from "@/components/StatsSection";
-import { format } from "date-fns";
+import { formatDate } from "@/lib/dates";
 import { Trash2, Upload, Loader2, X, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -147,12 +147,10 @@ export default function Tabori() {
   };
 
   const formatTerm = (c) => {
-    try {
-      const from = format(new Date(c.date_from + "T12:00:00"), "d. MMM yyyy");
-      if (!c.date_to) return from;
-      const to = format(new Date(c.date_to + "T12:00:00"), "d. MMM yyyy");
-      return `${from} – ${to}`;
-    } catch { return c.date_from; }
+    const from = formatDate(c.date_from);
+    if (!from) return c.date_from;
+    if (!c.date_to) return from;
+    return `${from} – ${formatDate(c.date_to)}`;
   };
 
   return (
@@ -163,12 +161,12 @@ export default function Tabori() {
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(10,10,10,0.95) 100%)" }} />
         <div style={{ position: "relative", zIndex: 1, padding: "0 var(--page-x) 72px", maxWidth: "1100px" }}>
           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "12px", letterSpacing: "0.3em", textTransform: "uppercase", color: "#E8501A", marginBottom: "16px", opacity: 0, animation: "fadeUp 0.8s 0.3s forwards" }}>Skupaj v gore</div>
-          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "clamp(56px, 8vw, 96px)", lineHeight: 0.95, letterSpacing: "-0.01em", margin: "0 0 16px", color: "#fff", opacity: 0, animation: "fadeUp 0.8s 0.5s forwards" }}>Tabori</h1>
-          <p style={{ fontFamily: "'Inter', sans-serif", fontWeight: 300, fontSize: "18px", color: "rgba(255,255,255,0.6)", maxWidth: "520px", opacity: 0, animation: "fadeUp 0.8s 0.7s forwards" }}>Klubski tabori in večdnevna srečanja</p>
+          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "clamp(56px, 8vw, 96px)", lineHeight: 0.95, letterSpacing: "-0.01em", margin: "0 0 16px", color: "#fff", opacity: 0, animation: "fadeUp 0.8s 0.5s forwards" }}>Tabori in dogodki</h1>
+          <p style={{ fontFamily: "'Inter', sans-serif", fontWeight: 300, fontSize: "18px", color: "rgba(255,255,255,0.6)", maxWidth: "520px", opacity: 0, animation: "fadeUp 0.8s 0.7s forwards" }}>Klubski tabori, dogodki in večdnevna srečanja</p>
         </div>
       </div>
 
-      <StatsSection theme={theme} items={[{ val: camps.length, label: "Skupaj taborov" }]} />
+      <StatsSection theme={theme} items={[{ val: camps.length, label: "Skupaj" }]} />
 
       <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "56px var(--page-x)" }}>
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "28px" }}>
@@ -183,13 +181,13 @@ export default function Tabori() {
               }}
               onMouseEnter={(e) => (e.currentTarget.style.background = "#c73d10")}
               onMouseLeave={(e) => (e.currentTarget.style.background = "#E8501A")}
-            >+ Dodaj tabor</button>
+            >+ Dodaj tabor / dogodek</button>
           )}
         </div>
 
         {!user && (
           <div style={{ marginBottom: "24px", fontFamily: "'Inter', sans-serif", fontSize: "13px", color: theme.textLow }}>
-            Ste član kluba? <span onClick={() => navigate("/login")} style={{ color: "#E8501A", cursor: "pointer", fontWeight: 600 }}>Prijavite se</span> in dodajte tabor.
+            Ste član kluba? <span onClick={() => navigate("/login")} style={{ color: "#E8501A", cursor: "pointer", fontWeight: 600 }}>Prijavite se</span> in dodajte tabor ali dogodek.
           </div>
         )}
 
@@ -199,7 +197,7 @@ export default function Tabori() {
 
         {!loading && camps.length === 0 && (
           <div style={{ textAlign: "center", padding: "80px 0" }}>
-            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "22px", color: theme.textLow }}>Ni taborov za prikaz</div>
+            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "22px", color: theme.textLow }}>Ni taborov ali dogodkov za prikaz</div>
           </div>
         )}
 
@@ -290,7 +288,7 @@ export default function Tabori() {
                     </AlertDialogTrigger>
                     <AlertDialogContent className="z-[200]">
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Izbriši tabor?</AlertDialogTitle>
+                        <AlertDialogTitle>Izbriši tabor / dogodek?</AlertDialogTitle>
                         <AlertDialogDescription>{detailCamp.title}. Tega dejanja ni mogoče razveljaviti.</AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -318,7 +316,7 @@ export default function Tabori() {
             style={{ background: theme.bg, border: `1px solid ${theme.border}`, borderRadius: "14px", width: "100%", maxWidth: "560px", padding: "32px" }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-              <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "28px", margin: 0 }}>{editingId ? "Uredi tabor" : "Dodaj tabor"}</h2>
+              <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "28px", margin: 0 }}>{editingId ? "Uredi tabor / dogodek" : "Dodaj tabor / dogodek"}</h2>
               <button type="button" onClick={() => setShowForm(false)} style={{ background: "none", border: "none", color: theme.textLow, fontSize: "24px", cursor: "pointer", lineHeight: 1 }}>×</button>
             </div>
 

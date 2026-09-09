@@ -668,10 +668,16 @@ export default function EditPost() {
     try {
       const climbMeta = form.category === "climbs" && Object.keys(form.climb_metadata || {}).length > 0
         ? form.climb_metadata : null;
-      const { error } = await supabase.from("BlogPost")
+      // .select() matters: when RLS rejects the row, PostgREST does NOT
+      // return an error — it just updates nothing. Without asking for the
+      // updated row back, a blocked save looked exactly like a successful one
+      // and we navigated away having saved nothing.
+      const { data, error } = await supabase.from("BlogPost")
         .update({ title: form.title, summary: form.summary, content: form.content, featured_image: form.featured_image, images: form.images, tags: form.tags, category: form.category, climb_metadata: climbMeta, is_public: form.is_public, status })
-        .eq("id", id);
+        .eq("id", id)
+        .select("id");
       if (error) throw error;
+      if (!data?.length) throw new Error("Baza je zavrnila spremembo (nimate pravic za urejanje te objave).");
       // replace: the finished form shouldn't stay in history — back from the
       // post should return to where the author started, not the stale form.
       navigate(`/post/${id}`, { replace: true });

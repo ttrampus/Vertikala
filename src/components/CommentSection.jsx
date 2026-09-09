@@ -2,8 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MessageCircle, Send, Loader2 } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { sl } from "date-fns/locale";
+import { formatRelativeDate } from "@/lib/dates";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -133,7 +132,7 @@ export default function CommentSection({ postId, onCountChange }) {
                   <div>
                     <span className="font-inter font-semibold text-sm">{displayName}</span>
                     <span className="text-muted-foreground text-xs ml-2">
-                      {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: sl })}
+                      {formatRelativeDate(comment.created_at)}
                     </span>
                   </div>
                 </div>

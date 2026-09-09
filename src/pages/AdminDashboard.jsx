@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Trash2, Eye, Users, FileText, Shield, Edit, Mail, UserPlus, ShieldCheck, ShieldOff, CheckCircle2, XCircle, List, Mountain, Tent, Plus, RotateCcw, ScrollText, Lock } from "lucide-react";
-import { format } from "date-fns";
+import { formatDate, formatDateTime } from "@/lib/dates";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -23,7 +23,6 @@ const EMPTY_ASCENT_FORM = { date: "", climber_name: "", co_climber: "", category
 const ASCENT_CATEGORY_LABELS = {
   "alpinistični": "Alpinistični",
   "večraztežajne": "Večraztežajne smeri",
-  "športnoplezalni": "Športnoplezalni",
   "turni": "Turni",
   "frikanje": "Frikanje",
 };
@@ -65,7 +64,7 @@ export default function AdminDashboard() {
   const [ascentForm, setAscentForm] = useState(EMPTY_ASCENT_FORM);
   const [savingAscent, setSavingAscent] = useState(false);
 
-  // Camps (Tabori)
+  // Camps (Tabori in dogodki)
   const [camps, setCamps] = useState([]);
   const [addingCamp, setAddingCamp] = useState(false);
   const [editingCampId, setEditingCampId] = useState(null);
@@ -288,8 +287,14 @@ export default function AdminDashboard() {
 
   const togglePostStatus = async (post) => {
     const newStatus = post.status === "published" ? "draft" : "published";
-    const { error } = await supabase.from("BlogPost").update({ status: newStatus }).eq("id", post.id);
-    if (!error) setPosts((prev) => prev.map((p) => (p.id === post.id ? { ...p, status: newStatus } : p)));
+    // .select(): an RLS-blocked update returns no error and no rows, so
+    // without this the button would flip the label but change nothing.
+    const { data, error } = await supabase.from("BlogPost").update({ status: newStatus }).eq("id", post.id).select("id");
+    if (error || !data?.length) {
+      alert("Spremembe stanja ni bilo mogoče shraniti" + (error ? ": " + error.message : "."));
+      return;
+    }
+    setPosts((prev) => prev.map((p) => (p.id === post.id ? { ...p, status: newStatus } : p)));
   };
 
   const sendInvite = async () => {
@@ -415,7 +420,7 @@ export default function AdminDashboard() {
           <TabsTrigger value="posts" className="gap-1 shrink-0 whitespace-nowrap"><FileText className="h-4 w-4" /> Objave</TabsTrigger>
           <TabsTrigger value="users" className="gap-1 shrink-0 whitespace-nowrap"><Users className="h-4 w-4" /> Člani</TabsTrigger>
           <TabsTrigger value="ascents" className="gap-1 shrink-0 whitespace-nowrap"><Mountain className="h-4 w-4" /> Vzponi</TabsTrigger>
-          <TabsTrigger value="camps" className="gap-1 shrink-0 whitespace-nowrap"><Tent className="h-4 w-4" /> Tabori</TabsTrigger>
+          <TabsTrigger value="camps" className="gap-1 shrink-0 whitespace-nowrap"><Tent className="h-4 w-4" /> Tabori in dogodki</TabsTrigger>
           <TabsTrigger value="invite" className="gap-1 shrink-0 whitespace-nowrap"><UserPlus className="h-4 w-4" /> Povabi člana</TabsTrigger>
           <TabsTrigger value="trash" className="gap-1 shrink-0 whitespace-nowrap"><Trash2 className="h-4 w-4" /> Koš{trashedPosts.length > 0 ? ` (${trashedPosts.length})` : ""}</TabsTrigger>
           <TabsTrigger value="audit" className="gap-1 shrink-0 whitespace-nowrap"><ScrollText className="h-4 w-4" /> Dnevnik</TabsTrigger>
@@ -478,7 +483,7 @@ export default function AdminDashboard() {
                     <span className="truncate max-w-[45%]">{post.author_name || post.author_email || post.created_by || "—"}</span>
                     {post.category && <TagBadge tag={post.category} small />}
                     {post.is_public === false && <PrivateBadge small />}
-                    <span className="flex-shrink-0">{format(new Date(post.created_date), "d. M. yyyy")}</span>
+                    <span className="flex-shrink-0">{formatDate(post.created_date)}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
@@ -594,7 +599,6 @@ export default function AdminDashboard() {
                     <option value="alpinistični">Alpinistični vzponi</option>
                     <option value="večraztežajne">Večraztežajne smeri</option>
                     <option value="turni">Turni smuki</option>
-                    <option value="športnoplezalni">Športnoplezalni vzponi</option>
                     <option value="frikanje">Frikanje</option>
                   </select>
                 </div>
@@ -717,7 +721,7 @@ export default function AdminDashboard() {
                   <textarea rows={4} placeholder="Kje se začne in konča, kaj s seboj, pravila, program… (neobvezno)" value={campForm.description} onChange={(e) => setCampForm((f) => ({ ...f, description: e.target.value }))} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-inter resize-vertical" />
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground font-inter">Za nalaganje slike uredite tabor na strani /tabori.</p>
+              <p className="text-xs text-muted-foreground font-inter">Za nalaganje slike uredite tabor ali dogodek na strani /tabori-in-dogodki.</p>
               <div className="flex gap-2 pt-1">
                 <Button type="submit" size="sm" disabled={savingCamp} className="gap-1.5">
                   {savingCamp && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Shrani
@@ -907,7 +911,7 @@ export default function AdminDashboard() {
                   <span className="font-inter font-semibold text-sm line-clamp-2 text-muted-foreground">{post.title}</span>
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mt-1">
                     {post.category && <TagBadge tag={post.category} small />}
-                    <span>izbrisano {format(new Date(post.deleted_at), "d. M. yyyy HH:mm")}</span>
+                    <span>izbrisano {formatDateTime(post.deleted_at)}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
@@ -963,7 +967,7 @@ export default function AdminDashboard() {
                       <span className="text-muted-foreground"> ({e.details.from} → {e.details.to})</span>
                     )}
                     <div className="text-xs text-muted-foreground mt-0.5">
-                      {actor} · {format(new Date(e.created_at), "d. M. yyyy HH:mm")}
+                      {actor} · {formatDateTime(e.created_at)}
                     </div>
                   </div>
                 </div>

@@ -37,7 +37,7 @@ export default function Layout() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Pages with a full-bleed dark hero image at the top
-  const heroPages = ['/', '/about', '/alpine-school', '/contact', '/vzponi', '/tabori'];
+  const heroPages = ['/', '/about', '/alpine-school', '/contact', '/vzponi', '/tabori-in-dogodki'];
   const hasHero = heroPages.includes(location.pathname);
   const isTransparent = hasHero && !scrolled;
 
@@ -92,7 +92,7 @@ export default function Layout() {
     { path: '/', label: 'Domov' },
     { path: '/about', label: 'O nas' },
     { path: '/vzponi', label: 'Vzponi' },
-    { path: '/tabori', label: 'Tabori' },
+    { path: '/tabori-in-dogodki', label: 'Tabori in dogodki' },
     { path: '/alpine-school', label: 'Šola' },
     { path: '/contact', label: 'Kontakt' },
   ];
@@ -124,6 +124,7 @@ export default function Layout() {
     background: 'none', border: 'none', cursor: 'pointer',
     fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600,
     fontSize: '14px', letterSpacing: '0.12em', textTransform: 'uppercase',
+    whiteSpace: 'nowrap',
     color: linkColor(active), transition: 'color 0.2s',
     padding: '4px 0',
     borderBottom: active ? '2px solid #E8501A' : '2px solid transparent',
@@ -332,7 +333,7 @@ export default function Layout() {
       </main>
 
       <style>{`
-        @media (max-width: 900px) {
+        @media (max-width: 1024px) {
           .nav-desktop { display: none !important; }
           .nav-hamburger { display: flex !important; }
         }
