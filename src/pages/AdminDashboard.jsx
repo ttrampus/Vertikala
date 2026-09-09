@@ -614,7 +614,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="col-span-1">
                   <label className="text-xs text-muted-foreground font-inter block mb-1">Ocena</label>
-                  <Input placeholder="7a+, TD-, D+/5c…" value={ascentForm.difficulty} onChange={(e) => setAscentForm((f) => ({ ...f, difficulty: e.target.value }))} />
+                  <Input placeholder="npr. 7a+" value={ascentForm.difficulty} onChange={(e) => setAscentForm((f) => ({ ...f, difficulty: e.target.value }))} />
                 </div>
                 <div className="col-span-1">
                   <label className="text-xs text-muted-foreground font-inter block mb-1">Višina (m)</label>

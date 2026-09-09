@@ -75,7 +75,7 @@ export default function ClimbMetaForm({ value = {}, onChange }) {
           <Input
             value={value.grade || ""}
             onChange={(e) => update("grade", e.target.value)}
-            placeholder="npr. UIAA III, AD, F"
+            placeholder="npr. 7a+"
           />
         </div>
 

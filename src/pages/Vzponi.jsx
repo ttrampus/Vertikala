@@ -464,7 +464,7 @@ export default function Vzponi() {
               </div>
               <div>
                 <label style={labelStyle}>Ocena</label>
-                <input placeholder="7a+, TD-, D+/5c…" value={form.difficulty} onChange={(e) => setForm((f) => ({ ...f, difficulty: e.target.value }))} style={inputStyle} />
+                <input placeholder="npr. 7a+" value={form.difficulty} onChange={(e) => setForm((f) => ({ ...f, difficulty: e.target.value }))} style={inputStyle} />
               </div>
               <div>
                 <label style={labelStyle}>Višina (m)</label>
