@@ -2,7 +2,12 @@ import { useState, useRef, useContext, useEffect } from "react";
 import { ThemeCtx } from "@/lib/ThemeContext";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/lib/AuthContext";
-import { Loader2, Camera, Check, AlertCircle } from "lucide-react";
+import { Loader2, Camera, Check, AlertCircle, Trash2 } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const AVATAR_MAX_BYTES = 4 * 1024 * 1024; // 4 MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
@@ -29,7 +34,9 @@ function Banner({ msg }) {
 
 export default function Profile() {
   const theme = useContext(ThemeCtx);
-  const { user, profile, setProfile } = useAuth();
+  const { user, profile, setProfile, logout } = useAuth();
+  const [deleting, setDeleting] = useState(false);
+  const [deleteMsg, setDeleteMsg] = useState(null);
   const fileRef = useRef(null);
 
   // Profile fields
@@ -194,6 +201,23 @@ export default function Profile() {
     setPwMsg({ ok: true, text: "Geslo spremenjeno. Druge naprave so bile odjavljene." });
   };
 
+  // Deleting your own account. The database enforces the same rules in
+  // delete_account(); an owner cannot delete themselves, so the club can never
+  // be left with nobody able to assign roles.
+  const deleteOwnAccount = async () => {
+    setDeleting(true);
+    setDeleteMsg(null);
+    const { error } = await supabase.rpc("delete_account", { p_user_id: user.id });
+    if (error) {
+      setDeleting(false);
+      setDeleteMsg({ ok: false, text: error.message });
+      return;
+    }
+    // The account is gone; drop the now-dead session and leave.
+    await logout();
+    window.location.href = "/";
+  };
+
   return (
     <div style={{ background: theme.bg, minHeight: "100vh", color: theme.text, transition: "background 0.4s, color 0.4s" }}>
       <div style={{ maxWidth: "640px", margin: "0 auto", padding: "140px 24px 96px" }}>
@@ -293,6 +317,53 @@ export default function Profile() {
           </div>
         </form>
       </div>
+
+      {/* Danger zone — owners are blocked in the database, so don't offer it. */}
+      {profile?.is_owner !== true && (
+        <div style={{ ...cardStyle, borderColor: "rgba(239,68,68,0.35)" }}>
+          <h2 style={sectionTitle}>Izbriši račun</h2>
+          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", lineHeight: 1.7, color: theme.textMid, margin: "0 0 20px" }}>
+            Vaš račun bo trajno izbrisan in prijava ne bo več mogoča. Vaše objave, vzponi in
+            komentarji ostanejo na strani kot del zgodovine kluba, le niso več vezani na vaš račun.
+            Tega dejanja ni mogoče razveljaviti.
+          </p>
+          <Banner msg={deleteMsg} />
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button
+                type="button"
+                disabled={deleting}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: "8px",
+                  background: "none", border: "1px solid rgba(239,68,68,0.5)", color: "#ef4444",
+                  cursor: deleting ? "default" : "pointer",
+                  fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "14px",
+                  letterSpacing: "0.08em", textTransform: "uppercase", padding: "12px 28px",
+                  borderRadius: "8px", marginTop: "16px",
+                }}
+              >
+                {deleting ? <Loader2 size={16} style={{ animation: "spin 0.8s linear infinite" }} /> : <Trash2 size={15} />}
+                Izbriši moj račun
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Res želite izbrisati svoj račun?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Prijava s tem računom ne bo več mogoča. Za ponoven vstop boste potrebovali novo povabilo.
+                  Tega dejanja ni mogoče razveljaviti.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Prekliči</AlertDialogCancel>
+                <AlertDialogAction onClick={deleteOwnAccount} className="bg-destructive text-destructive-foreground">
+                  Da, izbriši račun
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      )}
 
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>

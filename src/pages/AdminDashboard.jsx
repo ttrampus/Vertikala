@@ -58,6 +58,7 @@ export default function AdminDashboard() {
   const [bulkProgress, setBulkProgress] = useState(null); // { sent, total, results: [{email, ok, msg}] }
 
   const [togglingRole, setTogglingRole] = useState(null);
+  const [deletingUser, setDeletingUser] = useState(null);
 
   // Ascents
   const [ascents, setAscents] = useState([]);
@@ -297,6 +298,26 @@ export default function AdminDashboard() {
       return;
     }
     setPosts((prev) => prev.map((p) => (p.id === post.id ? { ...p, status: newStatus } : p)));
+  };
+
+  // Who this viewer may delete. The same rules are enforced in the database by
+  // delete_account(), so this only decides whether to show the button.
+  const canDeleteUser = (u) => {
+    if (u.is_owner) return false;               // owners are undeletable, by design
+    if (u.id === user.id) return false;         // self-deletion lives on the profile page
+    if (viewerIsOwner) return true;             // owner: members and admins
+    return isAdmin && u.role !== "admin";       // admin: plain members only
+  };
+
+  const deleteAccount = async (u) => {
+    setDeletingUser(u.id);
+    const { error } = await supabase.rpc("delete_account", { p_user_id: u.id });
+    setDeletingUser(null);
+    if (error) {
+      alert("Brisanje računa ni uspelo: " + error.message);
+      return;
+    }
+    setProfiles((prev) => prev.filter((x) => x.id !== u.id));
   };
 
   const sendInvite = async () => {
@@ -558,6 +579,29 @@ export default function AdminDashboard() {
                             : <><ShieldCheck className="h-3.5 w-3.5" /> Naredi admina</>
                         }
                       </Button>
+                    )}
+                    {canDeleteUser(u) && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" disabled={deletingUser === u.id} title="Izbriši račun">
+                            {deletingUser === u.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Izbriši račun {u.display_name || ""}?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Račun bo trajno izbrisan in se ta oseba ne bo več mogla prijaviti.
+                              Objave, vzponi, tabori in komentarji ostanejo — le niso več vezani na ta račun.
+                              Tega dejanja ni mogoče razveljaviti.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Prekliči</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => deleteAccount(u)} className="bg-destructive text-destructive-foreground">Izbriši račun</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     )}
                   </div>
                 </div>
