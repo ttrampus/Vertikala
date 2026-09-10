@@ -7,10 +7,11 @@ import { uploadToSupabase } from "@/lib/uploadToSupabase";
 import { thumbUrl } from "@/lib/thumbs";
 import HeroBg from "@/components/HeroBg";
 import CardImage from "@/components/CardImage";
+import FeaturedImagePicker from "@/components/FeaturedImagePicker";
 import StatsSection from "@/components/StatsSection";
 import DateField from "@/components/DateField";
 import { formatDate } from "@/lib/dates";
-import { Trash2, Upload, Loader2, X, Pencil } from "lucide-react";
+import { Trash2, X, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -18,7 +19,13 @@ import {
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-const EMPTY_FORM = { title: "", date_from: "", date_to: "", location: "", summary: "", description: "", image_url: "" };
+// Razmerja okvirov za sliko tabora: kartica v seznamu in glava podrobnosti.
+const CAMP_PREVIEWS = [
+  { label: "Kartica", ratio: 512 / 280 },
+  { label: "Podrobnosti", ratio: 640 / 260 },
+];
+
+const EMPTY_FORM = { title: "", date_from: "", date_to: "", location: "", summary: "", description: "", image_url: "", focal_point: "" };
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&q=70";
 
 export default function Tabori() {
@@ -62,6 +69,7 @@ export default function Tabori() {
       summary: c.summary || "",
       description: c.description || "",
       image_url: c.image_url || "",
+      focal_point: c.focal_point || "",
     });
     setFormError("");
     setDetailCamp(null);
@@ -74,7 +82,9 @@ export default function Tabori() {
     setUploadingImage(true);
     try {
       const url = await uploadToSupabase(file, "camps");
-      setForm((f) => ({ ...f, image_url: url }));
+      // Žarišče velja za točno tisto sliko, ki je bila takrat izbrana —
+      // ob novi sliki se vrne na sredino.
+      setForm((f) => ({ ...f, image_url: url, focal_point: "" }));
     } catch (err) {
       alert(`Nalaganje ni uspelo: ${err.message}`);
     } finally {
@@ -99,6 +109,7 @@ export default function Tabori() {
       summary: form.summary.trim() || null,
       description: form.description.trim() || null,
       image_url: form.image_url || null,
+      focal_point: form.focal_point || null,
     };
 
     if (editingId) {
@@ -216,6 +227,7 @@ export default function Tabori() {
                   src={c.image_url ? thumbUrl(c.image_url) : FALLBACK_IMAGE}
                   fallbackSrc={c.image_url || FALLBACK_IMAGE}
                   alt={c.title}
+                  focus={c.focal_point}
                   style={{ height: "280px" }}
                 >
                   <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 45%)" }} />
@@ -252,6 +264,7 @@ export default function Tabori() {
                 src={detailCamp.image_url ? thumbUrl(detailCamp.image_url) : FALLBACK_IMAGE}
                 fallbackSrc={detailCamp.image_url || FALLBACK_IMAGE}
                 alt={detailCamp.title}
+                focus={detailCamp.focal_point}
                 style={{ height: "260px" }}
               />
               <button
@@ -348,32 +361,15 @@ export default function Tabori() {
               </div>
               <div style={{ gridColumn: "1 / -1" }}>
                 <label style={labelStyle}>Slika</label>
-                {form.image_url ? (
-                  <div style={{ position: "relative", borderRadius: "8px", overflow: "hidden", height: "160px" }}>
-                    <img src={form.image_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                    <button
-                      type="button"
-                      onClick={() => setForm((f) => ({ ...f, image_url: "" }))}
-                      style={{ position: "absolute", top: "8px", right: "8px", background: "rgba(0,0,0,0.6)", border: "none", borderRadius: "999px", padding: "6px", cursor: "pointer", display: "flex" }}
-                    ><X className="h-4 w-4" style={{ color: "#fff" }} /></button>
-                  </div>
-                ) : (
-                  <label style={{
-                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                    height: "120px", borderRadius: "8px", border: `1.5px dashed ${theme.border}`,
-                    cursor: uploadingImage ? "default" : "pointer", gap: "8px",
-                  }}>
-                    {uploadingImage ? (
-                      <Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.textLow }} />
-                    ) : (
-                      <>
-                        <Upload className="h-6 w-6" style={{ color: theme.textLow }} />
-                        <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", color: theme.textLow }}>Kliknite za nalaganje slike</span>
-                      </>
-                    )}
-                    <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploadingImage} style={{ display: "none" }} />
-                  </label>
-                )}
+                <FeaturedImagePicker
+                  value={form.image_url}
+                  focus={form.focal_point}
+                  onFocusChange={(v) => setForm((f) => ({ ...f, focal_point: v }))}
+                  onRemove={() => setForm((f) => ({ ...f, image_url: "", focal_point: "" }))}
+                  onUpload={handleImageUpload}
+                  uploading={uploadingImage}
+                  previews={CAMP_PREVIEWS}
+                />
               </div>
             </div>
 

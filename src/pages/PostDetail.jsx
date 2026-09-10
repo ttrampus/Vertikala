@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import DOMPurify from "dompurify";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/lib/AuthContext";
-import { Loader2, ArrowLeft, Calendar, User, Eye } from "lucide-react";
+import { Loader2, ArrowLeft, Calendar, User, Eye, Edit } from "lucide-react";
 import { formatDate } from "@/lib/dates";
 import TagBadge from "../components/TagBadge";
 import PrivateBadge from "../components/PrivateBadge";
@@ -72,7 +72,7 @@ export default function PostDetail() {
     // wildcard requires table-level SELECT, unlike an explicit column list).
     const { data, error } = await supabase
       .from("BlogPost")
-      .select("id, title, summary, content, featured_image, images, tags, category, climb_metadata, status, author_name, created_by, created_by_id, created_date, updated_date, deleted_at, is_public, is_sample, likes_count, comments_count, views_count, wp_id")
+      .select("id, title, summary, content, featured_image, focal_point, images, tags, category, climb_metadata, status, author_name, created_by, created_by_id, created_date, updated_date, deleted_at, is_public, is_sample, likes_count, comments_count, views_count, wp_id")
       .eq("id", id)
       .single();
 
@@ -127,6 +127,8 @@ export default function PostDetail() {
     );
   }
 
+  const canEdit = Boolean(user && (isAdmin || post.created_by_id === user.id));
+
   return (
     <div className="min-h-screen pt-20">
       {/* Header */}
@@ -169,6 +171,7 @@ export default function PostDetail() {
             <CardImage
               src={post.featured_image}
               alt={post.title}
+              focus={post.focal_point}
               eager
               className="rounded-xl h-80"
             />
@@ -178,14 +181,28 @@ export default function PostDetail() {
 
       {/* Content */}
       <article className="max-w-3xl mx-auto px-6 lg:px-8 py-12">
-        <button
-          type="button"
-          onClick={goBack}
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Nazaj na objave
-        </button>
+        {/* Urejanje s same objave: skrbnik pri vseh, član pri svojih. Isto
+            pravilo velja v EditPost in v RLS politikah tabele — tukaj samo
+            skrijemo gumb, ki ne bi nikamor pripeljal. */}
+        <div className="flex items-center justify-between gap-4 mb-8">
+          <button
+            type="button"
+            onClick={goBack}
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Nazaj na objave
+          </button>
+          {canEdit && (
+            <Link
+              to={`/edit/${post.id}`}
+              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              <Edit className="h-4 w-4" />
+              Uredi objavo
+            </Link>
+          )}
+        </div>
 
         {/* Tags */}
         {post.tags?.length > 0 && (

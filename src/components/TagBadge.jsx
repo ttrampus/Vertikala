@@ -6,7 +6,9 @@ const categoryColors = {
   news: "bg-cyan-500/10 text-cyan-600 border-cyan-200",
 };
 
-const categoryLabels = {
+// Skupna imena kategorij: uporablja jih tudi PostToolbar, da se filter in
+// značka na vrstici ne razideta.
+export const categoryLabels = {
   climbs: "Vzponi",
   trips: "Izleti",
   events: "Dogodki",

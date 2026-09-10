@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import FeaturedImagePicker from "@/components/FeaturedImagePicker";
 import { supabase } from "@/lib/supabaseClient";
 import { uploadToSupabase } from "@/lib/uploadToSupabase";
 import { useAuth } from "@/lib/AuthContext";
@@ -14,7 +15,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Loader2, ArrowLeft, Upload, X, Save, Send,
+  Loader2, ArrowLeft, X, Save, Send,
   Bold, Italic, Underline as UnderlineIcon, List, ListOrdered,
   Quote, Link as LinkIcon, Image as ImageIcon, Video,
   AlignLeft, AlignCenter, AlignRight, Heading2, Heading3,
@@ -558,7 +559,7 @@ export default function EditPost() {
   const [initialContent, setInitialContent] = useState(null);
 
   const [form, setForm] = useState({
-    title: "", summary: "", content: "", featured_image: "", images: [], tags: [], category: "climbs", status: "published", climb_metadata: {}, is_public: true,
+    title: "", summary: "", content: "", featured_image: "", focal_point: null, images: [], tags: [], category: "climbs", status: "published", climb_metadata: {}, is_public: true,
   });
   const [tagInput, setTagInput] = useState("");
 
@@ -604,7 +605,7 @@ export default function EditPost() {
     // against a table that only has column-level grants.
     const { data, error } = await supabase
       .from("BlogPost")
-      .select("id, title, summary, content, featured_image, images, tags, category, climb_metadata, status, author_name, created_by, created_by_id, created_date, updated_date, deleted_at, is_public, is_sample, likes_count, comments_count, views_count, wp_id")
+      .select("id, title, summary, content, featured_image, focal_point, images, tags, category, climb_metadata, status, author_name, created_by, created_by_id, created_date, updated_date, deleted_at, is_public, is_sample, likes_count, comments_count, views_count, wp_id")
       .eq("id", id)
       .single();
     if (error) { console.error(error); navigate("/dashboard"); return; }
@@ -614,6 +615,7 @@ export default function EditPost() {
       summary: data.summary || "",
       content: data.content || "",
       featured_image: data.featured_image || "",
+      focal_point: data.focal_point || null,
       images: data.images || [],
       tags: data.tags || [],
       category: data.category || "climbs",
@@ -646,7 +648,9 @@ export default function EditPost() {
     setFeaturedUploading(true);
     try {
       const url = await uploadToSupabase(file, "inline");
-      setForm((prev) => ({ ...prev, featured_image: url }));
+      // Žarišče velja za točno tisto sliko, ki je bila takrat izbrana —
+      // ob novi sliki se vrne na sredino.
+      setForm((prev) => ({ ...prev, featured_image: url, focal_point: null }));
     } catch (err) {
       alert(`Nalaganje ni uspelo: ${err.message}`);
     } finally {
@@ -673,7 +677,7 @@ export default function EditPost() {
       // updated row back, a blocked save looked exactly like a successful one
       // and we navigated away having saved nothing.
       const { data, error } = await supabase.from("BlogPost")
-        .update({ title: form.title, summary: form.summary, content: form.content, featured_image: form.featured_image, images: form.images, tags: form.tags, category: form.category, climb_metadata: climbMeta, is_public: form.is_public, status })
+        .update({ title: form.title, summary: form.summary, content: form.content, featured_image: form.featured_image, focal_point: form.focal_point, images: form.images, tags: form.tags, category: form.category, climb_metadata: climbMeta, is_public: form.is_public, status })
         .eq("id", id)
         .select("id");
       if (error) throw error;
@@ -706,21 +710,14 @@ export default function EditPost() {
       <div className="space-y-8">
         <div>
           <label className="block text-sm font-inter font-medium mb-2">Naslovna slika</label>
-          {form.featured_image ? (
-            <div className="relative rounded-xl overflow-hidden aspect-[16/9] max-w-2xl">
-              <img src={form.featured_image} alt="Naslovna slika" className="w-full h-full object-cover" />
-              <button onClick={() => updateForm("featured_image", "")}
-                className="absolute top-3 right-3 bg-black/60 text-white rounded-full p-1.5 hover:bg-black/80">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ) : (
-            <label className="flex flex-col items-center justify-center aspect-[16/9] max-w-2xl rounded-xl border-2 border-dashed border-border hover:border-primary/50 cursor-pointer transition-colors">
-              {featuredUploading ? <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" />
-                : <><Upload className="h-8 w-8 text-muted-foreground mb-2" /><span className="text-sm text-muted-foreground">Kliknite za nalaganje naslovne slike</span></>}
-              <input type="file" accept="image/*" onChange={handleFeaturedUpload} className="hidden" disabled={featuredUploading} />
-            </label>
-          )}
+          <FeaturedImagePicker
+            value={form.featured_image}
+            focus={form.focal_point}
+            onFocusChange={(v) => updateForm("focal_point", v)}
+            onRemove={() => setForm((prev) => ({ ...prev, featured_image: "", focal_point: null }))}
+            onUpload={handleFeaturedUpload}
+            uploading={featuredUploading}
+          />
         </div>
 
         <div>

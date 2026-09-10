@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
@@ -20,6 +20,8 @@ import TagBadge from "../components/TagBadge";
 import PrivateBadge from "../components/PrivateBadge";
 import DateField from "@/components/DateField";
 import { formatNumber } from "@/lib/numbers";
+import PostToolbar, { NoPostsMessage } from "@/components/PostToolbar";
+import { applyPostFilters, EMPTY_FILTERS, hasActiveFilters } from "@/lib/postFilters";
 
 const EMPTY_ASCENT_FORM = { date: "", climber_name: "", co_climber: "", category: "alpinistični", location: "", route_name: "", difficulty: "", altitude: "", notes: "", is_public: true };
 const ASCENT_CATEGORY_LABELS = {
@@ -44,6 +46,7 @@ export default function AdminDashboard() {
 
   // Bulk post selection
   const [selectedPosts, setSelectedPosts] = useState(new Set());
+  const [postFilters, setPostFilters] = useState(EMPTY_FILTERS);
   const [bulkDeleting, setBulkDeleting] = useState(false);
 
   // Single invite
@@ -136,6 +139,15 @@ export default function AdminDashboard() {
     }
   };
 
+  const visiblePosts = useMemo(() => applyPostFilters(posts, postFilters), [posts, postFilters]);
+
+  // Izbor sledi filtru: skupinsko brisanje sme vzeti samo tisto, kar skrbnik
+  // dejansko vidi, sicer bi „Izberi vse“ pobralo tudi skrite vrstice.
+  const visibleSelectedPosts = useMemo(
+    () => visiblePosts.filter((p) => selectedPosts.has(p.id)),
+    [visiblePosts, selectedPosts]
+  );
+
   const togglePostSelected = (id) => {
     setSelectedPosts((prev) => {
       const n = new Set(prev);
@@ -146,11 +158,12 @@ export default function AdminDashboard() {
 
   const bulkDeletePosts = async () => {
     setBulkDeleting(true);
-    const ids = [...selectedPosts];
+    const ids = visibleSelectedPosts.map((p) => p.id);
+    const gone = new Set(ids);
     const { error } = await softDeletePosts(ids);
     if (!error) {
-      const moved = posts.filter((p) => selectedPosts.has(p.id)).map((p) => ({ ...p, deleted_at: new Date().toISOString() }));
-      setPosts((prev) => prev.filter((p) => !selectedPosts.has(p.id)));
+      const moved = visibleSelectedPosts.map((p) => ({ ...p, deleted_at: new Date().toISOString() }));
+      setPosts((prev) => prev.filter((p) => !gone.has(p.id)));
       setTrashedPosts((prev) => [...moved, ...prev]);
       setSelectedPosts(new Set());
     } else {
@@ -452,25 +465,34 @@ export default function AdminDashboard() {
         {/* POSTS TAB */}
         <TabsContent value="posts" className="mt-6">
           {posts.length > 0 && (
+            <PostToolbar
+              filters={postFilters}
+              onChange={setPostFilters}
+              shown={visiblePosts.length}
+              total={posts.length}
+              className="mb-4"
+            />
+          )}
+          {visiblePosts.length > 0 && (
             <div className="flex items-center justify-between mb-4 min-h-9">
               <label className="flex items-center gap-2.5 text-sm text-muted-foreground font-inter cursor-pointer px-4">
                 <Checkbox
-                  checked={selectedPosts.size === posts.length}
-                  onCheckedChange={(v) => setSelectedPosts(v ? new Set(posts.map((p) => p.id)) : new Set())}
+                  checked={visibleSelectedPosts.length === visiblePosts.length}
+                  onCheckedChange={(v) => setSelectedPosts(v ? new Set(visiblePosts.map((p) => p.id)) : new Set())}
                 />
-                {selectedPosts.size > 0 ? `${selectedPosts.size} izbranih` : "Izberi vse"}
+                {visibleSelectedPosts.length > 0 ? `${visibleSelectedPosts.length} izbranih` : "Izberi vse"}
               </label>
-              {selectedPosts.size > 0 && (
+              {visibleSelectedPosts.length > 0 && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive" size="sm" className="gap-1.5" disabled={bulkDeleting}>
                       {bulkDeleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-                      Izbriši ({selectedPosts.size})
+                      Izbriši ({visibleSelectedPosts.length})
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Premakni {selectedPosts.size} objav v koš?</AlertDialogTitle>
+                      <AlertDialogTitle>Premakni {visibleSelectedPosts.length} objav v koš?</AlertDialogTitle>
                       <AlertDialogDescription>Objave bodo premaknjene v koš in skrite z javnih strani. Obnovite jih lahko kadarkoli iz zavihka „Koš“.</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -483,8 +505,14 @@ export default function AdminDashboard() {
             </div>
           )}
           <div className="space-y-2">
-            {posts.length === 0 && <p className="text-muted-foreground text-sm font-inter py-8 text-center">Še ni objav.</p>}
-            {posts.map((post) => (
+            {visiblePosts.length === 0 && (
+              <NoPostsMessage
+                filtered={posts.length > 0 && hasActiveFilters(postFilters)}
+                empty="Še ni objav."
+                onReset={() => setPostFilters({ ...EMPTY_FILTERS })}
+              />
+            )}
+            {visiblePosts.map((post) => (
               <div key={post.id} className={`flex items-center gap-4 p-4 rounded-xl border bg-card ${selectedPosts.has(post.id) ? "border-primary/50" : "border-border"}`}>
                 <Checkbox
                   checked={selectedPosts.has(post.id)}

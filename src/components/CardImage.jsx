@@ -5,11 +5,16 @@ import { thumbFallback } from "@/lib/thumbs";
 // empty gray box. Renders its own wrapper (give it a size via className or
 // style); overlays like gradients and category chips go in as children.
 // `fallbackSrc` swaps in the original file if the thumb is missing.
+//
+// The image always fills the frame, so anything that does not match the frame's
+// shape gets cropped. `focus` ("50% 25%", from a post's focal_point) says which
+// point of the image must survive that crop; without it the crop is centred.
 export default function CardImage({
   src,
   fallbackSrc,
   alt = "",
   eager = false,
+  focus,
   className = "",
   style,
   imgClassName = "",
@@ -39,6 +44,7 @@ export default function CardImage({
           width: "100%",
           height: "100%",
           objectFit: "cover",
+          objectPosition: focus || undefined,
           opacity: loaded ? 1 : 0,
           transition: "opacity 0.5s ease",
           ...imgStyle,

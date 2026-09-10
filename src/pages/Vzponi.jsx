@@ -121,7 +121,7 @@ export default function Vzponi() {
   useEffect(() => {
     Promise.all([
       supabase.from("ascents").select("*").order("date", { ascending: false }),
-      supabase.from("BlogPost").select("id,title,summary,featured_image,author_name,created_date,likes_count,is_public").eq("status", "published").eq("category", "climbs").is("deleted_at", null).order("created_date", { ascending: false }).limit(6),
+      supabase.from("BlogPost").select("id,title,summary,featured_image,focal_point,author_name,created_date,likes_count,is_public").eq("status", "published").eq("category", "climbs").is("deleted_at", null).order("created_date", { ascending: false }).limit(6),
     ]).then(([ascentsRes, postsRes]) => {
       setAscents(ascentsRes.data || []);
       setClimbPosts(postsRes.data || []);
@@ -380,6 +380,7 @@ export default function Vzponi() {
                 <CardImage
                   src={post.featured_image ? thumbUrl(post.featured_image) : "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=70"}
                   fallbackSrc={post.featured_image}
+                  focus={post.focal_point}
                   style={{ height: "160px" }}
                 >
                   <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%)" }} />

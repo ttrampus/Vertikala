@@ -73,7 +73,7 @@ export default function Home() {
         .from("BlogPost")
         // Only the columns the cards use — avoids transferring the full HTML
         // `content` and large jsonb fields for every post on the landing page.
-        .select("id, title, summary, featured_image, author_name, category, created_date, likes_count, created_by, created_by_id, is_public")
+        .select("id, title, summary, featured_image, focal_point, author_name, category, created_date, likes_count, created_by, created_by_id, is_public")
         .eq("status", "published")
         .is("deleted_at", null)
         .order("created_date", { ascending: false });
@@ -263,19 +263,23 @@ export default function Home() {
                 <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '11px', letterSpacing: '0.25em', textTransform: 'uppercase', color: theme.textFaint, marginBottom: '16px' }}>— Izpostavljeno</div>
                 <Link to={`/post/${featuredPost.id}`} style={{ textDecoration: 'none' }}>
                   <div
-                    style={{ display: 'grid', gridTemplateColumns: 'var(--col-2)', background: theme.bgCard, border: `1px solid ${theme.border}`, borderRadius: '8px', overflow: 'hidden', transition: 'border-color 0.3s, transform 0.3s, background 0.4s', cursor: 'pointer' }}
+                    style={{ display: 'grid', gridTemplateColumns: 'var(--col-feat)', background: theme.bgCard, border: `1px solid ${theme.border}`, borderRadius: '8px', overflow: 'hidden', transition: 'border-color 0.3s, transform 0.3s, background 0.4s', cursor: 'pointer' }}
                     onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(232,80,26,0.4)'; e.currentTarget.style.transform = 'translateY(-3px)'; }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = 'translateY(0)'; }}
                   >
-                    <div style={{ padding: '48px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    {/* Spodnja meja višine: brez nje se kartica brez povzetka
+                        zniža in okvir za sliko postane preozek, slika pa spet
+                        izgubi robove. Meja višino le dvigne, zato pod sliko
+                        nikoli ne nastane prazen pas. */}
+                    <div style={{ padding: '48px', minHeight: '340px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                       <div>
                         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '20px' }}>
                           <span style={{ background: '#E8501A', color: '#fff', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 10px', borderRadius: '3px' }}>{CAT_LABEL[featuredPost.category] || featuredPost.category || 'Objava'}</span>
                           {featuredPost.is_public === false && <PrivateBadge small />}
                           <span style={{ color: theme.textLow, fontFamily: "'Inter', sans-serif", fontSize: '13px' }}>{formatDate(featuredPost.created_date)}</span>
                         </div>
-                        <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 'clamp(28px, 5.5vw, 42px)', lineHeight: 1.05, letterSpacing: '-0.01em', margin: '0 0 16px', color: theme.text }}>{featuredPost.title}</h2>
-                        {featuredPost.summary && <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '15px', lineHeight: 1.7, color: theme.textMid, margin: 0 }}>{featuredPost.summary}</p>}
+                        <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 'clamp(28px, 5.5vw, 42px)', lineHeight: 1.05, letterSpacing: '-0.01em', margin: '0 0 16px', color: theme.text, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{featuredPost.title}</h2>
+                        {featuredPost.summary && <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '15px', lineHeight: 1.7, color: theme.textMid, margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{featuredPost.summary}</p>}
                       </div>
                       <div style={{ marginTop: '32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: theme.textLow }}>{featuredPost.author_name || 'Član'} · ♥ {featuredPost.likes_count || 0}</span>
@@ -284,8 +288,12 @@ export default function Home() {
                     </div>
                     <CardImage
                       src={featuredPost.featured_image || 'https://images.unsplash.com/photo-1551632811-561732d1e306?w=800&q=80'}
+                      focus={featuredPost.focal_point}
                       eager
-                      style={{ minHeight: '360px' }}
+                      /* Naslov in povzetek sta omejena na dve vrstici, zato je
+                         višina besedilnega stolpca stalna — in s tem tudi oblika
+                         okvira za sliko, ne glede na dolžino besedila. */
+                      style={{ aspectRatio: 'var(--feat-img-ratio)' }}
                     >
                       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(20,20,20,0.3), transparent)' }} />
                     </CardImage>
@@ -314,6 +322,7 @@ export default function Home() {
                     <CardImage
                       src={post.featured_image ? thumbUrl(post.featured_image) : 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=70'}
                       fallbackSrc={post.featured_image}
+                      focus={post.focal_point}
                       eager={i < 3}
                       style={{ height: '180px' }}
                     >

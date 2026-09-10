@@ -225,6 +225,9 @@
 
   /* Grid column templates */
   --col-2: 1fr 1fr;             /* two equal columns */
+  --col-feat: 1fr 1.35fr;       /* featured post card: text | image, image wider so
+                                   the frame lands near 16:9 and crops little */
+  --feat-img-ratio: auto;       /* stacked, the image needs its own height (see below) */
   --col-3: repeat(3, 1fr);      /* card grids */
   --col-4: repeat(4, 1fr);      /* stat / feature grids */
   --col-side-l: 340px 1fr;      /* fixed sidebar on the LEFT (e.g. Contact info) */
@@ -262,6 +265,11 @@
 @media (max-width: 680px) {
   :root {
     --col-2: 1fr;
+    --col-feat: 1fr;
+    /* Side by side the image cell is stretched by the row, so its height comes
+       from the text next to it. Stacked there is no such row: without a ratio
+       the cell would have no height at all and the image would vanish. */
+    --feat-img-ratio: 16 / 9;
     --col-3: 1fr;
     --col-footer: 1fr;
     --col-time-e: 1fr;   /* stack number / content / link vertically on phones */

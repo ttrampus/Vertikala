@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
@@ -10,6 +10,8 @@ import { formatDate } from "@/lib/dates";
 import TagBadge from "../components/TagBadge";
 import PrivateBadge from "../components/PrivateBadge";
 import { Button } from "@/components/ui/button";
+import PostToolbar, { NoPostsMessage } from "@/components/PostToolbar";
+import { applyPostFilters, EMPTY_FILTERS, hasActiveFilters } from "@/lib/postFilters";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -24,6 +26,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [filters, setFilters] = useState(EMPTY_FILTERS);
 
   useEffect(() => {
     let alive = true;
@@ -32,7 +35,7 @@ export default function Dashboard() {
       setLoading(true);
       const { data, error } = await supabase
         .from("BlogPost")
-        .select("id, title, status, category, featured_image, created_date, is_public")
+        .select("id, title, summary, status, category, featured_image, created_date, is_public, likes_count, views_count")
         .eq("created_by_id", user.id)
         .is("deleted_at", null)
         .order("created_date", { ascending: false })
@@ -45,6 +48,15 @@ export default function Dashboard() {
     if (!isLoadingAuth && user?.id) loadPosts();
     return () => { alive = false; };
   }, [isLoadingAuth, user?.id]);
+
+  const visiblePosts = useMemo(() => applyPostFilters(posts, filters), [posts, filters]);
+
+  // Izbor sledi filtru: kar ni na zaslonu, ne sme pasti pod „Izberi vse“ in
+  // tudi ne pod skupinsko brisanje.
+  const visibleSelected = useMemo(
+    () => visiblePosts.filter((p) => selected.has(p.id)),
+    [visiblePosts, selected]
+  );
 
   const deletePost = async (id) => {
     const { error } = await softDeletePosts([id]);
@@ -63,11 +75,13 @@ export default function Dashboard() {
 
   const bulkDelete = async () => {
     setBulkDeleting(true);
-    const { error } = await softDeletePosts([...selected]);
+    const ids = visibleSelected.map((p) => p.id);
+    const { error } = await softDeletePosts(ids);
     if (error) {
       alert("Brisanje ni uspelo: " + error.message);
     } else {
-      setPosts((prev) => prev.filter((p) => !selected.has(p.id)));
+      const gone = new Set(ids);
+      setPosts((prev) => prev.filter((p) => !gone.has(p.id)));
       setSelected(new Set());
     }
     setBulkDeleting(false);
@@ -89,25 +103,35 @@ export default function Dashboard() {
       </div>
 
       {posts.length > 0 && (
+        <PostToolbar
+          filters={filters}
+          onChange={setFilters}
+          shown={visiblePosts.length}
+          total={posts.length}
+          className="mb-4"
+        />
+      )}
+
+      {visiblePosts.length > 0 && (
         <div className="flex items-center justify-between mb-4 min-h-9">
           <label className="flex items-center gap-2.5 text-sm text-muted-foreground font-inter cursor-pointer px-4">
             <Checkbox
-              checked={selected.size === posts.length}
-              onCheckedChange={(v) => setSelected(v ? new Set(posts.map((p) => p.id)) : new Set())}
+              checked={visibleSelected.length === visiblePosts.length}
+              onCheckedChange={(v) => setSelected(v ? new Set(visiblePosts.map((p) => p.id)) : new Set())}
             />
-            {selected.size > 0 ? `${selected.size} izbranih` : "Izberi vse"}
+            {visibleSelected.length > 0 ? `${visibleSelected.length} izbranih` : "Izberi vse"}
           </label>
-          {selected.size > 0 && (
+          {visibleSelected.length > 0 && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" size="sm" className="gap-1.5" disabled={bulkDeleting}>
                   {bulkDeleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-                  Izbriši ({selected.size})
+                  Izbriši ({visibleSelected.length})
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Izbriši {selected.size} objav?</AlertDialogTitle>
+                  <AlertDialogTitle>Izbriši {visibleSelected.length} objav?</AlertDialogTitle>
                   <AlertDialogDescription>Izbrane objave bodo trajno izbrisane. Tega ni mogoče razveljaviti.</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -121,13 +145,15 @@ export default function Dashboard() {
       )}
 
       <div className="space-y-2">
-        {posts.length === 0 && (
-          <p className="text-muted-foreground text-sm py-8 text-center">
-            Še nimate objav. Napišite svojo prvo!
-          </p>
+        {visiblePosts.length === 0 && (
+          <NoPostsMessage
+            filtered={posts.length > 0 && hasActiveFilters(filters)}
+            empty="Še nimate objav. Napišite svojo prvo!"
+            onReset={() => setFilters({ ...EMPTY_FILTERS })}
+          />
         )}
 
-        {posts.map((post) => (
+        {visiblePosts.map((post) => (
           <div
             key={post.id}
             className={`flex items-center gap-4 p-4 rounded-xl border bg-card ${selected.has(post.id) ? "border-primary/50" : "border-border"}`}

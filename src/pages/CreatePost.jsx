@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import FeaturedImagePicker from "@/components/FeaturedImagePicker";
 import { supabase } from "@/lib/supabaseClient";
 import { uploadToSupabase } from "@/lib/uploadToSupabase";
 import { useAuth } from "@/lib/AuthContext";
@@ -14,7 +15,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Loader2, ArrowLeft, Upload, X, Save, Send,
+  Loader2, ArrowLeft, X, Save, Send,
   Bold, Italic, Underline as UnderlineIcon, List, ListOrdered,
   Quote, Link as LinkIcon, Image as ImageIcon, Video,
   AlignLeft, AlignCenter, AlignRight, Heading2, Heading3,
@@ -591,7 +592,7 @@ export default function CreatePost() {
   const [showSideBySide, setShowSideBySide] = useState(false);
 
   const [form, setForm] = useState({
-    title: "", summary: "", content: "", featured_image: "", images: [], tags: [], category: "climbs", climb_metadata: {}, is_public: true,
+    title: "", summary: "", content: "", featured_image: "", focal_point: null, images: [], tags: [], category: "climbs", climb_metadata: {}, is_public: true,
   });
   const [tagInput, setTagInput] = useState("");
 
@@ -638,7 +639,9 @@ export default function CreatePost() {
     setFeaturedUploading(true);
     try {
       const url = await uploadToSupabase(file, "inline");
-      setForm((prev) => ({ ...prev, featured_image: url }));
+      // Žarišče velja za točno tisto sliko, ki je bila takrat izbrana —
+      // ob novi sliki se vrne na sredino.
+      setForm((prev) => ({ ...prev, featured_image: url, focal_point: null }));
     } catch (err) {
       alert(`Nalaganje ni uspelo: ${err.message}`);
     } finally {
@@ -666,7 +669,7 @@ export default function CreatePost() {
       // against a table that only has column-level grants. We only need the
       // new row's id anyway, to navigate to it below.
       const { data, error } = await supabase.from("BlogPost")
-        .insert([{ title: form.title, summary: form.summary, content: form.content, featured_image: form.featured_image, images: form.images, tags: form.tags, category: form.category, climb_metadata: climbMeta, is_public: form.is_public, status, created_by_id: user.id, created_by: user.email, author_email: user.email, author_name: profile?.display_name || user.email }])
+        .insert([{ title: form.title, summary: form.summary, content: form.content, featured_image: form.featured_image, focal_point: form.focal_point, images: form.images, tags: form.tags, category: form.category, climb_metadata: climbMeta, is_public: form.is_public, status, created_by_id: user.id, created_by: user.email, author_email: user.email, author_name: profile?.display_name || user.email }])
         .select("id").single();
       if (error) throw error;
       // replace: the finished form shouldn't stay in history — back from the
@@ -699,21 +702,14 @@ export default function CreatePost() {
         {/* Featured Image */}
         <div>
           <label className="block text-sm font-inter font-medium mb-2">Naslovna slika</label>
-          {form.featured_image ? (
-            <div className="relative rounded-xl overflow-hidden aspect-[16/9] max-w-2xl">
-              <img src={form.featured_image} alt="Featured" className="w-full h-full object-cover" />
-              <button onClick={() => updateForm("featured_image", "")}
-                className="absolute top-3 right-3 bg-black/60 text-white rounded-full p-1.5 hover:bg-black/80">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ) : (
-            <label className="flex flex-col items-center justify-center aspect-[16/9] max-w-2xl rounded-xl border-2 border-dashed border-border hover:border-primary/50 cursor-pointer transition-colors">
-              {featuredUploading ? <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" />
-                : <><Upload className="h-8 w-8 text-muted-foreground mb-2" /><span className="text-sm text-muted-foreground">Kliknite za nalaganje naslovne slike</span></>}
-              <input type="file" accept="image/*" onChange={handleFeaturedUpload} className="hidden" disabled={featuredUploading} />
-            </label>
-          )}
+          <FeaturedImagePicker
+            value={form.featured_image}
+            focus={form.focal_point}
+            onFocusChange={(v) => updateForm("focal_point", v)}
+            onRemove={() => setForm((prev) => ({ ...prev, featured_image: "", focal_point: null }))}
+            onUpload={handleFeaturedUpload}
+            uploading={featuredUploading}
+          />
         </div>
 
         {/* Title */}
