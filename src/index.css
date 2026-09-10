@@ -228,6 +228,9 @@
   --col-feat: 1fr 1.35fr;       /* featured post card: text | image, image wider so
                                    the frame lands near 16:9 and crops little */
   --feat-img-ratio: auto;       /* stacked, the image needs its own height (see below) */
+  --feat-text-min: 340px;       /* keeps the side-by-side frame from going too narrow */
+  --feat-img-order: 0;          /* stacked, the image leads (see below) */
+  --feat-pad: 48px;             /* featured card text padding */
   --col-3: repeat(3, 1fr);      /* card grids */
   --col-4: repeat(4, 1fr);      /* stat / feature grids */
   --col-side-l: 340px 1fr;      /* fixed sidebar on the LEFT (e.g. Contact info) */
@@ -258,6 +261,19 @@
     --col-side-l: 1fr;
     --col-side-r: 1fr;
     --sticky-side: static;
+
+    /* Side by side below ~900px the text column gets too narrow to read and the
+       title breaks over three lines, so the featured card stacks here already.
+       Stacked it behaves like every other card: image on top, then the text —
+       hence the ratio (the cell has no row to take its height from) and the
+       order (in source the text comes first, which side by side is correct).
+       The height floor is a side-by-side concern only; stacked it would just
+       leave a gap under the summary. */
+    --col-feat: 1fr;
+    --feat-img-ratio: 16 / 9;
+    --feat-img-order: -1;
+    --feat-text-min: 0px;
+    --feat-pad: 28px;
   }
 }
 
@@ -265,11 +281,6 @@
 @media (max-width: 680px) {
   :root {
     --col-2: 1fr;
-    --col-feat: 1fr;
-    /* Side by side the image cell is stretched by the row, so its height comes
-       from the text next to it. Stacked there is no such row: without a ratio
-       the cell would have no height at all and the image would vanish. */
-    --feat-img-ratio: 16 / 9;
     --col-3: 1fr;
     --col-footer: 1fr;
     --col-time-e: 1fr;   /* stack number / content / link vertically on phones */

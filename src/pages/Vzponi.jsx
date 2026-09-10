@@ -5,6 +5,7 @@ import StatsSection from "@/components/StatsSection";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/lib/AuthContext";
 import { thumbUrl } from "@/lib/thumbs";
+import { useIsPhone } from "@/lib/useMediaQuery";
 import CardImage from "@/components/CardImage";
 import HeroBg from "@/components/HeroBg";
 import DateField from "@/components/DateField";
@@ -102,6 +103,7 @@ async function exportAscentsToExcel(rows) {
 
 export default function Vzponi() {
   const theme = useContext(ThemeCtx);
+  const isPhone = useIsPhone();
   const navigate = useNavigate();
   const { user, profile, isAdmin } = useAuth();
 
@@ -340,8 +342,19 @@ export default function Vzponi() {
           </div>
         )}
 
-        {/* Table */}
-        {!loading && sorted.length > 0 && (
+        {/* Vzponi: tabela na širokih zaslonih, kartice na telefonu — pet
+            stolpcev se v 390 px ne stlači, vodoravno drsenje pa skrije prav
+            imena, po katerih se bere. */}
+        {!loading && sorted.length > 0 && (isPhone ? (
+          <AscentCards
+            rows={sorted}
+            theme={theme}
+            sort={sort}
+            onSort={toggleSort}
+            canDelete={canDelete}
+            onDelete={deleteAscent}
+          />
+        ) : (
           <AscentTable
             rows={sorted}
             theme={theme}
@@ -350,7 +363,7 @@ export default function Vzponi() {
             canDelete={canDelete}
             onDelete={deleteAscent}
           />
-        )}
+        ))}
       </div>
 
       {/* Blog posts from climbs category — long-form stories & reports */}
@@ -509,6 +522,118 @@ export default function Vzponi() {
           .vzponi-table th.col-opt, .vzponi-table td.col-opt { display: none; }
         }
       `}</style>
+    </div>
+  );
+}
+
+
+// Ista vsebina kot AscentTable, zložena v kartice: na telefonu je pet stolpcev
+// neberljivih, tabela pa bi se morala vleči vodoravno. Razvrščanje je tu v
+// spustnem seznamu, ker ni glav stolpcev, na katere bi se dalo klikniti.
+function AscentCards({ rows, theme, sort, onSort, canDelete, onDelete }) {
+  const SORTABLE = [
+    { col: "date", label: "Datum" },
+    { col: "climber_name", label: "Plezalec" },
+    { col: "category", label: "Kategorija" },
+    { col: "location", label: "Lokacija" },
+    { col: "difficulty", label: "Ocena" },
+  ];
+  const label = (t) => ({ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: theme.textLow, ...t });
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
+        <span style={label()}>Razvrsti</span>
+        <select
+          value={sort.col}
+          onChange={(e) => onSort(e.target.value)}
+          aria-label="Razvrsti vzpone"
+          style={{
+            flex: 1, minWidth: 0, padding: "8px 10px", borderRadius: "8px",
+            border: `1px solid ${theme.border}`, background: theme.bgCard, color: theme.text,
+            fontFamily: "'Inter', sans-serif", fontSize: "14px",
+          }}
+        >
+          {SORTABLE.map((s) => <option key={s.col} value={s.col}>{s.label}</option>)}
+        </select>
+        <button
+          type="button"
+          onClick={() => onSort(sort.col)}
+          aria-label={sort.dir === "asc" ? "Naraščajoče" : "Padajoče"}
+          style={{
+            padding: "8px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`,
+            background: theme.bgCard, color: theme.text, cursor: "pointer", fontSize: "14px",
+          }}
+        >{sort.dir === "asc" ? "▲" : "▼"}</button>
+      </div>
+
+      <div style={{ display: "grid", gap: "10px" }}>
+        {rows.map((a) => (
+          <div key={a.id} style={{ background: theme.bgCard, border: `1px solid ${theme.border}`, borderRadius: "10px", padding: "14px 16px" }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "10px" }}>
+              <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "13px", letterSpacing: "0.04em", color: "#E8501A" }}>
+                {formatDate(a.date)}
+              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                {a.difficulty && (
+                  <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "12px", letterSpacing: "0.06em", background: "rgba(232,80,26,0.12)", color: "#E8501A", padding: "3px 10px", borderRadius: "4px" }}>{a.difficulty}</span>
+                )}
+                {canDelete(a) && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Izbriši vzpon?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {a.climber_name}{(a.location || a.route_name) ? ` — ${a.location || a.route_name}` : ""}. Tega dejanja ni mogoče razveljaviti.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Prekliči</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => onDelete(a)} className="bg-destructive text-destructive-foreground">Izbriši</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
+            </div>
+
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "15px", fontWeight: 600, color: theme.text, marginTop: "4px", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+              <span>{a.climber_name}{a.co_climber ? ` / ${a.co_climber}` : ""}</span>
+              {a.is_public === false && (
+                <span
+                  title="Vidno samo prijavljenim članom"
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: "3px",
+                    fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "10px",
+                    letterSpacing: "0.05em", textTransform: "uppercase",
+                    background: theme.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+                    color: theme.textLow, padding: "2px 7px", borderRadius: "999px",
+                  }}
+                ><Lock size={9} /> Zasebno</span>
+              )}
+            </div>
+
+            {(a.location || a.route_name) && (
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "14px", color: theme.textMid, marginTop: "3px" }}>
+                {a.location && <span style={{ color: theme.text }}>{a.location}</span>}
+                {a.location && a.route_name && <span style={{ color: theme.textLow }}> — </span>}
+                {a.route_name}
+              </div>
+            )}
+
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "8px", flexWrap: "wrap" }}>
+              <span style={label({ fontSize: "11px" })}>{CATEGORY_LABELS[a.category] || a.category}</span>
+            </div>
+
+            {a.notes && <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "12px", color: theme.textLow, marginTop: "6px" }}>{a.notes}</div>}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext, useRef, useMemo } from "react";
 import { useNavigate, useNavigationType, Link } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
+import { useIsPhone } from "@/lib/useMediaQuery";
 import { navReady } from "@/lib/navReady";
 import { ThemeCtx } from "@/lib/ThemeContext";
 import { thumbUrl } from "@/lib/thumbs";
@@ -27,7 +28,11 @@ const CAT_LABEL = { climbs: 'Vzponi', trips: 'Izleti', events: 'Dogodki', traini
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const isUuid = (v) => typeof v === "string" && UUID_RE.test(v);
 
-const PAGE_SIZE = 24; // cards rendered initially / added per "show more" click
+// Cards rendered initially / added per "show more" click. A phone shows one
+// card per row, so 24 of them is a very long scroll for no benefit — the
+// smaller first page is roughly the same amount of screen as the desktop grid.
+const PAGE_SIZE = 24;
+const PAGE_SIZE_PHONE = 8;
 
 // Module-level cache: coming BACK to the homepage renders the last-known list
 // instantly (correct page height for scroll restore, no spinner) and refreshes
@@ -51,7 +56,9 @@ export default function Home() {
   const [loading, setLoading] = useState(() => !(isBack && postsCache));
   const [search, setSearch] = useState(restored?.search || '');
   const [activeCategory, setActiveCategory] = useState(restored?.category || '');
-  const [visibleCount, setVisibleCount] = useState(restored?.visibleCount || PAGE_SIZE);
+  const isPhone = useIsPhone();
+  const pageSize = isPhone ? PAGE_SIZE_PHONE : PAGE_SIZE;
+  const [visibleCount, setVisibleCount] = useState(restored?.visibleCount || pageSize);
   // When returning, show every section immediately — replaying the reveal
   // fade at a restored scroll position reads as flicker, not polish.
   const [visible, setVisible] = useState(() =>
@@ -131,7 +138,7 @@ export default function Home() {
   // which would clobber the count restored after back-navigation)
   useEffect(() => {
     if (firstFilterRun.current) { firstFilterRun.current = false; return; }
-    setVisibleCount(PAGE_SIZE);
+    setVisibleCount(pageSize);
   }, [search, activeCategory]);
 
   useEffect(() => {
@@ -271,7 +278,7 @@ export default function Home() {
                         zniža in okvir za sliko postane preozek, slika pa spet
                         izgubi robove. Meja višino le dvigne, zato pod sliko
                         nikoli ne nastane prazen pas. */}
-                    <div style={{ padding: '48px', minHeight: '340px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div style={{ padding: 'var(--feat-pad)', minHeight: 'var(--feat-text-min)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                       <div>
                         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '20px' }}>
                           <span style={{ background: '#E8501A', color: '#fff', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 10px', borderRadius: '3px' }}>{CAT_LABEL[featuredPost.category] || featuredPost.category || 'Objava'}</span>
@@ -293,7 +300,7 @@ export default function Home() {
                       /* Naslov in povzetek sta omejena na dve vrstici, zato je
                          višina besedilnega stolpca stalna — in s tem tudi oblika
                          okvira za sliko, ne glede na dolžino besedila. */
-                      style={{ aspectRatio: 'var(--feat-img-ratio)' }}
+                      style={{ aspectRatio: 'var(--feat-img-ratio)', order: 'var(--feat-img-order)' }}
                     >
                       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(20,20,20,0.3), transparent)' }} />
                     </CardImage>
@@ -336,7 +343,7 @@ export default function Home() {
                     <div style={{ padding: '24px' }}>
                       <div style={{ color: theme.textLow, fontFamily: "'Inter', sans-serif", fontSize: '12px', marginBottom: '10px' }}>{formatDate(post.created_date)}</div>
                       <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '22px', lineHeight: 1.15, color: theme.text, margin: '0 0 10px' }}>{post.title}</h3>
-                      {post.summary && <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', lineHeight: 1.6, color: theme.textMid, margin: '0 0 20px' }}>{post.summary}</p>}
+                      {post.summary && <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', lineHeight: 1.6, color: theme.textMid, margin: '0 0 20px', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{post.summary}</p>}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: theme.textLow }}>{post.author_name || 'Član'} · ♥ {post.likes_count || 0}</span>
                         <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '13px', letterSpacing: '0.08em', color: '#E8501A', textTransform: 'uppercase' }}>Preberi →</span>
@@ -351,7 +358,7 @@ export default function Home() {
             {hasMore && (
               <div style={{ textAlign: 'center', marginTop: '48px' }}>
                 <button
-                  onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                  onClick={() => setVisibleCount((c) => c + pageSize)}
                   style={{ background: 'transparent', color: theme.text, border: `1.5px solid ${theme.border}`, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '15px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '14px 40px', borderRadius: '4px', transition: 'all 0.2s' }}
                   onMouseEnter={e => { e.currentTarget.style.borderColor = '#E8501A'; e.currentTarget.style.color = '#E8501A'; }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.text; }}
