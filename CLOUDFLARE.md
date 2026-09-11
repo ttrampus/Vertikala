@@ -91,58 +91,55 @@ is a zip upload, and LiteSpeed caching needs watching.
 
 ---
 
-# PENDING: revert www to the new site
+# www: resolved
 
-**State as of 2026-09-11 ~13:50 UTC.** `www.vertikala.com` is temporarily
-pointed at the OLD Hitrost server. This must be undone once the wildcard
-certificate issues, or www keeps serving WordPress forever.
+`www.vertikala.com` briefly served the OLD Hitrost site on 2026-09-11 as a
+mitigation, and has since been returned to Pages. Both hostnames are live on
+the new site.
 
-## Why
+## What happened, so the same trap is avoidable
 
-Cloudflare issued a certificate for the apex (`vertikala.com`) but the zone's
-Universal SSL wildcard (`*.vertikala.com`) stayed `pending_validation` after
-the nameserver switch. With www proxied through Cloudflare and no certificate
-covering it, browsers got a full security interstitial
-("Firefox can't create a secure connection").
+After the nameserver switch, `vertikala.com` got a certificate but
+`www.vertikala.com` sat at `pending`, so browsers hit a full security
+interstitial on www. The mitigation was to point www back at Hitrost
+(91.185.211.101), which still holds a valid certificate for that hostname —
+visitors got the old-but-working site instead of a security warning.
 
-Mitigation: point www back at Hitrost (91.185.211.101), which still holds a
-valid GoGetSSL certificate for www.vertikala.com until 2026-12-24. Visitors
-get the old-but-working site instead of a security warning.
+That mitigation was also what kept www broken. **A Pages custom domain can
+only validate while its DNS points at Pages.** Moving www away took it out of
+Pages' reach and flipped it to `deactivated`; it could never have issued a
+certificate in that state. The zone's Universal SSL wildcard is a red herring
+here — the apex was served by a *Pages-issued* certificate (Google Trust
+Services) all along, not by Universal SSL.
 
-The wildcard validates via zone-level TXT records (`_acme-challenge`), which
-is independent of where www points — so this mitigation does not block it.
+The fix was to put www back (`CNAME www -> vertikala.pages.dev`, proxied) and
+PATCH the existing Pages domain to re-trigger validation. Note POST fails with
+error 8000018 once the domain exists — even deactivated — so retrying an add
+is not the way back. It went active in about five minutes.
 
-## How to tell it is ready
+## Final state
 
-    echo | openssl s_client -connect 104.21.31.229:443 \
-      -servername www.vertikala.com 2>/dev/null \
-      | openssl x509 -noout -subject
+| Type | Name | Value | Proxy |
+|---|---|---|---|
+| CNAME | vertikala.com | vertikala.pages.dev | proxied |
+| CNAME | www | vertikala.pages.dev | proxied |
+| A | mail | 91.185.211.101 | DNS-only |
+| A | ftp | 91.185.211.101 | DNS-only |
+| MX / SPF / DKIM / DMARC | | unchanged from the old zone | DNS-only |
 
-Prints a subject => the edge can serve www over TLS. Empty/handshake failure
-=> still pending. Or check the zone's SSL certificate packs for
-`status: active` on the pack covering `*.vertikala.com`.
+Both Pages domains `active`, each with its own Google Trust Services
+certificate. Mail was never interrupted.
 
-## The revert (two steps — DNS alone is not enough)
+## Still open
 
-1. **DNS**: replace the temporary A record with the original CNAME.
+The zone's Universal SSL pack (`vertikala.com`, `*.vertikala.com`) remains
+`pending_validation`. It is redundant while both hostnames carry Pages
+certificates, but it would matter for any future subdomain — worth checking
+again in a day or two.
 
-   - delete: `A  www  91.185.211.101  (DNS only, ttl 60)`
-   - create: `CNAME  www  vertikala.pages.dev  (PROXIED, ttl auto)`
+## Verifying www is really on the new site
 
-2. **Pages**: the custom domain `www.vertikala.com` went to `deactivated`
-   when the DNS moved away, so re-attach it:
+    curl -sI https://www.vertikala.com/zimsko-upanje/    # 301 -> /post/<uuid>
 
-       POST /accounts/{account_id}/pages/projects/vertikala/domains
-            {"name": "www.vertikala.com"}
-
-   (Dashboard: Pages -> vertikala -> Custom domains -> add www.vertikala.com.)
-
-## Verify after reverting
-
-    curl -sI https://www.vertikala.com/            # 200, server: cloudflare
-    curl -sI https://www.vertikala.com/zimsko-upanje/   # 301 -> /post/<uuid>
-
-Both must come from Cloudflare, not Hitrost. If the redirect does not fire,
-www is still hitting the old server.
-
-Zone id `ed555c1406590ebe9980b98fc21812fa`, Pages project `vertikala`.
+The redirect exists only on the new site, so a WordPress page here means www
+is back on Hitrost.
