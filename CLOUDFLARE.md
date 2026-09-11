@@ -88,3 +88,61 @@ net. `public_html/accusim/` is a placeholder (`<html>tralala</html>`) and
 See DEPLOY.md. It is a working plan and the `.htaccess` in `public/` carries
 the same 578 redirects in Apache form. It is just more manual: every deploy
 is a zip upload, and LiteSpeed caching needs watching.
+
+---
+
+# PENDING: revert www to the new site
+
+**State as of 2026-09-11 ~13:50 UTC.** `www.vertikala.com` is temporarily
+pointed at the OLD Hitrost server. This must be undone once the wildcard
+certificate issues, or www keeps serving WordPress forever.
+
+## Why
+
+Cloudflare issued a certificate for the apex (`vertikala.com`) but the zone's
+Universal SSL wildcard (`*.vertikala.com`) stayed `pending_validation` after
+the nameserver switch. With www proxied through Cloudflare and no certificate
+covering it, browsers got a full security interstitial
+("Firefox can't create a secure connection").
+
+Mitigation: point www back at Hitrost (91.185.211.101), which still holds a
+valid GoGetSSL certificate for www.vertikala.com until 2026-12-24. Visitors
+get the old-but-working site instead of a security warning.
+
+The wildcard validates via zone-level TXT records (`_acme-challenge`), which
+is independent of where www points — so this mitigation does not block it.
+
+## How to tell it is ready
+
+    echo | openssl s_client -connect 104.21.31.229:443 \
+      -servername www.vertikala.com 2>/dev/null \
+      | openssl x509 -noout -subject
+
+Prints a subject => the edge can serve www over TLS. Empty/handshake failure
+=> still pending. Or check the zone's SSL certificate packs for
+`status: active` on the pack covering `*.vertikala.com`.
+
+## The revert (two steps — DNS alone is not enough)
+
+1. **DNS**: replace the temporary A record with the original CNAME.
+
+   - delete: `A  www  91.185.211.101  (DNS only, ttl 60)`
+   - create: `CNAME  www  vertikala.pages.dev  (PROXIED, ttl auto)`
+
+2. **Pages**: the custom domain `www.vertikala.com` went to `deactivated`
+   when the DNS moved away, so re-attach it:
+
+       POST /accounts/{account_id}/pages/projects/vertikala/domains
+            {"name": "www.vertikala.com"}
+
+   (Dashboard: Pages -> vertikala -> Custom domains -> add www.vertikala.com.)
+
+## Verify after reverting
+
+    curl -sI https://www.vertikala.com/            # 200, server: cloudflare
+    curl -sI https://www.vertikala.com/zimsko-upanje/   # 301 -> /post/<uuid>
+
+Both must come from Cloudflare, not Hitrost. If the redirect does not fire,
+www is still hitting the old server.
+
+Zone id `ed555c1406590ebe9980b98fc21812fa`, Pages project `vertikala`.
