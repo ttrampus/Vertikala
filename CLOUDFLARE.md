@@ -23,43 +23,50 @@ migration: the mail records must survive the nameserver change.
 
 No autodiscover record exists.
 
-## Steps
+## Status: zone built, waiting on the nameserver switch
 
-1. **Add the site to Cloudflare** (Add a Site -> vertikala.com -> Free plan).
-   Cloudflare scans the existing zone and imports the records above.
-   **Check every row against the table before continuing** — the scan misses
-   records that are not guessable, and the DKIM TXT is long enough to get
-   truncated. Copy the full DKIM value from DirectAdmin -> E-Mail Accounts.
+Zone `vertikala.com` = `ed555c1406590ebe9980b98fc21812fa`, status **pending**.
+Everything below is already configured; nothing takes effect until the
+registrar points at Cloudflare.
 
-2. **`mail.vertikala.com` must be grey-cloud (DNS-only), not orange.**
-   This is the one mistake that breaks email. Proxying it would publish
-   Cloudflare's IPs for the mail host and mail would stop being delivered.
-   Same for any other mail-related hostname.
+Cloudflare nameservers to set at the registrar:
 
-3. **Change the nameservers at the registrar** to the two Cloudflare gives you.
-   Propagation is usually under an hour. Email keeps flowing throughout as
-   long as step 2 is right.
+    ada.ns.cloudflare.com
+    dakota.ns.cloudflare.com
 
-4. **Attach the domain to Pages**: Pages project -> Custom domains ->
-   "Set up a custom domain" -> `vertikala.com`, then again for `www`.
-   Cloudflare creates the CNAME and issues the certificate automatically.
-   This replaces the old root A record to 91.185.211.101.
+### Records created
 
-5. **Supabase**: Authentication -> URL Configuration -> Site URL
-   `https://vertikala.com`, and add `https://vertikala.com/**` to Redirect
-   URLs. Keep the pages.dev entry as a fallback.
+| Type | Name | Value | Proxy |
+|---|---|---|---|
+| CNAME | vertikala.com | vertikala.pages.dev | proxied |
+| CNAME | www | vertikala.pages.dev | proxied |
+| A | mail | 91.185.211.101 | **DNS-only** |
+| A | ftp | 91.185.211.101 | **DNS-only** |
+| MX | @ | 10 mail.vertikala.com | — |
+| TXT | @ | `v=spf1 a mx ip4:91.185.211.0/24 ip4:185.69.148.0/22 ~all` | — |
+| TXT | x._domainkey | DKIM, 2048-bit RSA | — |
+| TXT | _dmarc | `v=DMARC1; p=none` | — |
 
-6. **Deploy**: already done — `_redirects` and `_headers` are on `main` and
-   Pages builds them automatically. `_redirects` carries 1156 rules: both
-   `/slug` and `/slug/` for each of the 578 posts, because Cloudflare Pages
-   matches the path literally and every real WordPress link has the trailing
-   slash.
+The DKIM record was reassembled from the two DNS TXT character-strings the old
+zone published, then validated by parsing it as an RSA public key — it is the
+same key, not a retyped approximation.
 
-7. **Verify**:
-   - `https://vertikala.com/` loads, `/vzponi` survives a hard refresh
-   - `https://vertikala.com/zimsko-upanje` 301s to `/post/...`
-   - send a test email to `krj01@vertikala.com` **and** send one out from it
-   - `curl -I https://vertikala.com/` -> `Cache-Control: no-cache`
+`mail` and `ftp` must stay DNS-only. Proxying either publishes Cloudflare's
+IPs for a non-HTTP service and breaks it.
+
+Probed for other hostnames before the switch (webmail, smtp, imap, pop, cpanel,
+autoconfig, autodiscover, ns1/2, blog, shop, test, dev, staging, CAA, SRV) —
+only `ftp` existed.
+
+### Zone settings
+
+SSL mode **Full (strict)**, Always Use HTTPS **on**, minimum TLS **1.2**.
+
+### Pages
+
+Custom domains `vertikala.com` and `www.vertikala.com` are attached to the
+`vertikala` project, status `pending` — they validate and get certificates
+automatically once the nameservers move.
 
 ## SPF note
 
