@@ -49,9 +49,11 @@ No autodiscover record exists.
    `https://vertikala.com`, and add `https://vertikala.com/**` to Redirect
    URLs. Keep the pages.dev entry as a fallback.
 
-6. **Deploy**: push to the branch the Pages project builds from. The build
-   output now includes `_redirects` (578 old WordPress permalinks -> new post
-   URLs) and `_headers` (immutable asset caching, no-cache HTML).
+6. **Deploy**: already done — `_redirects` and `_headers` are on `main` and
+   Pages builds them automatically. `_redirects` carries 1156 rules: both
+   `/slug` and `/slug/` for each of the 578 posts, because Cloudflare Pages
+   matches the path literally and every real WordPress link has the trailing
+   slash.
 
 7. **Verify**:
    - `https://vertikala.com/` loads, `/vzponi` survives a hard refresh
