@@ -18,12 +18,12 @@ const CATEGORIES = [
   { key: '', label: 'Vse' },
   { key: 'climbs', label: 'Vzponi' },
   { key: 'trips', label: 'Izleti' },
-  { key: 'events', label: 'Dogodki' },
+  { key: 'events', label: 'Tabori in dogodki' },
   { key: 'training', label: 'Trening' },
   { key: 'news', label: 'Novice' },
 ];
 
-const CAT_LABEL = { climbs: 'Vzponi', trips: 'Izleti', events: 'Dogodki', training: 'Trening', news: 'Novice' };
+const CAT_LABEL = { climbs: 'Vzponi', trips: 'Izleti', events: 'Tabori in dogodki', training: 'Trening', news: 'Novice' };
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const isUuid = (v) => typeof v === "string" && UUID_RE.test(v);
@@ -76,17 +76,37 @@ export default function Home() {
     let alive = true;
     const fetchPosts = async () => {
       if (!postsCache) setLoading(true); // cached list stays visible during refresh
-      const { data, error } = await supabase
-        .from("BlogPost")
-        // Only the columns the cards use — avoids transferring the full HTML
-        // `content` and large jsonb fields for every post on the landing page.
-        .select("id, title, summary, featured_image, focal_point, author_name, category, created_date, likes_count, created_by, created_by_id, is_public")
-        .eq("status", "published")
-        .is("deleted_at", null)
-        .order("created_date", { ascending: false });
+      const [{ data, error }, { data: camps }] = await Promise.all([
+        supabase
+          .from("BlogPost")
+          // Only the columns the cards use — avoids transferring the full HTML
+          // `content` and large jsonb fields for every post on the landing page.
+          .select("id, title, summary, featured_image, focal_point, author_name, category, created_date, likes_count, created_by, created_by_id, is_public")
+          .eq("status", "published")
+          .is("deleted_at", null)
+          .order("created_date", { ascending: false }),
+        supabase
+          .from("camps")
+          .select("id, title, summary, image_url, focal_point, created_by_id, created_at"),
+      ]);
       if (!alive) return;
       if (!error) {
-        const list = data || [];
+        // Tabori in dogodki live in their own table; on the homepage they are
+        // listed as posts of the "events" category and open on their own page.
+        const campItems = (camps || []).map((c) => ({
+          id: `camp-${c.id}`,
+          href: `/tabori-in-dogodki?tabor=${c.id}`,
+          isCamp: true,
+          title: c.title,
+          summary: c.summary,
+          featured_image: c.image_url,
+          focal_point: c.focal_point,
+          category: 'events',
+          created_date: c.created_at,
+          created_by_id: c.created_by_id,
+        }));
+        const list = [...(data || []), ...campItems]
+          .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
         // Override the stored author name/avatar with each author's CURRENT
         // profile, so cards reflect profile changes instead of the name saved
         // when the post was written. Only look up valid UUIDs — some legacy
@@ -130,7 +150,7 @@ export default function Home() {
   const statItems = useMemo(() => [
     { val: posts.length, label: 'Objav' },
     { val: new Set(posts.map(p => p.author_name || p.created_by || 'Member')).size, label: 'Avtorjev' },
-    { val: posts.filter(p => p.category === 'events').length, label: 'Dogodkov' },
+    { val: posts.filter(p => p.category === 'events').length, label: 'Taborov in dogodkov' },
     { val: new Set(posts.map(p => p.category).filter(Boolean)).size, label: 'Kategorij' },
   ], [posts]);
 
@@ -268,7 +288,7 @@ export default function Home() {
             {featuredPost && (
               <div data-reveal="featured" style={{ ...rev('featured'), marginBottom: '64px' }}>
                 <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '11px', letterSpacing: '0.25em', textTransform: 'uppercase', color: theme.textFaint, marginBottom: '16px' }}>— Izpostavljeno</div>
-                <Link to={`/post/${featuredPost.id}`} style={{ textDecoration: 'none' }}>
+                <Link to={featuredPost.href || `/post/${featuredPost.id}`} style={{ textDecoration: 'none' }}>
                   <div
                     style={{ display: 'grid', gridTemplateColumns: 'var(--col-feat)', background: theme.bgCard, border: `1px solid ${theme.border}`, borderRadius: '8px', overflow: 'hidden', transition: 'border-color 0.3s, transform 0.3s, background 0.4s', cursor: 'pointer' }}
                     onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(232,80,26,0.4)'; e.currentTarget.style.transform = 'translateY(-3px)'; }}
@@ -289,7 +309,7 @@ export default function Home() {
                         {featuredPost.summary && <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '15px', lineHeight: 1.7, color: theme.textMid, margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{featuredPost.summary}</p>}
                       </div>
                       <div style={{ marginTop: '32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: theme.textLow }}>{featuredPost.author_name || 'Član'} · ♥ {featuredPost.likes_count || 0}</span>
+                        <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: theme.textLow }}>{featuredPost.author_name || 'Član'}{!featuredPost.isCamp && ` · ♥ ${featuredPost.likes_count || 0}`}</span>
                         <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '14px', letterSpacing: '0.08em', color: '#E8501A', textTransform: 'uppercase' }}>Preberi →</span>
                       </div>
                     </div>
@@ -316,7 +336,7 @@ export default function Home() {
               {otherPosts.map((post, i) => (
                 <Link
                   key={post.id}
-                  to={`/post/${post.id}`}
+                  to={post.href || `/post/${post.id}`}
                   style={restored
                     ? { textDecoration: 'none' }
                     : { textDecoration: 'none', opacity: 0, animation: visible.grid ? `fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) ${Math.min(i * 0.05, 0.5)}s forwards` : 'none' }}
@@ -345,7 +365,7 @@ export default function Home() {
                       <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '22px', lineHeight: 1.15, color: theme.text, margin: '0 0 10px' }}>{post.title}</h3>
                       {post.summary && <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', lineHeight: 1.6, color: theme.textMid, margin: '0 0 20px', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{post.summary}</p>}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: theme.textLow }}>{post.author_name || 'Član'} · ♥ {post.likes_count || 0}</span>
+                        <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: theme.textLow }}>{post.author_name || 'Član'}{!post.isCamp && ` · ♥ ${post.likes_count || 0}`}</span>
                         <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '13px', letterSpacing: '0.08em', color: '#E8501A', textTransform: 'uppercase' }}>Preberi →</span>
                       </div>
                     </div>

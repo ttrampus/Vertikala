@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ThemeCtx } from "@/lib/ThemeContext";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/lib/AuthContext";
@@ -42,13 +42,18 @@ export default function Tabori() {
   const [formError, setFormError] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
   const [detailCamp, setDetailCamp] = useState(null);
+  // Kartice taborov na domači strani vodijo sem s ?tabor=<id>.
+  const [searchParams] = useSearchParams();
+  const openCampId = searchParams.get("tabor");
 
   useEffect(() => {
     supabase.from("camps").select("*").order("date_from", { ascending: false }).then(({ data }) => {
       setCamps(data || []);
       setLoading(false);
+      const linked = openCampId && (data || []).find((c) => c.id === openCampId);
+      if (linked) setDetailCamp(linked);
     });
-  }, []);
+  }, [openCampId]);
 
   const canManage = (c) => isAdmin || (user && c.created_by_id === user.id);
 

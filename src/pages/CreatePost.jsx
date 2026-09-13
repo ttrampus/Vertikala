@@ -32,7 +32,7 @@ import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
 
 const categories = ["climbs", "trips", "events", "training", "news"];
-const categoryLabels = { climbs: "Vzponi", trips: "Izleti", events: "Dogodki", training: "Trening", news: "Novice" };
+const categoryLabels = { climbs: "Vzponi", trips: "Izleti", events: "Tabori in dogodki", training: "Trening", news: "Novice" };
 const VIDEO_MAX_BYTES = 50 * 1024 * 1024; // 50 MB
 
 // ── YouTube helpers ───────────────────────────────────────────────────────────

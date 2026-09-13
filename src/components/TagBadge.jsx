@@ -11,7 +11,7 @@ const categoryColors = {
 export const categoryLabels = {
   climbs: "Vzponi",
   trips: "Izleti",
-  events: "Dogodki",
+  events: "Tabori in dogodki",
   training: "Trening",
   news: "Novice",
 };
