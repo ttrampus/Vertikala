@@ -14,6 +14,63 @@
     <link rel="preconnect" href="https://images.unsplash.com" />
     <link rel="preload" as="image" href="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1600&q=80" fetchpriority="high" />
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <!-- Boot safety net — plain ES5 so it runs even where the app can't.
+         1. Browsers that block site data (cookie blocking, some in-app
+            browsers) throw on any localStorage/sessionStorage access, which
+            crashed the app to a white page. Swap in an in-memory stand-in.
+         2. If an app script fails to load (e.g. a deploy going live mid-visit),
+            reload once; if it fails again, show a message, never a white page. -->
+    <script>
+      (function () {
+        ['localStorage', 'sessionStorage'].forEach(function (k) {
+          try {
+            var s = window[k];
+            s.setItem('__probe', '1');
+            s.removeItem('__probe');
+          } catch (_) {
+            var m = {};
+            var mem = {
+              getItem: function (x) { return Object.prototype.hasOwnProperty.call(m, x) ? m[x] : null; },
+              setItem: function (x, v) { m[x] = String(v); },
+              removeItem: function (x) { delete m[x]; },
+              clear: function () { m = {}; },
+              key: function (i) { return Object.keys(m)[i] || null; }
+            };
+            Object.defineProperty(mem, 'length', { get: function () { return Object.keys(m).length; } });
+            try { Object.defineProperty(window, k, { value: mem, configurable: true }); } catch (_) {}
+          }
+        });
+
+        function showBootError() {
+          var el = document.getElementById('boot-error');
+          if (el && !window.__appMounted) el.style.display = 'flex';
+        }
+        window.__bootFailed = function () {
+          var last = 0;
+          try { last = +sessionStorage.getItem('boot-reload') || 0; } catch (_) {}
+          if (Date.now() - last > 30000) {
+            try { sessionStorage.setItem('boot-reload', String(Date.now())); } catch (_) {}
+            location.reload();
+          } else {
+            showBootError();
+          }
+        };
+        window.addEventListener('error', function (e) {
+          var t = e.target;
+          var url = t && (t.src || t.href);
+          if (url && (t.tagName === 'SCRIPT' || t.tagName === 'LINK') && url.indexOf('/assets/') !== -1) {
+            window.__bootFailed();
+          }
+        }, true);
+        // Vite fires this when a lazily loaded page's files fail to load.
+        window.addEventListener('vite:preloadError', function (e) {
+          e.preventDefault();
+          window.__bootFailed();
+        });
+        // Last resort: nothing rendered after 20 s — at least say so.
+        setTimeout(showBootError, 20000);
+      })();
+    </script>
     <!-- Apply saved theme before first paint to avoid flash -->
     <script>
       try {
@@ -27,6 +84,12 @@
   </head>
   <body>
     <div id="root"></div>
+    <div id="boot-error" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:24px;background:#f5f4f0;color:#111;font-family:system-ui,sans-serif;text-align:center;z-index:9999">
+      <div>
+        <p style="font-size:18px;margin:0 0 16px">Stran se ni pravilno naložila.</p>
+        <button onclick="location.reload()" style="font-size:16px;padding:10px 22px;border:0;border-radius:6px;background:#E8501A;color:#fff">Osveži stran</button>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

@@ -1,6 +1,7 @@
-# Hashed assets are immutable; index.html must never be cached.
-/assets/*
-  Cache-Control: public, max-age=31536000, immutable
+# Cache headers for /assets/* are set in functions/assets/[[path]].js, not
+# here: a rule here would also stamp "immutable" on the index.html fallback
+# Pages serves for a missing asset, and that poisoned caches (white page).
+# HTML must never be cached, so every visit picks up the current asset names.
 
 /*
   X-Content-Type-Options: nosniff

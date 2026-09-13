@@ -18,6 +18,13 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
+        // "[name].[hash]" instead of Vite's default "[name]-[hash]": the
+        // 2026-09-13 deploy left browsers holding index.html cached for a year
+        // under old asset URLs (see functions/assets/[[path]].js). A new naming
+        // scheme guarantees none of those URLs is ever requested again.
+        entryFileNames: "assets/[name].[hash].js",
+        chunkFileNames: "assets/[name].[hash].js",
+        assetFileNames: "assets/[name].[hash][extname]",
         manualChunks: {
           "vendor-react": ["react", "react-dom", "react-router-dom"],
           "vendor-supabase": ["@supabase/supabase-js"],
