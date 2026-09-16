@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import ImageUploader from "../components/ImageUploader";
 import ClimbMetaForm from "../components/ClimbMetaForm";
+import ImageResizeOverlay from "@/components/ImageResizeOverlay";
 
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -311,151 +312,6 @@ function LinkModal({ onInsert, onClose }) {
         </div>
       </div>
     </div>
-  );
-}
-
-function ImageResizeOverlay({ editorContainerRef, editor }) {
-  const [selected, setSelected] = useState(null);
-  const dragRef = useRef(null);
-  const overlayBoxRef = useRef(null);
-  const handleRefs = useRef({});
-  const isDraggingRef = useRef(false);
-
-  useEffect(() => {
-    const container = editorContainerRef.current;
-    if (!container) return;
-    const onMouseDown = (e) => {
-      if (e.target.tagName === "IMG" && container.contains(e.target)) {
-        e.preventDefault();
-        const img = e.target;
-        const cr = container.getBoundingClientRect();
-        const ir = img.getBoundingClientRect();
-        setSelected({ el: img, x: ir.left - cr.left, y: ir.top - cr.top, w: ir.width, h: ir.height });
-      } else if (!e.target.closest("[data-resize-handle]")) {
-        setSelected(null);
-      }
-    };
-    const onClickOutside = (e) => {
-      if (!e.target.closest("[data-resize-handle]") && e.target.tagName !== "IMG") setSelected(null);
-    };
-    container.addEventListener("mousedown", onMouseDown);
-    document.addEventListener("mousedown", onClickOutside);
-    return () => {
-      container.removeEventListener("mousedown", onMouseDown);
-      document.removeEventListener("mousedown", onClickOutside);
-    };
-  }, [editorContainerRef]);
-
-  useEffect(() => {
-    if (!selected) return;
-    const sync = () => {
-      if (isDraggingRef.current) return;
-      const container = editorContainerRef.current;
-      if (!container || !selected.el) return;
-      const cr = container.getBoundingClientRect();
-      const ir = selected.el.getBoundingClientRect();
-      setSelected((s) => s ? { ...s, x: ir.left - cr.left, y: ir.top - cr.top, w: ir.width, h: ir.height } : null);
-    };
-    const id = setInterval(sync, 50);
-    return () => clearInterval(id);
-  }, [selected, editorContainerRef]);
-
-  const startDrag = (e, corner) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const container = editorContainerRef.current;
-    if (!container) return;
-
-    // Re-query live img in case the NodeView was recreated since selection
-    let img = selected.el;
-    if (!img || !img.isConnected) {
-      img = container.querySelector('figure[data-type="figure"] img');
-      if (!img) return;
-    }
-
-    const startX = e.clientX;
-    const startW = img.getBoundingClientRect().width;
-    const containerW = container.getBoundingClientRect().width;
-    dragRef.current = { corner, startX, startW, img, containerW };
-    img.dataset.resizing = "1";
-    isDraggingRef.current = true;
-
-    const onMove = (ev) => {
-      ev.stopPropagation();
-      const { corner, startX, startW, img, containerW } = dragRef.current;
-      let delta = ev.clientX - startX;
-      if (corner === "sw" || corner === "nw") delta = -delta;
-      const newW = Math.max(60, Math.min(containerW, startW + delta));
-
-      img.style.width = `${newW}px`;
-
-      // Update overlay DOM directly — bypasses React batching so every frame paints live
-      const cr = container.getBoundingClientRect();
-      const ir = img.getBoundingClientRect();
-      const ox = ir.left - cr.left;
-      const oy = ir.top - cr.top;
-      const ow = ir.width;
-      const oh = ir.height;
-      if (overlayBoxRef.current) {
-        overlayBoxRef.current.style.left = `${ox}px`;
-        overlayBoxRef.current.style.top = `${oy}px`;
-        overlayBoxRef.current.style.width = `${ow}px`;
-        overlayBoxRef.current.style.height = `${oh}px`;
-      }
-      const pos = { nw: [ox - 5, oy - 5], ne: [ox + ow - 5, oy - 5], sw: [ox - 5, oy + oh - 5], se: [ox + ow - 5, oy + oh - 5] };
-      Object.entries(pos).forEach(([id, [l, t]]) => {
-        const el = handleRefs.current[id];
-        if (el) { el.style.left = `${l}px`; el.style.top = `${t}px`; }
-      });
-    };
-
-    const onUp = () => {
-      document.removeEventListener("mousemove", onMove, { capture: true });
-      document.removeEventListener("mouseup", onUp, { capture: true });
-      delete img.dataset.resizing;
-      isDraggingRef.current = false;
-
-      if (editor) {
-        const src = img.src;
-        const finalWidth = img.style.width;
-        editor.view.state.doc.descendants((node, pos) => {
-          if (node.type.name === "figure" && node.attrs.src === src) {
-            editor.view.dispatch(
-              editor.view.state.tr.setNodeMarkup(pos, null, { ...node.attrs, width: finalWidth })
-            );
-            return false;
-          }
-        });
-      }
-
-      // Sync React state once with the final dimensions
-      const cr = container.getBoundingClientRect();
-      const ir = img.getBoundingClientRect();
-      setSelected((s) => s ? { ...s, x: ir.left - cr.left, y: ir.top - cr.top, w: ir.width, h: ir.height } : null);
-    };
-
-    document.addEventListener("mousemove", onMove, { capture: true });
-    document.addEventListener("mouseup", onUp, { capture: true });
-  };
-
-  if (!selected) return null;
-  const { x, y, w, h } = selected;
-  const handles = [
-    { id: "nw", style: { top: y - 5, left: x - 5, cursor: "nw-resize" } },
-    { id: "ne", style: { top: y - 5, left: x + w - 5, cursor: "ne-resize" } },
-    { id: "sw", style: { top: y + h - 5, left: x - 5, cursor: "sw-resize" } },
-    { id: "se", style: { top: y + h - 5, left: x + w - 5, cursor: "se-resize" } },
-  ];
-  return (
-    <>
-      <div ref={overlayBoxRef} style={{ position: "absolute", top: y, left: x, width: w, height: h, border: "2px solid hsl(221,83%,53%)", borderRadius: 6, pointerEvents: "none", zIndex: 40 }} />
-      {handles.map(({ id, style }) => (
-        <div key={id} data-resize-handle
-          ref={(el) => { handleRefs.current[id] = el; }}
-          onMouseDown={(e) => startDrag(e, id)}
-          style={{ position: "absolute", width: 10, height: 10, background: "white", border: "2px solid hsl(221,83%,53%)", borderRadius: 2, zIndex: 41, ...style }} />
-      ))}
-    </>
   );
 }
 
@@ -816,7 +672,7 @@ export default function EditPost() {
 
           <div className="mt-2.5 rounded-lg bg-muted/40 border border-border px-4 py-2.5 grid grid-cols-2 gap-x-6 gap-y-1">
             <p className="col-span-2 text-xs font-semibold text-foreground/60 mb-0.5">Namigi</p>
-            <p className="text-xs text-muted-foreground"><ImageIcon className="inline h-3 w-3 mr-1" />Kliknite sliko in povlecite vogale za spreminjanje velikosti</p>
+            <p className="text-xs text-muted-foreground"><ImageIcon className="inline h-3 w-3 mr-1" />Kliknite sliko: vogali spremenijo velikost, povlecite jo za premik, Delete jo izbriše</p>
             <p className="text-xs text-muted-foreground"><Columns2 className="inline h-3 w-3 mr-1" />Ikona stolpcev → 2–4 slike drug ob drugem</p>
             <p className="text-xs text-muted-foreground"><Video className="inline h-3 w-3 mr-1" />Ikona videa → YouTube povezava ali nalaganje z naprave</p>
             <p className="text-xs text-muted-foreground"><ImageIcon className="inline h-3 w-3 mr-1" />Ikona slike → naložite fotografijo na mesto kazalca</p>
