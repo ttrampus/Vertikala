@@ -1,11 +1,51 @@
 import { useState, useEffect, useRef } from "react";
 import { NodeSelection } from "@tiptap/pm/state";
+import { AlignLeft, AlignCenter, AlignRight } from "lucide-react";
+import { WRAP_MAX_FRACTION } from "@/lib/FigureNode";
 
 // Block nodes that carry images in the post editor. Clicking an <img> inside
 // one of these selects the whole node — that's what Delete removes and what
 // a drag moves.
 const IMAGE_NODES = new Set(["figure", "imageRow", "videoNode"]);
 const DRAG_THRESHOLD = 5; // px of movement before a click becomes a move
+// Overlay chrome — clicking these must not deselect the image they act on.
+const CHROME = "[data-resize-handle], [data-image-toolbar]";
+
+// Image block on one side, text flowing beside it — the two wrap options.
+function WrapIcon({ side }) {
+  const boxX = side === "left" ? 1.5 : 8.5;
+  const textX = side === "left" ? 9 : 1.5;
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true">
+      <rect x={boxX} y="2.4" width="6" height="7.6" rx="1" fill="currentColor" />
+      {[3.2, 6.2, 9.2].map((y) => (
+        <rect key={y} x={textX} y={y} width="5.5" height="1.2" rx="0.6" fill="currentColor" opacity="0.6" />
+      ))}
+      <rect x="1.5" y="12.4" width="13" height="1.2" rx="0.6" fill="currentColor" opacity="0.6" />
+    </svg>
+  );
+}
+
+// The bar sits above the image, or tucked inside its top edge when the image
+// starts too close to the top of the editor for the bar to fit.
+const TOOLBAR_H = 34;
+function toolbarPos(x, y) {
+  return [x, y >= TOOLBAR_H + 6 ? y - TOOLBAR_H - 6 : y + 8];
+}
+
+function LayoutBtn({ active, title, onClick, children }) {
+  return (
+    <button type="button" data-image-toolbar title={title}
+      // The editor keeps its NodeSelection only if the press never lands
+      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+      onClick={onClick}
+      className={`p-1.5 rounded-md transition-colors ${active
+        ? "bg-foreground text-background"
+        : "text-muted-foreground hover:text-foreground hover:bg-muted"}`}>
+      {children}
+    </button>
+  );
+}
 
 // Document position of the image block that renders `img`, or null.
 function findImageNodePos(view, img) {
@@ -50,6 +90,7 @@ export default function ImageResizeOverlay({ editorContainerRef, editor }) {
   const [dropLine, setDropLine] = useState(null); // { x, y, w } while moving
   const dragRef = useRef(null);
   const overlayBoxRef = useRef(null);
+  const toolbarRef = useRef(null);
   const handleRefs = useRef({});
   const isDraggingRef = useRef(false);
 
@@ -64,6 +105,24 @@ export default function ImageResizeOverlay({ editorContainerRef, editor }) {
     const dom = editor.view.nodeDOM(pos);
     const img = dom instanceof Element ? dom.querySelector("img") : null;
     setSelected(img ? rectFor(img) : null);
+  };
+
+  // The figure node behind the current selection, or null for rows and videos.
+  const figureAt = () => {
+    if (!selected || !editor) return null;
+    const pos = findImageNodePos(editor.view, selected.el);
+    const node = pos === null ? null : editor.view.state.doc.nodeAt(pos);
+    return node?.type.name === "figure" ? { pos, node } : null;
+  };
+
+  const setFigureAttrs = (patch) => {
+    const found = figureAt();
+    if (!found) return;
+    const { view } = editor;
+    view.dispatch(view.state.tr.setNodeMarkup(found.pos, null, { ...found.node.attrs, ...patch }));
+    view.focus();
+    // The layout change moves the image, so the overlay has to re-measure it
+    requestAnimationFrame(() => reselectAt(found.pos));
   };
 
   useEffect(() => {
@@ -89,12 +148,12 @@ export default function ImageResizeOverlay({ editorContainerRef, editor }) {
         }
         setSelected(rectFor(img));
         if (pos !== null) startMove(e, img, pos);
-      } else if (!e.target.closest("[data-resize-handle]")) {
+      } else if (!e.target.closest(CHROME)) {
         setSelected(null);
       }
     };
     const onClickOutside = (e) => {
-      if (!e.target.closest("[data-resize-handle]") && e.target.tagName !== "IMG") setSelected(null);
+      if (!e.target.closest(CHROME) && e.target.tagName !== "IMG") setSelected(null);
     };
     container.addEventListener("mousedown", onMouseDown, { capture: true });
     document.addEventListener("mousedown", onClickOutside);
@@ -212,7 +271,13 @@ export default function ImageResizeOverlay({ editorContainerRef, editor }) {
 
     const startX = e.clientX;
     const startW = img.getBoundingClientRect().width;
-    const containerW = container.getBoundingClientRect().width;
+    // A wrapped figure is capped at a fraction of the column, so the handle
+    // has to stop there too — otherwise the drag stores a width the image
+    // never had, and unwrapping it later would make the image jump.
+    const figure = img.closest('figure[data-type="figure"]');
+    const wrapped = !!figure?.getAttribute("data-wrap");
+    const columnW = (wrapped ? figure.parentElement : container).getBoundingClientRect().width;
+    const containerW = wrapped ? columnW * WRAP_MAX_FRACTION : columnW;
     dragRef.current = { corner, startX, startW, img, containerW };
     img.dataset.resizing = "1";
     isDraggingRef.current = true;
@@ -244,6 +309,11 @@ export default function ImageResizeOverlay({ editorContainerRef, editor }) {
         const el = handleRefs.current[id];
         if (el) { el.style.left = `${l}px`; el.style.top = `${t}px`; }
       });
+      if (toolbarRef.current) {
+        const [tl, tt] = toolbarPos(ox, oy);
+        toolbarRef.current.style.left = `${tl}px`;
+        toolbarRef.current.style.top = `${tt}px`;
+      }
     };
 
     const onUp = () => {
@@ -277,8 +347,11 @@ export default function ImageResizeOverlay({ editorContainerRef, editor }) {
 
   if (!selected) return line;
   const { x, y, w, h } = selected;
-  // Resize only applies to single figures; side-by-side rows and videos keep their layout.
+  // Resize and layout only apply to single figures; side-by-side rows and
+  // videos keep their own layout.
   const resizable = !!selected.el.closest('figure[data-type="figure"]');
+  const attrs = resizable ? figureAt()?.node.attrs : null;
+  const [tbX, tbY] = toolbarPos(x, y);
   const handles = [
     { id: "nw", style: { top: y - 5, left: x - 5, cursor: "nw-resize" } },
     { id: "ne", style: { top: y - 5, left: x + w - 5, cursor: "ne-resize" } },
@@ -290,6 +363,23 @@ export default function ImageResizeOverlay({ editorContainerRef, editor }) {
     <>
       {line}
       <div ref={overlayBoxRef} style={{ position: "absolute", top: y, left: x, width: w, height: h, border: "2px solid hsl(221,83%,53%)", borderRadius: 6, pointerEvents: "none", zIndex: 40 }} />
+      {attrs && !dropLine && (
+        <div ref={toolbarRef} data-image-toolbar
+          style={{ position: "absolute", left: tbX, top: tbY, zIndex: 43 }}
+          className="flex items-center gap-0.5 rounded-lg border border-border bg-popover px-1 py-1 shadow-md">
+          <LayoutBtn title="Poravnaj levo" active={!attrs.wrap && attrs.textAlign === "left"}
+            onClick={() => setFigureAttrs({ textAlign: "left", wrap: null })}><AlignLeft size={15} /></LayoutBtn>
+          <LayoutBtn title="Na sredino" active={!attrs.wrap && attrs.textAlign === "center"}
+            onClick={() => setFigureAttrs({ textAlign: "center", wrap: null })}><AlignCenter size={15} /></LayoutBtn>
+          <LayoutBtn title="Poravnaj desno" active={!attrs.wrap && attrs.textAlign === "right"}
+            onClick={() => setFigureAttrs({ textAlign: "right", wrap: null })}><AlignRight size={15} /></LayoutBtn>
+          <div className="w-px h-5 bg-border mx-1 self-center" />
+          <LayoutBtn title="Slika levo, besedilo ob njej" active={attrs.wrap === "left"}
+            onClick={() => setFigureAttrs({ wrap: "left" })}><WrapIcon side="left" /></LayoutBtn>
+          <LayoutBtn title="Slika desno, besedilo ob njej" active={attrs.wrap === "right"}
+            onClick={() => setFigureAttrs({ wrap: "right" })}><WrapIcon side="right" /></LayoutBtn>
+        </div>
+      )}
       {resizable && !dropLine && handles.map(({ id, style }) => (
         <div key={id} data-resize-handle
           ref={(el) => { handleRefs.current[id] = el; }}

@@ -414,6 +414,37 @@ img { max-width: 100%; }
   margin: 0 auto;
   max-width: 100%;
 }
+/* ── Wrapped figures (text flows beside the image) ──────────────────────────
+   The editor writes float, max-width and margins inline. Only the margin needs
+   restating here, to beat the `margin: 2rem auto !important` above, which would
+   otherwise re-center the float and push the text off it. */
+.prose figure[data-wrap="left"] {
+  margin: 6px 24px 12px 0 !important;
+}
+.prose figure[data-wrap="right"] {
+  margin: 6px 0 12px 24px !important;
+}
+/* A heading opens a new section, so it starts below the image rather than
+   beside it — and a float must not spill past the end of the post body. */
+.prose h2,
+.prose h3 {
+  clear: both;
+}
+.prose::after {
+  content: "";
+  display: block;
+  clear: both;
+}
+/* Phones: half a column beside an image is ~150px, too narrow to read, so the
+   image goes back to being a full-width block. */
+@media (max-width: 640px) {
+  .prose figure[data-wrap] {
+    float: none !important;
+    max-width: 100% !important;
+    margin: 2rem auto !important;
+  }
+}
+
 .prose figure figcaption {
   display: block;
   width: 100%;

@@ -1,5 +1,29 @@
 import { Node } from "@tiptap/core";
 
+// A floated figure has to be narrower than the column, or there is nothing
+// left for the text to flow into. Images wider than this get capped — the
+// resize overlay imports the fraction so its handles stop at the same place.
+export const WRAP_MAX_FRACTION = 0.5;
+const WRAP_MAX_WIDTH = `${WRAP_MAX_FRACTION * 100}%`;
+
+// Outer <figure>: a plain block, unless it floats for text to wrap around.
+function figureStyle(wrap) {
+  if (wrap === "left")  return `float:left;max-width:${WRAP_MAX_WIDTH};margin:6px 24px 12px 0;`;
+  if (wrap === "right") return `float:right;max-width:${WRAP_MAX_WIDTH};margin:6px 0 12px 24px;`;
+  return "margin:20px 0;";
+}
+
+// Inner wrapper: display:table shrinks to the image width; its margins drive
+// alignment. A floated figure is already sized to the image, so it sits flush.
+function innerStyle(align, wrap) {
+  const margin =
+    wrap               ? "margin:0;" :
+    align === "right"  ? "margin:0 0 0 auto;" :
+    align === "left"   ? "margin:0 auto 0 0;" :
+                         "margin:0 auto;";
+  return `display:table;max-width:100%;${margin}`;
+}
+
 /**
  * TipTap v3 block node: <figure><div (table)><img/><figcaption/></div></figure>
  *
@@ -7,6 +31,9 @@ import { Node } from "@tiptap/core";
  * figcaption is always as wide as the image — it never floats off to the side.
  * Caption text is the node's content (contentDOM), so TipTap manages editing
  * natively — no custom input elements, no updateAttributes on keystrokes.
+ *
+ * The figure is a block of its own, unless `wrap` floats it so the following
+ * paragraphs flow around it.
  */
 export const FigureNode = Node.create({
   name: "figure",
@@ -21,6 +48,9 @@ export const FigureNode = Node.create({
       alt:       { default: "" },
       width:     { default: null },
       textAlign: { default: "center" },
+      // null = own block, text above and below. "left"/"right" float the
+      // figure so the following paragraphs wrap around it, like in Word.
+      wrap:      { default: null },
     };
   },
 
@@ -34,11 +64,17 @@ export const FigureNode = Node.create({
           if (!img) return false;
           const style = dom.getAttribute("style") || "";
           const taMatch = style.match(/text-align\s*:\s*(left|center|right)/);
+          // data-wrap is what this node writes; the float in the inline style
+          // is the fallback for figures that came from elsewhere (WP imports).
+          const wrapAttr = dom.getAttribute("data-wrap");
+          const floatMatch = style.match(/float\s*:\s*(left|right)/);
           return {
             src:       img.getAttribute("src") || "",
             alt:       img.getAttribute("alt") || "",
             width:     img.style.width || img.getAttribute("width") || null,
             textAlign: taMatch ? taMatch[1] : "center",
+            wrap:      wrapAttr === "left" || wrapAttr === "right" ? wrapAttr
+                       : floatMatch ? floatMatch[1] : null,
           };
         },
       },
@@ -59,19 +95,17 @@ export const FigureNode = Node.create({
   },
 
   renderHTML({ node }) {
-    const { src, alt, width, textAlign } = node.attrs;
+    const { src, alt, width, textAlign, wrap } = node.attrs;
     const align = textAlign || "center";
-    // Inner wrapper: display:table shrinks to image width; margin drives alignment
-    const innerMargin =
-      align === "right"  ? "margin:0 0 0 auto;" :
-      align === "left"   ? "margin:0 auto 0 0;" :
-                           "margin:0 auto;";
-    const innerStyle = `display:table;max-width:100%;${innerMargin}`;
-    const imgStyle   = `max-width:100%;border-radius:8px;display:block;${width ? `width:${width};` : ""}`;
+    const imgStyle = `max-width:100%;border-radius:8px;display:block;${width ? `width:${width};` : ""}`;
     return [
       "figure",
-      { "data-type": "figure", style: "margin:20px 0;" },
-      ["div", { style: innerStyle },
+      {
+        "data-type": "figure",
+        ...(wrap ? { "data-wrap": wrap } : {}),
+        style: figureStyle(wrap),
+      },
+      ["div", { style: innerStyle(align, wrap) },
         ["img", { src, alt: alt || "", style: imgStyle }],
         ["figcaption", {}, 0],
       ],
@@ -91,28 +125,19 @@ export const FigureNode = Node.create({
 
   addNodeView() {
     return ({ node }) => {
-      const applyAlign = (align) => {
-        const a = align || "center";
-        if (a === "right") {
-          inner.style.marginLeft  = "auto";
-          inner.style.marginRight = "0";
-        } else if (a === "left") {
-          inner.style.marginLeft  = "0";
-          inner.style.marginRight = "auto";
-        } else {
-          inner.style.marginLeft  = "auto";
-          inner.style.marginRight = "auto";
-        }
+      const applyLayout = (align, wrap) => {
+        wrapper.style.cssText = `display:block;${figureStyle(wrap)}`;
+        if (wrap) wrapper.setAttribute("data-wrap", wrap);
+        else wrapper.removeAttribute("data-wrap");
+        inner.style.cssText = innerStyle(align || "center", wrap);
       };
 
-      // Outer figure — just a block container, alignment via inner margin
+      // Outer figure — a block container, or a float when text wraps around it
       const wrapper = document.createElement("figure");
       wrapper.setAttribute("data-type", "figure");
-      wrapper.style.cssText = "margin:20px 0;display:block;";
 
       // Inner wrapper shrinks to the image's width (display:table behaviour)
       const inner = document.createElement("div");
-      inner.style.cssText = "display:table;max-width:100%;";
 
       const img = document.createElement("img");
       img.src = node.attrs.src || "";
@@ -125,7 +150,7 @@ export const FigureNode = Node.create({
       const figcaption = document.createElement("figcaption");
       figcaption.setAttribute("data-placeholder", "Dodaj opis slike… (neobvezno)");
 
-      applyAlign(node.attrs.textAlign);
+      applyLayout(node.attrs.textAlign, node.attrs.wrap);
 
       inner.appendChild(img);
       inner.appendChild(figcaption);
@@ -154,7 +179,7 @@ export const FigureNode = Node.create({
             const newW = updatedNode.attrs.width || "";
             if (img.style.width !== newW) img.style.width = newW;
           }
-          applyAlign(updatedNode.attrs.textAlign);
+          applyLayout(updatedNode.attrs.textAlign, updatedNode.attrs.wrap);
           return true;
         },
       };

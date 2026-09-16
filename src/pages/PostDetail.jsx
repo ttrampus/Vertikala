@@ -233,7 +233,7 @@ export default function PostDetail() {
             prose-a:text-primary"
           dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content, {
             ADD_TAGS: ["iframe"],
-            ADD_ATTR: ["allow", "allowfullscreen", "frameborder", "src", "width", "height", "data-type", "data-video-type", "data-youtube-id", "controls"],
+            ADD_ATTR: ["allow", "allowfullscreen", "frameborder", "src", "width", "height", "data-type", "data-wrap", "data-video-type", "data-youtube-id", "controls"],
           }) }}
         />
         <Lightbox

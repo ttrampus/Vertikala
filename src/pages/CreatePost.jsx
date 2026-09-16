@@ -670,7 +670,8 @@ export default function CreatePost() {
 
           <div className="mt-2.5 rounded-lg bg-muted/40 border border-border px-4 py-2.5 grid grid-cols-2 gap-x-6 gap-y-1">
             <p className="col-span-2 text-xs font-semibold text-foreground/60 mb-0.5">Nasveti</p>
-            <p className="text-xs text-muted-foreground"><ImageIcon className="inline h-3 w-3 mr-1" />Kliknite sliko in povlecite kotičke za spremembo velikosti</p>
+            <p className="text-xs text-muted-foreground"><ImageIcon className="inline h-3 w-3 mr-1" />Kliknite sliko: vogali spremenijo velikost, povlecite jo za premik, Delete jo izbriše</p>
+            <p className="text-xs text-muted-foreground"><ImageIcon className="inline h-3 w-3 mr-1" />Orodna vrstica nad izbrano sliko → poravnava ali besedilo ob sliki</p>
             <p className="text-xs text-muted-foreground"><Columns2 className="inline h-3 w-3 mr-1" />Ikona stolpcev → 2–4 slike eno poleg druge</p>
             <p className="text-xs text-muted-foreground"><Video className="inline h-3 w-3 mr-1" />Ikona videa → YouTube povezava ali nalaganje z naprave</p>
             <p className="text-xs text-muted-foreground"><ImageIcon className="inline h-3 w-3 mr-1" />Ikona slike → naložite fotografijo na mesto kazalnika</p>
@@ -717,6 +718,11 @@ export default function CreatePost() {
           display: block;
           margin: 8px 0;
         }
+        /* Wrapped figures: the float comes from the node's inline style; the
+           editor only has to keep blocks from sliding up beside it. */
+        .tiptap h2, .tiptap h3 { clear: both; }
+        .tiptap::after { content: ""; display: block; clear: both; }
+        .tiptap figure[data-wrap] img { margin: 0; }
         .tiptap [data-type="image-row"] {
           display: flex !important;
           flex-direction: row !important;
