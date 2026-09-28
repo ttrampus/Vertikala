@@ -11,7 +11,7 @@ import HeroBg from "@/components/HeroBg";
 import DateField from "@/components/DateField";
 import { formatDate, toDate } from "@/lib/dates";
 import ExcelJS from "exceljs";
-import { Trash2, Lock, Search, Download, Plus } from "lucide-react";
+import { Trash2, Pencil, Lock, Search, Download, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -39,12 +39,33 @@ const EMPTY_FORM = { date: "", climber_name: "", co_climber: "", category: "alpi
 // Real .xlsx (not CSV) so diacritics (č/š/ž) round-trip cleanly through any
 // viewer, dates keep their own type instead of Excel guessing at parsed
 // text, and column widths/alignment can be set explicitly.
+// One sheet per year, newest first — the way members keep their own
+// logbooks — each in the order the table on the page is sorted.
 async function exportAscentsToExcel(rows) {
   const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet("Vzponi", { views: [{ state: "frozen", ySplit: 1 }] });
+  const yearOf = (a) => toDate(a.date).getFullYear();
+  const years = [...new Set(rows.map(yearOf))].sort((a, b) => b - a);
+  years.forEach((y) => addAscentSheet(workbook, `Vzponi ${y}`, rows.filter((a) => yearOf(a) === y)));
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `vzponi-${new Date().toISOString().slice(0, 10)}.xlsx`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function addAscentSheet(workbook, name, rows) {
+  const sheet = workbook.addWorksheet(name, { views: [{ state: "frozen", ySplit: 1 }] });
 
   sheet.columns = [
-    { header: "Datum", key: "date", width: 12, style: { numFmt: "dd/mm/yyyy" } },
+    // "." rather than "/": Excel swaps "/" for the system date separator, so
+    // the same file showed 26.09.2026 in Excel but 26/09/2026 elsewhere.
+    { header: "Datum", key: "date", width: 12, style: { numFmt: "dd.mm.yyyy" } },
     { header: "Plezalec", key: "climber_name", width: 10 },
     { header: "Soplezalec", key: "co_climber", width: 10 },
     { header: "Kategorija", key: "category", width: 10 },
@@ -70,9 +91,10 @@ async function exportAscentsToExcel(rows) {
   });
 
   // Auto-width: widen each column to fit its longest cell (header included),
-  // so nothing needs manual stretching after opening the file.
+  // so nothing needs manual stretching after opening the file. The header
+  // gets a few extra characters for the filter dropdown button beside it.
   sheet.columns.forEach((col) => {
-    let max = col.header.length;
+    let max = col.header.length + 3;
     col.eachCell({ includeEmpty: false }, (cell) => {
       const text = cell.type === ExcelJS.ValueType.Date
         ? formatDate(cell.value)
@@ -89,16 +111,12 @@ async function exportAscentsToExcel(rows) {
   });
   sheet.getRow(1).font = { bold: true };
 
-  const buffer = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `vzponi-${new Date().toISOString().slice(0, 10)}.xlsx`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  // Filter already on when the file opens, no Data → Filter needed. Real
+  // date cells also make Excel group the Datum dropdown by year and month.
+  sheet.autoFilter = {
+    from: { row: 1, column: 1 },
+    to: { row: sheet.rowCount, column: sheet.columnCount },
+  };
 }
 
 export default function Vzponi() {
@@ -114,8 +132,9 @@ export default function Vzponi() {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState({ col: "date", dir: "desc" });
 
-  // Add-ascent modal
+  // Add/edit-ascent modal — editingId is null when adding a new one
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
@@ -132,7 +151,26 @@ export default function Vzponi() {
   }, []);
 
   const openForm = () => {
+    setEditingId(null);
     setForm({ ...EMPTY_FORM, climber_name: profile?.display_name || "", date: new Date().toISOString().slice(0, 10) });
+    setFormError("");
+    setShowForm(true);
+  };
+
+  const openEdit = (a) => {
+    setEditingId(a.id);
+    setForm({
+      date: a.date || "",
+      climber_name: a.climber_name || "",
+      co_climber: a.co_climber || "",
+      category: a.category || EMPTY_FORM.category,
+      location: a.location || "",
+      route_name: a.route_name || "",
+      difficulty: a.difficulty || "",
+      altitude: a.altitude != null ? String(a.altitude) : "",
+      notes: a.notes || "",
+      is_public: a.is_public !== false,
+    });
     setFormError("");
     setShowForm(true);
   };
@@ -156,16 +194,19 @@ export default function Vzponi() {
       altitude: form.altitude ? parseInt(form.altitude) : null,
       notes: form.notes.trim() || null,
       is_public: form.is_public,
-      created_by_id: user.id,
     };
-    const { data, error } = await supabase.from("ascents").insert(payload).select().single();
+    // Editing keeps created_by_id as it was, so the ascent stays its author's.
+    const { data, error } = editingId
+      ? await supabase.from("ascents").update(payload).eq("id", editingId).select().single()
+      : await supabase.from("ascents").insert({ ...payload, created_by_id: user.id }).select().single();
     setSaving(false);
     if (error || !data) {
       setFormError(error?.message || "Shranjevanje ni uspelo.");
       return;
     }
-    setAscents((prev) => [data, ...prev]);
+    setAscents((prev) => editingId ? prev.map((x) => (x.id === data.id ? data : x)) : [data, ...prev]);
     setShowForm(false);
+    setEditingId(null);
     setForm(EMPTY_FORM);
   };
 
@@ -178,7 +219,8 @@ export default function Vzponi() {
     setAscents((prev) => prev.filter((x) => x.id !== a.id));
   };
 
-  const canDelete = (a) => isAdmin || (user && a.created_by_id === user.id);
+  // Same rule as the RLS policies: the author or an admin may edit/delete.
+  const canManage = (a) => isAdmin || (user && a.created_by_id === user.id);
 
   const filtered = ascents.filter((a) => {
     if (activeTab !== "vse" && a.category !== activeTab) return false;
@@ -186,6 +228,7 @@ export default function Vzponi() {
       const q = search.toLowerCase();
       return (
         a.climber_name?.toLowerCase().includes(q) ||
+        a.co_climber?.toLowerCase().includes(q) ||
         a.route_name?.toLowerCase().includes(q) ||
         a.location?.toLowerCase().includes(q)
       );
@@ -351,7 +394,8 @@ export default function Vzponi() {
             theme={theme}
             sort={sort}
             onSort={toggleSort}
-            canDelete={canDelete}
+            canManage={canManage}
+            onEdit={openEdit}
             onDelete={deleteAscent}
           />
         ) : (
@@ -360,7 +404,8 @@ export default function Vzponi() {
             theme={theme}
             sort={sort}
             onSort={toggleSort}
-            canDelete={canDelete}
+            canManage={canManage}
+            onEdit={openEdit}
             onDelete={deleteAscent}
           />
         ))}
@@ -434,7 +479,7 @@ export default function Vzponi() {
             style={{ background: theme.bg, border: `1px solid ${theme.border}`, borderRadius: "14px", width: "100%", maxWidth: "560px", padding: "32px" }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-              <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "28px", margin: 0 }}>Dodaj vzpon</h2>
+              <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "28px", margin: 0 }}>{editingId ? "Uredi vzpon" : "Dodaj vzpon"}</h2>
               <button type="button" onClick={() => setShowForm(false)} style={{ background: "none", border: "none", color: theme.textLow, fontSize: "24px", cursor: "pointer", lineHeight: 1 }}>×</button>
             </div>
 
@@ -469,24 +514,24 @@ export default function Vzponi() {
                 </select>
               </div>
               <div>
-                <label style={labelStyle}>Lokacija</label>
-                <input placeholder="Mont Blanc, Stovc…" value={form.location} onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))} style={inputStyle} />
+                <label style={labelStyle}>Ožja lokacija</label>
+                <input placeholder="npr. KSA, Planjava" value={form.location} onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))} style={inputStyle} />
               </div>
               <div>
-                <label style={labelStyle}>Smer</label>
-                <input placeholder="Trois Monts, Botoks…" value={form.route_name} onChange={(e) => setForm((f) => ({ ...f, route_name: e.target.value }))} style={inputStyle} />
+                <label style={labelStyle}>Ime smeri</label>
+                <input placeholder="npr. Jugozahodni raz" value={form.route_name} onChange={(e) => setForm((f) => ({ ...f, route_name: e.target.value }))} style={inputStyle} />
               </div>
               <div>
                 <label style={labelStyle}>Ocena</label>
-                <input placeholder="npr. 7a+" value={form.difficulty} onChange={(e) => setForm((f) => ({ ...f, difficulty: e.target.value }))} style={inputStyle} />
+                <input placeholder="npr. V/IV ali 7a+" value={form.difficulty} onChange={(e) => setForm((f) => ({ ...f, difficulty: e.target.value }))} style={inputStyle} />
               </div>
               <div>
-                <label style={labelStyle}>Višina (m)</label>
-                <input type="number" placeholder="4808" value={form.altitude} onChange={(e) => setForm((f) => ({ ...f, altitude: e.target.value }))} style={inputStyle} />
+                <label style={labelStyle}>Višina smeri (m)</label>
+                <input type="number" min="0" placeholder="npr. 300" value={form.altitude} onChange={(e) => setForm((f) => ({ ...f, altitude: e.target.value }))} style={inputStyle} />
               </div>
               <div style={{ gridColumn: "1 / -1" }}>
                 <label style={labelStyle}>Opomba</label>
-                <input placeholder="Neobvezno…" value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} style={inputStyle} />
+                <input placeholder="Neobvezno — na strani ni prikazana, je pa v izvozu v Excel" value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} style={inputStyle} />
               </div>
               <label style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", marginTop: "4px" }}>
                 <input type="checkbox" checked={form.is_public} onChange={(e) => setForm((f) => ({ ...f, is_public: e.target.checked }))} style={{ width: "16px", height: "16px", accentColor: "#E8501A", cursor: "pointer" }} />
@@ -502,7 +547,7 @@ export default function Vzponi() {
 
             <div style={{ display: "flex", gap: "10px", marginTop: "24px" }}>
               <button type="submit" disabled={saving} style={{ background: saving ? "#7a2c0d" : "#E8501A", color: "#fff", border: "none", cursor: saving ? "default" : "pointer", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "14px", letterSpacing: "0.08em", textTransform: "uppercase", padding: "12px 28px", borderRadius: "8px" }}>
-                {saving ? "Shranjujem…" : "Shrani vzpon"}
+                {saving ? "Shranjujem…" : editingId ? "Shrani spremembe" : "Shrani vzpon"}
               </button>
               <button type="button" onClick={() => setShowForm(false)} style={{ background: "none", border: `1px solid ${theme.border}`, color: theme.text, cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600, fontSize: "13px", letterSpacing: "0.08em", textTransform: "uppercase", padding: "12px 24px", borderRadius: "8px" }}>Prekliči</button>
             </div>
@@ -512,6 +557,12 @@ export default function Vzponi() {
 
       <style>{`
         @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        /* Vseh sedem stolpcev potrebuje ~850 px; pod tem tabela zdrsne vstran
+           in skrije gumba Uredi/Izbriši. Kategorija in višina se umakneta prvi
+           (kategorija je vidna tudi v zavihkih zgoraj). */
+        @media (max-width: 1024px) {
+          .vzponi-table th.col-opt, .vzponi-table td.col-opt { display: none; }
+        }
         @media (max-width: 900px) {
           .vzponi-hero { padding: 0 24px 48px !important; }
         }
@@ -519,7 +570,6 @@ export default function Vzponi() {
           .vzponi-posts-grid { grid-template-columns: 1fr !important; }
           .vzponi-content { padding: 40px 24px !important; }
           .vzponi-stories { padding: 0 24px 60px !important; }
-          .vzponi-table th.col-opt, .vzponi-table td.col-opt { display: none; }
         }
       `}</style>
     </div>
@@ -527,16 +577,74 @@ export default function Vzponi() {
 }
 
 
-// Ista vsebina kot AscentTable, zložena v kartice: na telefonu je pet stolpcev
-// neberljivih, tabela pa bi se morala vleči vodoravno. Razvrščanje je tu v
-// spustnem seznamu, ker ni glav stolpcev, na katere bi se dalo klikniti.
-function AscentCards({ rows, theme, sort, onSort, canDelete, onDelete }) {
+
+// Gumba Uredi in Izbriši ob vzponu, ki ga sme prijavljeni urejati (avtor ali
+// admin). Enaka v tabeli in na karticah, zato na enem mestu.
+function AscentActions({ a, onEdit, onDelete }) {
+  return (
+    <div style={{ display: "inline-flex", alignItems: "center", gap: "2px" }}>
+      <Button
+        variant="ghost" size="icon" title="Uredi" aria-label="Uredi vzpon"
+        onClick={() => onEdit(a)}
+        className="h-8 w-8 text-muted-foreground hover:text-[#E8501A]"
+      >
+        <Pencil className="h-4 w-4" />
+      </Button>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button variant="ghost" size="icon" title="Izbriši" aria-label="Izbriši vzpon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Izbriši vzpon?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {a.climber_name}{(a.location || a.route_name) ? ` — ${a.location || a.route_name}` : ""}. Tega dejanja ni mogoče razveljaviti.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Prekliči</AlertDialogCancel>
+            <AlertDialogAction onClick={() => onDelete(a)} className="bg-destructive text-destructive-foreground">Izbriši</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+// Zožena, velike črke — kot ostala besedila v tabeli; skupni PrivateBadge je
+// v pisavi Inter in bi tu izstopal.
+function PrivatePill({ theme }) {
+  return (
+    <span
+      title="Vidno samo prijavljenim članom"
+      style={{
+        display: "inline-flex", alignItems: "center", gap: "3px", flexShrink: 0,
+        fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "10px",
+        letterSpacing: "0.05em", textTransform: "uppercase",
+        background: theme.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+        color: theme.textLow, padding: "2px 7px", borderRadius: "999px",
+      }}
+    ><Lock size={9} /> Zasebno</span>
+  );
+}
+
+const gradeBadge = { fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "12px", letterSpacing: "0.06em", background: "rgba(232,80,26,0.12)", color: "#E8501A", padding: "3px 10px", borderRadius: "4px", whiteSpace: "nowrap" };
+
+// Ista vsebina kot AscentTable, zložena v kartice: na telefonu je sedem
+// stolpcev neberljivih, tabela pa bi se morala vleči vodoravno. Razvrščanje je
+// tu v spustnem seznamu, ker ni glav stolpcev, na katere bi se dalo klikniti.
+// Opomba se na strani ne prikazuje — je samo v izvozu v Excel.
+function AscentCards({ rows, theme, sort, onSort, canManage, onEdit, onDelete }) {
   const SORTABLE = [
     { col: "date", label: "Datum" },
     { col: "climber_name", label: "Plezalec" },
     { col: "category", label: "Kategorija" },
-    { col: "location", label: "Lokacija" },
+    { col: "location", label: "Ožja lokacija" },
+    { col: "route_name", label: "Ime smeri" },
     { col: "difficulty", label: "Ocena" },
+    { col: "altitude", label: "Višina smeri" },
   ];
   const label = (t) => ({ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: theme.textLow, ...t });
 
@@ -570,52 +678,19 @@ function AscentCards({ rows, theme, sort, onSort, canDelete, onDelete }) {
       <div style={{ display: "grid", gap: "10px" }}>
         {rows.map((a) => (
           <div key={a.id} style={{ background: theme.bgCard, border: `1px solid ${theme.border}`, borderRadius: "10px", padding: "14px 16px" }}>
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "10px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", minHeight: "32px" }}>
               <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "13px", letterSpacing: "0.04em", color: "#E8501A" }}>
                 {formatDate(a.date)}
               </span>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                {a.difficulty && (
-                  <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "12px", letterSpacing: "0.06em", background: "rgba(232,80,26,0.12)", color: "#E8501A", padding: "3px 10px", borderRadius: "4px" }}>{a.difficulty}</span>
-                )}
-                {canDelete(a) && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Izbriši vzpon?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          {a.climber_name}{(a.location || a.route_name) ? ` — ${a.location || a.route_name}` : ""}. Tega dejanja ni mogoče razveljaviti.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Prekliči</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => onDelete(a)} className="bg-destructive text-destructive-foreground">Izbriši</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                )}
+                {a.difficulty && <span style={gradeBadge}>{a.difficulty}</span>}
+                {canManage(a) && <AscentActions a={a} onEdit={onEdit} onDelete={onDelete} />}
               </div>
             </div>
 
             <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "15px", fontWeight: 600, color: theme.text, marginTop: "4px", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
               <span>{a.climber_name}{a.co_climber ? ` / ${a.co_climber}` : ""}</span>
-              {a.is_public === false && (
-                <span
-                  title="Vidno samo prijavljenim članom"
-                  style={{
-                    display: "inline-flex", alignItems: "center", gap: "3px",
-                    fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "10px",
-                    letterSpacing: "0.05em", textTransform: "uppercase",
-                    background: theme.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
-                    color: theme.textLow, padding: "2px 7px", borderRadius: "999px",
-                  }}
-                ><Lock size={9} /> Zasebno</span>
-              )}
+              {a.is_public === false && <PrivatePill theme={theme} />}
             </div>
 
             {(a.location || a.route_name) && (
@@ -628,9 +703,13 @@ function AscentCards({ rows, theme, sort, onSort, canDelete, onDelete }) {
 
             <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "8px", flexWrap: "wrap" }}>
               <span style={label({ fontSize: "11px" })}>{CATEGORY_LABELS[a.category] || a.category}</span>
+              {a.altitude != null && (
+                <>
+                  <span style={label({ fontSize: "11px" })}>·</span>
+                  <span style={label({ fontSize: "11px" })}>{a.altitude} m</span>
+                </>
+              )}
             </div>
-
-            {a.notes && <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "12px", color: theme.textLow, marginTop: "6px" }}>{a.notes}</div>}
           </div>
         ))}
       </div>
@@ -638,14 +717,17 @@ function AscentCards({ rows, theme, sort, onSort, canDelete, onDelete }) {
   );
 }
 
-function AscentTable({ rows, theme, sort, onSort, canDelete, onDelete }) {
+// Stolpci so tisti, ki jih klub želi na strani: Datum, Plezalec/Soplezalec,
+// Kategorija, Ožja lokacija, Ime smeri, Ocena, Višina smeri. Opomba je samo
+// v izvozu v Excel.
+function AscentTable({ rows, theme, sort, onSort, canManage, onEdit, onDelete }) {
   const arrow = (col) => sort.col === col ? (sort.dir === "asc" ? " ▲" : " ▼") : "";
   const th = (col, label, extraClass = "") => (
     <th
       className={extraClass}
       onClick={() => onSort(col)}
       style={{
-        textAlign: "left", padding: "12px 14px", cursor: "pointer", userSelect: "none",
+        textAlign: "left", padding: "12px 12px", cursor: "pointer", userSelect: "none",
         fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "12px",
         letterSpacing: "0.1em", textTransform: "uppercase",
         color: sort.col === col ? "#E8501A" : theme.textLow,
@@ -654,7 +736,7 @@ function AscentTable({ rows, theme, sort, onSort, canDelete, onDelete }) {
     >{label}{arrow(col)}</th>
   );
 
-  const td = { padding: "13px 14px", fontFamily: "'Inter', sans-serif", fontSize: "14px", borderBottom: `1px solid ${theme.border}`, verticalAlign: "top" };
+  const td = { padding: "13px 12px", fontFamily: "'Inter', sans-serif", fontSize: "14px", borderBottom: `1px solid ${theme.border}`, verticalAlign: "top" };
 
   return (
     <div style={{ overflowX: "auto" }}>
@@ -664,9 +746,11 @@ function AscentTable({ rows, theme, sort, onSort, canDelete, onDelete }) {
             {th("date", "Datum")}
             {th("climber_name", "Plezalec / Soplezalec")}
             {th("category", "Kategorija", "col-opt")}
-            {th("location", "Lokacija / Smer")}
-            {th("difficulty", "Ocena", "col-opt")}
-            <th style={{ borderBottom: `2px solid ${theme.border}`, width: "36px" }} />
+            {th("location", "Ožja lokacija")}
+            {th("route_name", "Ime smeri")}
+            {th("difficulty", "Ocena")}
+            {th("altitude", "Višina smeri", "col-opt")}
+            <th style={{ borderBottom: `2px solid ${theme.border}`, width: "72px" }} />
           </tr>
         </thead>
         <tbody>
@@ -680,57 +764,23 @@ function AscentTable({ rows, theme, sort, onSort, canDelete, onDelete }) {
               <td style={{ ...td, whiteSpace: "nowrap", color: "#E8501A", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "13px", letterSpacing: "0.04em" }}>
                 {formatDate(a.date)}
               </td>
-              <td style={{ ...td, fontWeight: 600, color: theme.text, whiteSpace: "nowrap" }}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
+              <td style={{ ...td, fontWeight: 600, color: theme.text }}>
+                <span style={{ display: "inline-flex", alignItems: "center", flexWrap: "wrap", gap: "4px 8px" }}>
                   <span>{a.climber_name}{a.co_climber ? ` / ${a.co_climber}` : ""}</span>
-                  {a.is_public === false && (
-                    <span
-                      title="Vidno samo prijavljenim članom"
-                      style={{
-                        display: "inline-flex", alignItems: "center", gap: "3px", flexShrink: 0,
-                        fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "10px",
-                        letterSpacing: "0.05em", textTransform: "uppercase",
-                        background: theme.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
-                        color: theme.textLow, padding: "2px 7px", borderRadius: "999px",
-                      }}
-                    ><Lock size={9} /> Zasebno</span>
-                  )}
+                  {a.is_public === false && <PrivatePill theme={theme} />}
                 </span>
               </td>
               <td className="col-opt" style={{ ...td, color: theme.textMid }}>{CATEGORY_LABELS[a.category] || a.category}</td>
-              <td style={{ ...td, color: theme.textMid }}>
-                {a.location && <span style={{ color: theme.text, fontWeight: 500 }}>{a.location}</span>}
-                {a.location && a.route_name && <span style={{ color: theme.textLow }}> — </span>}
-                {a.route_name && <span>{a.route_name}</span>}
-                {a.notes && <div style={{ fontSize: "12px", color: theme.textLow, marginTop: "3px" }}>{a.notes}</div>}
+              <td style={{ ...td, color: theme.text, fontWeight: 500 }}>{a.location}</td>
+              <td style={{ ...td, color: theme.textMid }}>{a.route_name}</td>
+              <td style={td}>
+                {a.difficulty && <span style={gradeBadge}>{a.difficulty}</span>}
               </td>
-              <td className="col-opt" style={td}>
-                {a.difficulty && (
-                  <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "12px", letterSpacing: "0.06em", background: "rgba(232,80,26,0.12)", color: "#E8501A", padding: "3px 10px", borderRadius: "4px", whiteSpace: "nowrap" }}>{a.difficulty}</span>
-                )}
+              <td className="col-opt" style={{ ...td, color: theme.textMid, whiteSpace: "nowrap" }}>
+                {a.altitude != null && `${a.altitude} m`}
               </td>
-              <td style={{ ...td, textAlign: "right" }}>
-                {canDelete(a) && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Izbriši vzpon?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          {a.climber_name}{(a.location || a.route_name) ? ` — ${a.location || a.route_name}` : ""}. Tega dejanja ni mogoče razveljaviti.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Prekliči</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => onDelete(a)} className="bg-destructive text-destructive-foreground">Izbriši</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                )}
+              <td style={{ ...td, padding: "8px 4px", textAlign: "right", whiteSpace: "nowrap" }}>
+                {canManage(a) && <AscentActions a={a} onEdit={onEdit} onDelete={onDelete} />}
               </td>
             </tr>
           ))}
