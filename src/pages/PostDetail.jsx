@@ -10,7 +10,7 @@ import PrivateBadge from "../components/PrivateBadge";
 import LikeButton from "../components/LikeButton";
 import CommentSection from "../components/CommentSection";
 import ImageGallery from "../components/ImageGallery";
-import CardImage from "../components/CardImage";
+import WholeImage from "../components/WholeImage";
 import Lightbox from "../components/Lightbox";
 import ElevationDivider from "../components/ElevationDivider";
 import ClimbMetaCard from "../components/ClimbMetaCard";
@@ -168,12 +168,14 @@ export default function PostDetail() {
 
         {post.featured_image && (
           <div className="max-w-3xl mx-auto px-6 lg:px-8 pb-8">
-            <CardImage
+            {/* Shown whole, never cropped: posters keep their text, and the
+                height cap keeps a tall one on screen by narrowing it. */}
+            <WholeImage
               src={post.featured_image}
               alt={post.title}
-              focus={post.focal_point}
               eager
-              className="rounded-xl h-80"
+              placeholderClassName="aspect-[3/2] rounded-xl"
+              className="mx-auto w-auto h-auto max-w-full max-h-[80vh] rounded-xl"
             />
           </div>
         )}

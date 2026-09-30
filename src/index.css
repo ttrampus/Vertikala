@@ -336,6 +336,9 @@ img { max-width: 100%; }
 }
 .prose hr { border: none; border-top: 1px solid hsl(var(--border)); margin: 2em 0; }
 .prose a { color: hsl(var(--primary)); text-decoration: underline; text-underline-offset: 2px; }
+/* A pasted URL is one unbreakable word; on a phone it ran past the edge and
+   was cut off. Break it (or any other overlong word) where it has to. */
+.prose { overflow-wrap: break-word; }
 
 /* ============================================================
    IMPORTED WORDPRESS GALLERIES
@@ -343,33 +346,34 @@ img { max-width: 100%; }
    (.gallery-item { float:left; width:33% }) to make the grid, but
    DOMPurify strips <style> tags — so we re-create the layout here.
    Scoped to .prose (the post-content container in PostDetail).
+   Masonry columns rather than a grid of fixed-height cells: every photo
+   keeps its own shape, so none is cropped (see ImageGallery.jsx).
    ============================================================ */
 .prose .gallery {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  columns: 3;
+  column-gap: 8px;
   margin: 24px 0;
   list-style: none;
   padding: 0;
 }
-.prose .gallery-columns-1 { grid-template-columns: 1fr; }
-.prose .gallery-columns-2 { grid-template-columns: repeat(2, 1fr); }
-.prose .gallery-columns-4 { grid-template-columns: repeat(4, 1fr); }
-.prose .gallery-columns-5 { grid-template-columns: repeat(5, 1fr); }
+.prose .gallery-columns-1 { columns: 1; }
+.prose .gallery-columns-2 { columns: 2; }
+.prose .gallery-columns-4 { columns: 4; }
+.prose .gallery-columns-5 { columns: 5; }
 /* WP inserts <br style="clear:both"> between every 3 items (float-clear hack).
-   In a CSS grid these <br> elements occupy a cell, breaking rows 2+.
-   Hide them so every dl.gallery-item fills consecutive cells. */
+   It would only add blank lines between the items. */
 .prose .gallery > br { display: none; }
 
-/* Each <dl class="gallery-item"> is a grid cell */
+/* Each <dl class="gallery-item"> is one tile, kept whole within a column */
 .prose .gallery-item,
 .prose .gallery figure {
   display: block;
   width: auto !important;
-  margin: 0 !important;
+  margin: 0 0 8px !important;
   float: none !important;
   overflow: hidden;
   border-radius: 8px;
+  break-inside: avoid;
 }
 /* <dt class="gallery-icon"> and the <a> wrapper must fill their parent */
 .prose .gallery dt,
@@ -385,8 +389,7 @@ img { max-width: 100%; }
 }
 .prose .gallery img {
   width: 100%;
-  height: 180px;
-  object-fit: cover;
+  height: auto;
   display: block;
   border-radius: 8px;
   margin: 0 !important;
@@ -508,21 +511,18 @@ img { max-width: 100%; }
 }
 /* Newer block-editor galleries, just in case some posts use them */
 .prose .wp-block-gallery {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  columns: 3;
+  column-gap: 8px;
   margin: 24px 0;
 }
-.prose .wp-block-gallery .wp-block-image { margin: 0 !important; }
+.prose .wp-block-gallery .wp-block-image { margin: 0 0 8px !important; break-inside: avoid; }
 .prose .wp-block-gallery img {
-  width: 100%; height: 100%; aspect-ratio: 1 / 1; object-fit: cover;
+  width: 100%; height: auto;
   border-radius: 8px; margin: 0 !important;
 }
 @media (max-width: 600px) {
-  .prose .gallery,
-  .prose .gallery-columns-4,
-  .prose .gallery-columns-5,
-  .prose .wp-block-gallery { grid-template-columns: repeat(2, 1fr); }
+  .prose .gallery:not(.gallery-columns-1),
+  .prose .wp-block-gallery { columns: 2; }
 }
 /* Loading surface under card images (see components/CardImage.jsx): a quiet
    shimmer that the loaded image fades in over, instead of a bare gray box. */

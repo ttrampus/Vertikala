@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Lightbox from "./Lightbox";
-import CardImage from "./CardImage";
+import WholeImage from "./WholeImage";
 import { thumbUrl } from "@/lib/thumbs";
 
 export default function ImageGallery({ images = [] }) {
@@ -8,31 +8,26 @@ export default function ImageGallery({ images = [] }) {
 
   if (!images.length) return null;
 
-  // Variable scale layout
-  const getSpan = (idx) => {
-    const pattern = [2, 1, 1, 2, 1, 1, 1, 2];
-    return pattern[idx % pattern.length];
-  };
-
+  // Masonry columns, each photo at its own shape: a grid of fixed-height
+  // cells cropped every portrait and panorama, which on a phone left little
+  // of the picture. Columns fill top to bottom, so no cell has to match its
+  // neighbour's height.
   return (
     <>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+      <div className="columns-2 md:columns-3 gap-3">
         {images.map((url, idx) => (
           <div
             key={idx}
-            className={`cursor-pointer rounded-xl overflow-hidden ${
-              getSpan(idx) === 2 ? "col-span-2" : "col-span-1"
-            }`}
+            className="mb-3 break-inside-avoid cursor-pointer rounded-xl overflow-hidden"
             onClick={() => setLightboxIdx(idx)}
           >
-            {/* Grid cells show the card thumb; the lightbox opens the original. */}
-            <CardImage
+            {/* Cells show the thumb (same shape, smaller); the lightbox opens the original. */}
+            <WholeImage
               src={thumbUrl(url)}
               fallbackSrc={url}
               alt={`Photo ${idx + 1}`}
-              className="w-full h-48 md:h-64"
-              imgClassName="hover:scale-105"
-              imgStyle={{ transition: "opacity 0.5s ease, transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)" }}
+              placeholderClassName="aspect-[4/3]"
+              className="w-full h-auto hover:scale-105"
             />
           </div>
         ))}
