@@ -31,6 +31,7 @@ import { RawHtmlNode } from "@/lib/RawHtmlNode";
 import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
+import { useBackdropClose } from "@/lib/useBackdropClose";
 
 const categories = ["climbs", "trips", "events", "training", "news"];
 const categoryLabels = { climbs: "Vzponi", trips: "Izleti", events: "Tabori in dogodki", training: "Trening", news: "Novice" };
@@ -252,9 +253,10 @@ function VideoModal({ editor, onClose }) {
     }
   };
 
+  const backdrop = useBackdropClose(onClose);
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
-      onClick={(e) => e.target === e.currentTarget && onClose()}>
+      {...backdrop}>
       <div className="bg-background rounded-2xl p-6 w-full max-w-md shadow-2xl border border-border">
         <h3 className="font-semibold text-base mb-4">Vstavi video</h3>
         <div className="flex gap-1 mb-5 p-1 bg-muted rounded-lg">
@@ -299,9 +301,10 @@ function VideoModal({ editor, onClose }) {
 function LinkModal({ onInsert, onClose }) {
   const [url, setUrl] = useState("");
   const handle = () => { if (url.trim()) { onInsert(url.trim()); onClose(); } };
+  const backdrop = useBackdropClose(onClose);
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
-      onClick={(e) => e.target === e.currentTarget && onClose()}>
+      {...backdrop}>
       <div className="bg-background rounded-2xl p-6 w-full max-w-md shadow-2xl border border-border">
         <h3 className="font-semibold text-base mb-1">Vstavi povezavo</h3>
         <Input value={url} onChange={(e) => setUrl(e.target.value)}
@@ -344,9 +347,10 @@ function SideBySideModal({ editor, onClose }) {
     }
   };
 
+  const backdrop = useBackdropClose(onClose);
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
-      onClick={(e) => e.target === e.currentTarget && onClose()}>
+      {...backdrop}>
       <div className="bg-background rounded-2xl p-6 w-full max-w-lg shadow-2xl border border-border">
         <div className="flex justify-between items-start mb-4">
           <div>

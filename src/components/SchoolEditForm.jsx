@@ -6,6 +6,7 @@ import DraggableList from "@/components/DraggableList";
 import AutoTextarea from "@/components/AutoTextarea";
 import { withKeys } from "@/lib/pageContent";
 import { DEFAULT_SCHOOL } from "@/lib/schoolContent";
+import { useBackdropClose } from "@/lib/useBackdropClose";
 
 // Defined at module scope on purpose. A component declared inside the render
 // body is a NEW component type on every render, so React unmounts and remounts
@@ -73,9 +74,11 @@ export default function SchoolEditForm({ initial, theme, onSave, onClose, saving
     letterSpacing: "0.08em", textTransform: "uppercase", padding: "8px 14px", borderRadius: "6px",
   };
 
+  const backdrop = useBackdropClose(() => !saving && onClose());
+
   return (
     <div
-      onClick={() => !saving && onClose()}
+      {...backdrop}
       style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(3px)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "48px 20px", overflowY: "auto" }}
     >
       <form

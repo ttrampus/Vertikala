@@ -18,6 +18,7 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useBackdropClose } from "@/lib/useBackdropClose";
 
 // Razmerja okvirov za sliko tabora: kartica v seznamu in glava podrobnosti.
 const CAMP_PREVIEWS = [
@@ -170,6 +171,9 @@ export default function Tabori() {
     return `${from} – ${formatDate(c.date_to)}`;
   };
 
+  const detailBackdrop = useBackdropClose(() => setDetailCamp(null));
+  const formBackdrop = useBackdropClose(() => !saving && setShowForm(false));
+
   return (
     <div style={{ background: theme.bg, minHeight: "100vh", color: theme.text, transition: "background 0.4s, color 0.4s" }}>
       {/* Hero */}
@@ -257,7 +261,7 @@ export default function Tabori() {
       {/* Detail modal */}
       {detailCamp && (
         <div
-          onClick={() => setDetailCamp(null)}
+          {...detailBackdrop}
           style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(3px)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "60px 20px", overflowY: "auto" }}
         >
           <div
@@ -326,7 +330,7 @@ export default function Tabori() {
       {/* Add/edit camp modal */}
       {showForm && (
         <div
-          onClick={() => !saving && setShowForm(false)}
+          {...formBackdrop}
           style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(3px)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "60px 20px", overflowY: "auto" }}
         >
           <form

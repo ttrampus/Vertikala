@@ -5,6 +5,7 @@ import DraggableList from "@/components/DraggableList";
 import AutoTextarea from "@/components/AutoTextarea";
 import { withKeys } from "@/lib/pageContent";
 import { DEFAULT_ABOUT } from "@/lib/aboutContent";
+import { useBackdropClose } from "@/lib/useBackdropClose";
 
 // Module scope: a component declared inside the render body is a new type on
 // every render, which remounts its subtree and drops the caret each keystroke.
@@ -72,9 +73,11 @@ export default function AboutEditForm({ initial, theme, onSave, onClose, saving,
   };
   const iconBtn = { ...smallBtn, padding: "9px" };
 
+  const backdrop = useBackdropClose(() => !saving && onClose());
+
   return (
     <div
-      onClick={() => !saving && onClose()}
+      {...backdrop}
       style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(3px)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "48px 20px", overflowY: "auto" }}
     >
       <form

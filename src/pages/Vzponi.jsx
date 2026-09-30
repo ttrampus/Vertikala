@@ -20,6 +20,7 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useBackdropClose } from "@/lib/useBackdropClose";
 
 const CATEGORIES = [
   { key: "vse", label: "Vsi" },
@@ -71,6 +72,7 @@ export default function Vzponi() {
   // Vzpon, ki ga je morda že vpisal soplezalec — pokaže se opozorilo, drugi
   // klik na Shrani ga vseeno doda.
   const [duplicate, setDuplicate] = useState(null);
+  const formBackdrop = useBackdropClose(() => !saving && setShowForm(false));
 
   useEffect(() => {
     Promise.all([
@@ -477,7 +479,7 @@ export default function Vzponi() {
       {/* Add ascent modal */}
       {showForm && (
         <div
-          onClick={() => !saving && setShowForm(false)}
+          {...formBackdrop}
           style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(3px)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "60px 20px", overflowY: "auto" }}
         >
           <form
