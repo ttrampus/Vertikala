@@ -5,12 +5,13 @@ import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/lib/AuthContext";
 import { Loader2, ArrowLeft, Calendar, User, Eye, Edit } from "lucide-react";
 import { formatDate } from "@/lib/dates";
+import { justifyGalleries } from "@/lib/justify";
 import TagBadge from "../components/TagBadge";
 import PrivateBadge from "../components/PrivateBadge";
 import LikeButton from "../components/LikeButton";
 import CommentSection from "../components/CommentSection";
 import ImageGallery from "../components/ImageGallery";
-import WholeImage from "../components/WholeImage";
+import CoverImage from "../components/CoverImage";
 import Lightbox from "../components/Lightbox";
 import ElevationDivider from "../components/ElevationDivider";
 import ClimbMetaCard from "../components/ClimbMetaCard";
@@ -62,6 +63,28 @@ export default function PostDetail() {
   useEffect(() => {
     loadPost();
   }, [id]);
+
+  // Old WordPress galleries in the body get the same justified rows as
+  // ImageGallery. Their photos' shapes are only known once each loads, and the
+  // rows depend on the column width, so lay out again on every load and resize.
+  useEffect(() => {
+    const el = bodyRef.current;
+    if (!el?.querySelector(".gallery")) return;
+    let frame = 0;
+    const relayout = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => justifyGalleries(el));
+    };
+    relayout();
+    const ro = new ResizeObserver(relayout);
+    ro.observe(el);
+    el.addEventListener("load", relayout, true); // load doesn't bubble; capture sees each <img>
+    return () => {
+      cancelAnimationFrame(frame);
+      ro.disconnect();
+      el.removeEventListener("load", relayout, true);
+    };
+  }, [loading, post?.content]);
 
   const loadPost = async () => {
     setLoading(true);
@@ -170,15 +193,7 @@ export default function PostDetail() {
 
         {post.featured_image && (
           <div className="max-w-3xl mx-auto px-6 lg:px-8 pb-8">
-            {/* Shown whole, never cropped: posters keep their text, and the
-                height cap keeps a tall one on screen by narrowing it. */}
-            <WholeImage
-              src={post.featured_image}
-              alt={post.title}
-              eager
-              placeholderClassName="aspect-[3/2] rounded-xl"
-              className="mx-auto w-auto h-auto max-w-full max-h-[80vh] rounded-xl"
-            />
+            <CoverImage src={post.featured_image} alt={post.title} />
           </div>
         )}
       </div>

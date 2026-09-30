@@ -346,34 +346,33 @@ img { max-width: 100%; }
    (.gallery-item { float:left; width:33% }) to make the grid, but
    DOMPurify strips <style> tags — so we re-create the layout here.
    Scoped to .prose (the post-content container in PostDetail).
-   Masonry columns rather than a grid of fixed-height cells: every photo
-   keeps its own shape, so none is cropped (see ImageGallery.jsx).
+   Justified rows, every photo at its own shape so none is cropped:
+   PostDetail sets each tile's width from its photo (justifyGalleries in
+   lib/justify.js). The width below only holds until that runs.
    ============================================================ */
 .prose .gallery {
-  columns: 3;
-  column-gap: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
   margin: 24px 0;
   list-style: none;
   padding: 0;
 }
-.prose .gallery-columns-1 { columns: 1; }
-.prose .gallery-columns-2 { columns: 2; }
-.prose .gallery-columns-4 { columns: 4; }
-.prose .gallery-columns-5 { columns: 5; }
 /* WP inserts <br style="clear:both"> between every 3 items (float-clear hack).
-   It would only add blank lines between the items. */
+   In a flex row it would only get in the way. */
 .prose .gallery > br { display: none; }
 
-/* Each <dl class="gallery-item"> is one tile, kept whole within a column */
+/* Each <dl class="gallery-item"> is one tile */
 .prose .gallery-item,
 .prose .gallery figure {
   display: block;
-  width: auto !important;
-  margin: 0 0 8px !important;
+  flex: none;
+  width: calc((100% - 16px) / 3);
+  margin: 0 !important; /* beats .prose figure's; the row-centring margins are set inline */
   float: none !important;
   overflow: hidden;
   border-radius: 8px;
-  break-inside: avoid;
 }
 /* <dt class="gallery-icon"> and the <a> wrapper must fill their parent */
 .prose .gallery dt,
@@ -521,7 +520,6 @@ img { max-width: 100%; }
   border-radius: 8px; margin: 0 !important;
 }
 @media (max-width: 600px) {
-  .prose .gallery:not(.gallery-columns-1),
   .prose .wp-block-gallery { columns: 2; }
 }
 /* Loading surface under card images (see components/CardImage.jsx): a quiet
