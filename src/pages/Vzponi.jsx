@@ -274,22 +274,24 @@ export default function Vzponi() {
                 onBlur={(e) => (e.target.style.borderColor = theme.border)}
               />
             </div>
-            <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
-              <button
-                onClick={() => exportAscentsToExcel(sorted)}
-                disabled={sorted.length === 0}
-                style={{
-                  display: "flex", alignItems: "center", gap: "7px",
-                  background: "transparent", color: theme.textMid, border: `1px solid ${theme.border}`,
-                  cursor: sorted.length === 0 ? "default" : "pointer", opacity: sorted.length === 0 ? 0.5 : 1,
-                  fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "13px",
-                  letterSpacing: "0.08em", textTransform: "uppercase", padding: "9px 18px",
-                  borderRadius: "8px", whiteSpace: "nowrap", transition: "border-color 0.2s, color 0.2s",
-                }}
-                onMouseEnter={(e) => { if (sorted.length) { e.currentTarget.style.borderColor = "#E8501A"; e.currentTarget.style.color = "#E8501A"; } }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.textMid; }}
-              ><Download size={14} /> Izvozi v Excel</button>
-              {user && (
+            {/* Izvoz in dodajanje samo za prijavljene člane — izvoz vsebuje tudi
+                polja klubskega obrazca, ki na strani niso prikazana. */}
+            {user && (
+              <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+                <button
+                  onClick={() => exportAscentsToExcel(sorted)}
+                  disabled={sorted.length === 0}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "7px",
+                    background: "transparent", color: theme.textMid, border: `1px solid ${theme.border}`,
+                    cursor: sorted.length === 0 ? "default" : "pointer", opacity: sorted.length === 0 ? 0.5 : 1,
+                    fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "13px",
+                    letterSpacing: "0.08em", textTransform: "uppercase", padding: "9px 18px",
+                    borderRadius: "8px", whiteSpace: "nowrap", transition: "border-color 0.2s, color 0.2s",
+                  }}
+                  onMouseEnter={(e) => { if (sorted.length) { e.currentTarget.style.borderColor = "#E8501A"; e.currentTarget.style.color = "#E8501A"; } }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.textMid; }}
+                ><Download size={14} /> Izvozi v Excel</button>
                 <button
                   onClick={openForm}
                   style={{
@@ -302,14 +304,14 @@ export default function Vzponi() {
                   onMouseEnter={(e) => (e.currentTarget.style.background = "#c73d10")}
                   onMouseLeave={(e) => (e.currentTarget.style.background = "#E8501A")}
                 ><Plus size={15} /> Dodaj vzpon</button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
 
         {!user && (
           <div style={{ marginBottom: "24px", fontFamily: "'Inter', sans-serif", fontSize: "13px", color: theme.textLow }}>
-            Ste član kluba? <span onClick={() => navigate("/login")} style={{ color: "#E8501A", cursor: "pointer", fontWeight: 600 }}>Prijavite se</span> in dodajte svoje vzpone.
+            Ste član kluba? <span onClick={() => navigate("/login")} style={{ color: "#E8501A", cursor: "pointer", fontWeight: 600 }}>Prijavite se</span>, da dodate svoje vzpone ali jih izvozite v Excel.
           </div>
         )}
 
