@@ -11,7 +11,8 @@ import HeroBg from "@/components/HeroBg";
 import DateField from "@/components/DateField";
 import { formatDate } from "@/lib/dates";
 import { exportAscentsToExcel, ASCENT_TYPES, ROUTE_TYPES, CONDITIONS, ROPE_POSITIONS } from "@/lib/ascentsExcel";
-import { Trash2, Pencil, Lock, Search, Download, Plus } from "lucide-react";
+import { normKey, peopleOf, involves } from "@/lib/ascentPeople";
+import { Trash2, Pencil, Lock, Search, Download, Plus, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -56,6 +57,9 @@ export default function Vzponi() {
   const [activeTab, setActiveTab] = useState("vse");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState({ col: "date", dir: "desc" });
+  // "Moji vzponi": samo vzponi, kjer je prijavljeni plezalec ali soplezalec.
+  const [mine, setMine] = useState(false);
+  const myName = profile?.display_name?.trim() || "";
 
   // Add/edit-ascent modal — editingId is null when adding a new one
   const [showForm, setShowForm] = useState(false);
@@ -63,6 +67,9 @@ export default function Vzponi() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
+  // Vzpon, ki ga je morda že vpisal soplezalec — pokaže se opozorilo, drugi
+  // klik na Shrani ga vseeno doda.
+  const [duplicate, setDuplicate] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -79,6 +86,7 @@ export default function Vzponi() {
     setEditingId(null);
     setForm({ ...EMPTY_FORM, climber_name: profile?.display_name || "", date: new Date().toISOString().slice(0, 10) });
     setFormError("");
+    setDuplicate(null);
     setShowForm(true);
   };
 
@@ -98,6 +106,7 @@ export default function Vzponi() {
       is_public: a.is_public !== false,
     });
     setFormError("");
+    setDuplicate(null);
     setShowForm(true);
   };
 
@@ -106,6 +115,13 @@ export default function Vzponi() {
     if (!form.date || !form.climber_name.trim()) {
       setFormError("Datum in plezalec sta obvezna.");
       return;
+    }
+    if (!editingId && !duplicate) {
+      const dup = findDuplicate();
+      if (dup) {
+        setDuplicate(dup);
+        return;
+      }
     }
     setSaving(true);
     setFormError("");
@@ -137,6 +153,17 @@ export default function Vzponi() {
     setForm(EMPTY_FORM);
   };
 
+  // Isti vzpon, vpisan že prej (ponavadi ga je vpisal soplezalec): isti dan in
+  // ista smer, ali — če smer ni vpisana — ista ožja lokacija in vsaj eno
+  // skupno ime. Več smeri istega dne v istem plezališču ni podvojitev.
+  const findDuplicate = () => {
+    const route = normKey(form.route_name);
+    const people = peopleOf(form);
+    return ascents.find((a) => a.date === form.date && (route
+      ? normKey(a.route_name) === route
+      : normKey(form.location) && normKey(a.location) === normKey(form.location) && peopleOf(a).some((n) => people.includes(n))));
+  };
+
   const deleteAscent = async (a) => {
     const { error } = await supabase.from("ascents").delete().eq("id", a.id);
     if (error) {
@@ -151,6 +178,7 @@ export default function Vzponi() {
 
   const filtered = ascents.filter((a) => {
     if (activeTab !== "vse" && a.category !== activeTab) return false;
+    if (mine && !involves(a, myName)) return false;
     if (search) {
       const q = search.toLowerCase();
       return (
@@ -253,6 +281,25 @@ export default function Vzponi() {
                 >{c.label}</button>
               );
             })}
+            {/* Deluje skupaj z zavihki. Izvoz v tem načinu je osebni obrazec, tudi z
+                vzponi, ki jih je vpisal soplezalec. */}
+            {user && myName && (
+              <button
+                onClick={() => setMine((m) => !m)}
+                aria-pressed={mine}
+                title="Vzponi, kjer ste plezalec ali soplezalec — izvoz je vaš osebni obrazec"
+                style={{
+                  marginLeft: "auto", display: "flex", alignItems: "center", gap: "6px",
+                  background: mine ? "rgba(232,80,26,0.1)" : "transparent",
+                  border: `1px solid ${mine ? "#E8501A" : theme.border}`,
+                  borderRadius: "999px", padding: "8px 16px", cursor: "pointer",
+                  fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600,
+                  fontSize: "12.5px", letterSpacing: "0.07em", textTransform: "uppercase",
+                  color: mine ? "#E8501A" : theme.textMid,
+                  transition: "all 0.2s",
+                }}
+              ><UserRound size={13} /> Moji vzponi</button>
+            )}
           </div>
 
           <div style={{ height: "1px", background: theme.border }} />
@@ -279,7 +326,7 @@ export default function Vzponi() {
             {user && (
               <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
                 <button
-                  onClick={() => exportAscentsToExcel(sorted)}
+                  onClick={() => exportAscentsToExcel(sorted, mine ? myName : null)}
                   disabled={sorted.length === 0}
                   style={{
                     display: "flex", alignItems: "center", gap: "7px",
@@ -434,7 +481,7 @@ export default function Vzponi() {
               </div>
               <div>
                 <label style={labelStyle}>Soplezalec</label>
-                <input placeholder="Ime Priimek" value={form.co_climber} onChange={setField("co_climber")} style={inputStyle} />
+                <input placeholder="Ime Priimek, več jih loči z vejico" value={form.co_climber} onChange={setField("co_climber")} style={inputStyle} />
               </div>
               <div>
                 <label style={labelStyle}>Kategorija *</label>
@@ -524,9 +571,22 @@ export default function Vzponi() {
               <div style={{ marginTop: "16px", fontFamily: "'Inter', sans-serif", fontSize: "13px", color: "#ef4444" }}>{formError}</div>
             )}
 
+            {duplicate && (
+              <div style={{ marginTop: "16px", padding: "12px 14px", borderRadius: "8px", border: "1px solid rgba(232,80,26,0.35)", background: "rgba(232,80,26,0.07)", fontFamily: "'Inter', sans-serif", fontSize: "13px", lineHeight: 1.5, color: theme.text }}>
+                <div style={{ fontWeight: 600 }}>Ta vzpon je morda že vpisan</div>
+                <div style={{ marginTop: "2px" }}>
+                  {formatDate(duplicate.date)} · {duplicate.climber_name}{duplicate.co_climber ? ` / ${duplicate.co_climber}` : ""}
+                  {(duplicate.location || duplicate.route_name) && ` · ${[duplicate.location, duplicate.route_name].filter(Boolean).join(" — ")}`}
+                </div>
+                <div style={{ marginTop: "6px", color: theme.textMid }}>
+                  Če ste plezali skupaj, ga ni treba vpisati še enkrat — med Moji vzponi in v vašem izvozu je tudi, kadar ste soplezalec.
+                </div>
+              </div>
+            )}
+
             <div style={{ display: "flex", gap: "10px", marginTop: "24px" }}>
               <button type="submit" disabled={saving} style={{ background: saving ? "#7a2c0d" : "#E8501A", color: "#fff", border: "none", cursor: saving ? "default" : "pointer", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "14px", letterSpacing: "0.08em", textTransform: "uppercase", padding: "12px 28px", borderRadius: "8px" }}>
-                {saving ? "Shranjujem…" : editingId ? "Shrani spremembe" : "Shrani vzpon"}
+                {saving ? "Shranjujem…" : editingId ? "Shrani spremembe" : duplicate ? "Vseeno dodaj" : "Shrani vzpon"}
               </button>
               <button type="button" onClick={() => setShowForm(false)} style={{ background: "none", border: `1px solid ${theme.border}`, color: theme.text, cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600, fontSize: "13px", letterSpacing: "0.08em", textTransform: "uppercase", padding: "12px 24px", borderRadius: "8px" }}>Prekliči</button>
             </div>

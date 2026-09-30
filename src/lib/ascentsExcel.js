@@ -1,5 +1,6 @@
 import ExcelJS from "exceljs";
 import { toDate } from "./dates.js";
+import { normName, coClimbersOf } from "./ascentPeople.js";
 
 // Spustni seznami klubskega obrazca — enake vrednosti kot v Excel predlogi in
 // v omejitvah stolpcev (supabase/ascents_form_fields.sql). `v` se shrani in
@@ -61,15 +62,48 @@ const FONT = { name: "Arial", size: 9 };
 const THIN = { style: "thin" };
 const MEDIUM = { style: "medium" };
 
+// Koliko vrstic zasede besedilo, prelomljeno po besedah, v stolpcu dane
+// širine. Širina je v znakih privzete pisave (~7 px), Arial 9 pa ima ~6,3 px
+// na znak — ocena je raje za vrstico previsoka kot pa besedilo odrezano.
+function wrappedLines(text, width) {
+  const perLine = Math.max(1, Math.floor((width * 7 - 1) / 6.3));
+  return text.split("\n").reduce((sum, para) => {
+    let lines = 1, used = 0;
+    for (const word of para.split(" ").filter(Boolean)) {
+      if (used && used + 1 + word.length <= perLine) { used += 1 + word.length; continue; }
+      if (used) lines += 1;
+      used = word.length;
+      while (used > perLine) { lines += 1; used -= perLine; } // predolga beseda se prelomi sredi
+    }
+    return sum + lines;
+  }, 0);
+}
+
+// Vzpon, ki ga je vpisal soplezalec, v osebnem obrazcu pokažemo z moje
+// strani: jaz sem plezalec, vpisovalec gre med soplezalce, mesto v navezi se
+// obrne (če je on vodil, sem bil drugi). Če je bil vpisovalec drugi v navezi
+// treh ali več, ne vemo, kdo je vodil — to polje ostane prazno.
+function asSeenBy(a, me) {
+  if (normName(a.climber_name) === normName(me)) return a;
+  const others = coClimbersOf(a).filter((n) => normName(n) !== normName(me));
+  const flipped = { "1": "2", "2": others.length ? null : "1" };
+  return {
+    ...a,
+    climber_name: me,
+    co_climber: [a.climber_name, ...others].join(", "),
+    rope_position: a.rope_position in flipped ? flipped[a.rope_position] : a.rope_position,
+  };
+}
+
 // Real .xlsx (not CSV) so diacritics (č/š/ž) round-trip cleanly through any
 // viewer, dates keep their own type instead of Excel guessing at parsed
 // text, and the form's borders, dropdowns and print setup carry over.
 // One sheet (tab) per year, newest first, rows oldest first — like the
-// members' own logbooks. When every row is one climber's (e.g. after
-// searching for a name) the file is named like theirs and counts their
-// running total; the personal details on top stay blank for them to fill in.
-export async function exportAscentsToExcel(rows) {
-  const { workbook, person } = buildAscentsWorkbook(rows);
+// members' own logbooks. `me` (from "Moji vzponi") or every row being one
+// climber's makes it a personal form: named like theirs, with their running
+// total; the personal details on top stay blank for them to fill in.
+export async function exportAscentsToExcel(rows, me = null) {
+  const { workbook, person } = buildAscentsWorkbook(rows, me);
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
   const url = URL.createObjectURL(blob);
@@ -84,9 +118,10 @@ export async function exportAscentsToExcel(rows) {
   URL.revokeObjectURL(url);
 }
 
-export function buildAscentsWorkbook(rows) {
-  const names = new Set(rows.map((a) => (a.climber_name || "").trim().toLowerCase()));
-  const person = names.size === 1 ? rows[0].climber_name.trim() : null;
+export function buildAscentsWorkbook(rows, me = null) {
+  const names = new Set(rows.map((a) => normName(a.climber_name)));
+  const person = me || (names.size === 1 ? rows[0].climber_name.trim() : null);
+  if (me) rows = rows.map((a) => asSeenBy(a, me));
   const columns = COLUMNS.filter((c) => !c.only || c.only === (person ? "personal" : "club"));
 
   const yearOf = (a) => toDate(a.date).getFullYear();
@@ -169,6 +204,12 @@ function fillYearSheet(sheet, year, rows, columns, prev) {
       if (c.key === "date") cell.numFmt = "dd.mm.yyyy"; // "." — Excel swaps "/" for the system separator
       if (c.key === "altitude") cell.numFmt = '0"m"';
     });
+    // Višina zapisana v datoteko: datoteka s spleta se odpre v zaščitenem
+    // pogledu, kjer Excel višin vrstic ne prilagodi prelomljenemu besedilu —
+    // daljši komentarji in več soplezalcev so se prekrivali ali bili odrezani,
+    // dokler niste kliknili "Omogoči urejanje".
+    const lines = Math.max(...columns.map((c) => (typeof values[c.key] === "string" ? wrappedLines(values[c.key], c.width) : 1)));
+    sheet.getRow(r).height = Math.max(15, lines * 12 + 3);
     if (totalLetter && n === 0 && !prev) {
       sheet.getCell(r, colOf("total")).note =
         "Prvi vzpon v izvozu šteje 1. Če imaš še vzpone, ki niso vpisani na spletni strani, "
