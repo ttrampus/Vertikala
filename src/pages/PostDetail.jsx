@@ -133,7 +133,9 @@ export default function PostDetail() {
     <div className="min-h-screen pt-20">
       {/* Header */}
       <div className="border-b border-border">
-        <div className="max-w-3xl mx-auto px-6 lg:px-8 pt-10 pb-8">
+        {/* break-words: imported summaries can hold a bare URL, which would
+            otherwise run past a phone's edge. */}
+        <div className="max-w-3xl mx-auto px-6 lg:px-8 pt-10 pb-8 break-words">
           {(post.category || post.is_public === false) && (
             <div className="mb-3 flex items-center gap-2">
               {post.category && <TagBadge tag={post.category} />}
