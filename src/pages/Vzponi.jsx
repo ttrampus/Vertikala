@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ThemeCtx } from "@/lib/ThemeContext";
 import StatsSection from "@/components/StatsSection";
@@ -9,9 +9,10 @@ import { useIsPhone } from "@/lib/useMediaQuery";
 import CardImage from "@/components/CardImage";
 import HeroBg from "@/components/HeroBg";
 import DateField from "@/components/DateField";
+import { NameField, NamesField } from "@/components/ClimberNameField";
 import { formatDate } from "@/lib/dates";
 import { exportAscentsToExcel, ASCENT_TYPES, ROUTE_TYPES, CONDITIONS, ROPE_POSITIONS } from "@/lib/ascentsExcel";
-import { normKey, peopleOf, involves } from "@/lib/ascentPeople";
+import { normName, normKey, coClimbersOf, peopleOf, involves } from "@/lib/ascentPeople";
 import { Trash2, Pencil, Lock, Search, Download, Plus, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -81,6 +82,25 @@ export default function Vzponi() {
       setLoading(false);
     });
   }, []);
+
+  // Imena članov za predloge v obrazcu (samo prijavljenim — gl. supabase/member_names.sql).
+  const [memberNames, setMemberNames] = useState([]);
+  useEffect(() => {
+    if (!user) return;
+    supabase.rpc("member_names").then(({ data }) => setMemberNames((data || []).map((r) => r.display_name)));
+  }, [user]);
+
+  // Predlogi: člani, nato še imena, ki so pri vzponih že vpisana (partnerji, ki
+  // niso člani). Pri istem imenu velja zapis iz profila. Samo ime brez
+  // priimka ("Veronika") ni predlog — prav takšne zapise hočemo odpraviti.
+  const nameSuggestions = useMemo(() => {
+    const byKey = new Map(memberNames.map((name) => [normName(name), { name, member: true }]));
+    ascents.forEach((a) => [a.climber_name, ...coClimbersOf(a)].forEach((raw) => {
+      const name = (raw || "").trim();
+      if (name.includes(" ") && !byKey.has(normName(name))) byKey.set(normName(name), { name, member: false });
+    }));
+    return [...byKey.values()].sort((a, b) => a.name.localeCompare(b.name, "sl"));
+  }, [memberNames, ascents]);
 
   const openForm = () => {
     setEditingId(null);
@@ -477,11 +497,11 @@ export default function Vzponi() {
               </div>
               <div>
                 <label style={labelStyle}>Plezalec *</label>
-                <input required placeholder="Ime Priimek" value={form.climber_name} onChange={(e) => setForm((f) => ({ ...f, climber_name: e.target.value }))} style={inputStyle} />
+                <NameField required placeholder="Ime Priimek" value={form.climber_name} onChange={(v) => setForm((f) => ({ ...f, climber_name: v }))} suggestions={nameSuggestions} theme={theme} style={inputStyle} />
               </div>
               <div>
                 <label style={labelStyle}>Soplezalec</label>
-                <input placeholder="Ime Priimek, več jih loči z vejico" value={form.co_climber} onChange={setField("co_climber")} style={inputStyle} />
+                <NamesField placeholder="Začnite tipkati ime…" value={form.co_climber} onChange={(v) => setForm((f) => ({ ...f, co_climber: v }))} suggestions={nameSuggestions} theme={theme} style={inputStyle} />
               </div>
               <div>
                 <label style={labelStyle}>Kategorija *</label>
