@@ -223,14 +223,12 @@ export default function PostDetail() {
           <ClimbMetaCard meta={post.climb_metadata} />
         )}
 
-        {/* Body */}
+        {/* Body. `prose` hooks up the post-text rules in index.css (the
+            typography plugin isn't installed, so prose-* modifiers do nothing). */}
         <div
           ref={bodyRef}
           onClick={handleBodyClick}
-          className="font-serif text-lg leading-[1.65] prose prose-slate dark:prose-invert max-w-none
-            prose-headings:font-inter prose-headings:tracking-tight
-            prose-h2:text-2xl prose-h3:text-xl
-            prose-a:text-primary"
+          className="font-serif text-lg leading-[1.65] prose max-w-none"
           dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content, {
             ADD_TAGS: ["iframe"],
             ADD_ATTR: ["allow", "allowfullscreen", "frameborder", "src", "width", "height", "data-type", "data-wrap", "data-video-type", "data-youtube-id", "controls"],

@@ -741,15 +741,8 @@ export default function EditPost() {
           border-radius: 6px;
         }
         .tiptap [data-type="video-node"] { border-radius: 10px; overflow: hidden; margin: 12px 0; display: block; }
-        .tiptap blockquote { border-left: 3px solid hsl(var(--border)); padding-left: 1rem; color: hsl(var(--muted-foreground)); font-style: italic; margin: 1rem 0; }
-        .tiptap hr { border: none; border-top: 1px solid hsl(var(--border)); margin: 1.5rem 0; }
-        .tiptap h2 { font-size: 1.5rem; font-weight: 700; margin: 1.5rem 0 0.5rem; letter-spacing: -0.02em; }
-        .tiptap h3 { font-size: 1.2rem; font-weight: 600; margin: 1.2rem 0 0.4rem; }
-        .tiptap ul { list-style: disc; padding-left: 1.5rem; margin: 0.5rem 0; }
-        .tiptap ol { list-style: decimal; padding-left: 1.5rem; margin: 0.5rem 0; }
-        .tiptap li { margin: 0.25rem 0; }
-        .tiptap a { color: hsl(var(--primary)); text-decoration: underline; text-underline-offset: 2px; }
-        .tiptap p { margin: 0.5rem 0; }
+        /* Text (paragraphs, headings, lists, quotes, links) is styled by the
+           shared .prose rules in index.css — the same ones the post page uses. */
         .tiptap figcaption {
           display: block; width: 100%; box-sizing: border-box;
           text-align: center; font-style: italic; font-size: 13px;

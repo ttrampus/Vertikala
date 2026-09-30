@@ -305,7 +305,9 @@ export default function Home() {
                           {featuredPost.is_public === false && <PrivateBadge small />}
                           <span style={{ color: theme.textLow, fontFamily: "'Inter', sans-serif", fontSize: '13px' }}>{formatDate(featuredPost.created_date)}</span>
                         </div>
-                        <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 'clamp(28px, 5.5vw, 42px)', lineHeight: 1.05, letterSpacing: '-0.01em', margin: '0 0 16px', color: theme.text, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{featuredPost.title}</h2>
+                        {/* lineHeight 1.2, not tighter: the two-line clamp hides overflow, and below
+                            ~1.19 Barlow's g/j/p/y hang past the box and get sliced off flat. */}
+                        <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 'clamp(28px, 5.5vw, 42px)', lineHeight: 1.2, letterSpacing: '-0.01em', margin: '0 0 16px', color: theme.text, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{featuredPost.title}</h2>
                         {featuredPost.summary && <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '15px', lineHeight: 1.7, color: theme.textMid, margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{featuredPost.summary}</p>}
                       </div>
                       <div style={{ marginTop: '32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

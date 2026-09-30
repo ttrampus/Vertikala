@@ -303,6 +303,41 @@ html, body { overflow-x: clip; max-width: 100%; }
 img { max-width: 100%; }
 
 /* ============================================================
+   POST TEXT
+   The post body (PostDetail) and both editors (Create/EditPost)
+   carry `prose`, but @tailwindcss/typography, which would style
+   it, is not installed — and Tailwind's reset strips paragraph
+   margins, heading sizes and list bullets. Posts therefore ran
+   together as one block while the editor, which had its own
+   rules, looked fine. These are now the only rules for both, so
+   the editor shows exactly what the post will look like. Sizes
+   are in em and scale with each container's text size.
+   ============================================================ */
+.prose > :first-child,
+.prose blockquote > :first-child { margin-top: 0; }
+.prose > :last-child,
+.prose blockquote > :last-child { margin-bottom: 0; }
+.prose p { margin: 0.9em 0; }
+/* A blank line in the editor is an empty <p>. With nothing inside it has no
+   height on the post, so the gap the author left would disappear. */
+.prose p:empty::before { content: "\00a0"; }
+.prose h2 { font-size: 1.5em; font-weight: 700; line-height: 1.3; letter-spacing: -0.02em; margin: 1.6em 0 0.5em; }
+.prose h3 { font-size: 1.2em; font-weight: 600; line-height: 1.35; margin: 1.4em 0 0.4em; }
+.prose ul { list-style: disc; padding-left: 1.5em; margin: 0.9em 0; }
+.prose ol { list-style: decimal; padding-left: 1.5em; margin: 0.9em 0; }
+.prose li { margin: 0.25em 0; }
+.prose li > p { margin: 0; } /* the editor wraps every list item's text in a <p> */
+.prose blockquote {
+  border-left: 3px solid hsl(var(--border));
+  padding-left: 1em;
+  margin: 1.2em 0;
+  color: hsl(var(--muted-foreground));
+  font-style: italic;
+}
+.prose hr { border: none; border-top: 1px solid hsl(var(--border)); margin: 2em 0; }
+.prose a { color: hsl(var(--primary)); text-decoration: underline; text-underline-offset: 2px; }
+
+/* ============================================================
    IMPORTED WORDPRESS GALLERIES
    The classic [gallery] shortcode ships its own inline <style>
    (.gallery-item { float:left; width:33% }) to make the grid, but
