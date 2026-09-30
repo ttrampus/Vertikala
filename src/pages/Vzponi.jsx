@@ -9,8 +9,8 @@ import { useIsPhone } from "@/lib/useMediaQuery";
 import CardImage from "@/components/CardImage";
 import HeroBg from "@/components/HeroBg";
 import DateField from "@/components/DateField";
-import { formatDate, toDate } from "@/lib/dates";
-import ExcelJS from "exceljs";
+import { formatDate } from "@/lib/dates";
+import { exportAscentsToExcel, ASCENT_TYPES, ROUTE_TYPES, CONDITIONS, ROPE_POSITIONS } from "@/lib/ascentsExcel";
 import { Trash2, Pencil, Lock, Search, Download, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,90 +34,15 @@ const CATEGORY_LABELS = {
   "frikanje": "Frikanje",
 };
 
-const EMPTY_FORM = { date: "", climber_name: "", co_climber: "", category: "alpinistični", location: "", route_name: "", difficulty: "", altitude: "", notes: "", is_public: true };
+const EMPTY_FORM = {
+  date: "", climber_name: "", co_climber: "", category: "alpinistični",
+  region: "", location: "", route_name: "", difficulty: "", altitude: "",
+  ascent_type: "", route_type: "", conditions: "", rope_position: "", duration: "",
+  notes: "", is_public: true,
+};
 
-// Real .xlsx (not CSV) so diacritics (č/š/ž) round-trip cleanly through any
-// viewer, dates keep their own type instead of Excel guessing at parsed
-// text, and column widths/alignment can be set explicitly.
-// One sheet per year, newest first — the way members keep their own
-// logbooks — each in the order the table on the page is sorted.
-async function exportAscentsToExcel(rows) {
-  const workbook = new ExcelJS.Workbook();
-  const yearOf = (a) => toDate(a.date).getFullYear();
-  const years = [...new Set(rows.map(yearOf))].sort((a, b) => b - a);
-  years.forEach((y) => addAscentSheet(workbook, `Vzponi ${y}`, rows.filter((a) => yearOf(a) === y)));
-
-  const buffer = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `vzponi-${new Date().toISOString().slice(0, 10)}.xlsx`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-}
-
-function addAscentSheet(workbook, name, rows) {
-  const sheet = workbook.addWorksheet(name, { views: [{ state: "frozen", ySplit: 1 }] });
-
-  sheet.columns = [
-    // "." rather than "/": Excel swaps "/" for the system date separator, so
-    // the same file showed 26.09.2026 in Excel but 26/09/2026 elsewhere.
-    { header: "Datum", key: "date", width: 12, style: { numFmt: "dd.mm.yyyy" } },
-    { header: "Plezalec", key: "climber_name", width: 10 },
-    { header: "Soplezalec", key: "co_climber", width: 10 },
-    { header: "Kategorija", key: "category", width: 10 },
-    { header: "Lokacija", key: "location", width: 10 },
-    { header: "Smer", key: "route_name", width: 10 },
-    { header: "Ocena", key: "difficulty", width: 8 },
-    { header: "Višina (m)", key: "altitude", width: 10 },
-    { header: "Opomba", key: "notes", width: 10 },
-  ];
-
-  rows.forEach((a) => {
-    sheet.addRow({
-      date: a.date ? toDate(a.date) : null,
-      climber_name: a.climber_name || "",
-      co_climber: a.co_climber || "",
-      category: CATEGORY_LABELS[a.category] || a.category || "",
-      location: a.location || "",
-      route_name: a.route_name || "",
-      difficulty: a.difficulty || "",
-      altitude: a.altitude ?? "",
-      notes: a.notes || "",
-    });
-  });
-
-  // Auto-width: widen each column to fit its longest cell (header included),
-  // so nothing needs manual stretching after opening the file. The header
-  // gets a few extra characters for the filter dropdown button beside it.
-  sheet.columns.forEach((col) => {
-    let max = col.header.length + 3;
-    col.eachCell({ includeEmpty: false }, (cell) => {
-      const text = cell.type === ExcelJS.ValueType.Date
-        ? formatDate(cell.value)
-        : String(cell.value ?? "");
-      max = Math.max(max, text.length);
-    });
-    col.width = Math.min(Math.max(max + 2, 8), 40);
-  });
-
-  sheet.eachRow((row) => {
-    row.eachCell({ includeEmpty: true }, (cell) => {
-      cell.alignment = { horizontal: "left", vertical: "middle" };
-    });
-  });
-  sheet.getRow(1).font = { bold: true };
-
-  // Filter already on when the file opens, no Data → Filter needed. Real
-  // date cells also make Excel group the Datum dropdown by year and month.
-  sheet.autoFilter = {
-    from: { row: 1, column: 1 },
-    to: { row: sheet.rowCount, column: sheet.columnCount },
-  };
-}
+// Polja klubskega obrazca, ki se na strani ne prikazujejo — samo v izvozu.
+const DETAIL_FIELDS = ["region", "ascent_type", "route_type", "conditions", "rope_position", "duration"];
 
 export default function Vzponi() {
   const theme = useContext(ThemeCtx);
@@ -168,6 +93,7 @@ export default function Vzponi() {
       route_name: a.route_name || "",
       difficulty: a.difficulty || "",
       altitude: a.altitude != null ? String(a.altitude) : "",
+      ...Object.fromEntries(DETAIL_FIELDS.map((k) => [k, a[k] || ""])),
       notes: a.notes || "",
       is_public: a.is_public !== false,
     });
@@ -192,6 +118,7 @@ export default function Vzponi() {
       route_name: form.route_name.trim() || null,
       difficulty: form.difficulty.trim() || null,
       altitude: form.altitude ? parseInt(form.altitude) : null,
+      ...Object.fromEntries(DETAIL_FIELDS.map((k) => [k, form[k].trim() || null])),
       notes: form.notes.trim() || null,
       is_public: form.is_public,
     };
@@ -230,7 +157,8 @@ export default function Vzponi() {
         a.climber_name?.toLowerCase().includes(q) ||
         a.co_climber?.toLowerCase().includes(q) ||
         a.route_name?.toLowerCase().includes(q) ||
-        a.location?.toLowerCase().includes(q)
+        a.location?.toLowerCase().includes(q) ||
+        a.region?.toLowerCase().includes(q)
       );
     }
     return true;
@@ -263,6 +191,16 @@ export default function Vzponi() {
     fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase",
     color: theme.textLow, display: "block", marginBottom: "6px",
   };
+  const selectStyle = { ...inputStyle, background: theme.isDark ? "#1a1a1a" : "#fff", cursor: "pointer" };
+  const optionStyle = { background: theme.isDark ? "#1a1a1a" : "#fff", color: theme.text };
+  const setField = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+  // Spustni seznam za polja obrazca s stalnimi vrednostmi; "—" = ni izbrano.
+  const codeSelect = (key, options) => (
+    <select value={form[key]} onChange={setField(key)} style={selectStyle}>
+      <option value="" style={optionStyle}>—</option>
+      {options.map((o) => <option key={o.v} value={o.v} style={optionStyle}>{o.l}</option>)}
+    </select>
+  );
 
   return (
     <div style={{ background: theme.bg, minHeight: "100vh", color: theme.text, transition: "background 0.4s, color 0.4s" }}>
@@ -494,14 +432,18 @@ export default function Vzponi() {
               </div>
               <div>
                 <label style={labelStyle}>Soplezalec</label>
-                <input placeholder="Ime Priimek" value={form.co_climber} onChange={(e) => setForm((f) => ({ ...f, co_climber: e.target.value }))} style={inputStyle} />
+                <input placeholder="Ime Priimek" value={form.co_climber} onChange={setField("co_climber")} style={inputStyle} />
               </div>
-              <div style={{ gridColumn: "1 / -1" }}>
+              <div>
                 <label style={labelStyle}>Kategorija *</label>
+                {/* Turni smuk je v klubskem obrazcu vrsta vzpona — predizpolni jo, če je še prazna. */}
                 <select
                   value={form.category}
-                  onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-                  style={{ ...inputStyle, background: theme.isDark ? "#1a1a1a" : "#fff", cursor: "pointer" }}
+                  onChange={(e) => {
+                    const category = e.target.value;
+                    setForm((f) => ({ ...f, category, ascent_type: category === "turni" && !f.ascent_type ? "Turni smuk" : f.ascent_type }));
+                  }}
+                  style={selectStyle}
                 >
                   {[
                     { v: "alpinistični", l: "Alpinistični vzponi" },
@@ -509,29 +451,64 @@ export default function Vzponi() {
                     { v: "turni", l: "Turni smuki" },
                     { v: "frikanje", l: "Frikanje" },
                   ].map((o) => (
-                    <option key={o.v} value={o.v} style={{ background: theme.isDark ? "#1a1a1a" : "#fff", color: theme.text }}>{o.l}</option>
+                    <option key={o.v} value={o.v} style={optionStyle}>{o.l}</option>
                   ))}
                 </select>
               </div>
               <div>
+                <label style={labelStyle}>Širša lokacija</label>
+                <input placeholder="npr. KSA, Julijske alpe" value={form.region} onChange={setField("region")} style={inputStyle} />
+              </div>
+              <div>
                 <label style={labelStyle}>Ožja lokacija</label>
-                <input placeholder="npr. KSA, Planjava" value={form.location} onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))} style={inputStyle} />
+                <input placeholder="Gora, stena, vrh — npr. Planjava" value={form.location} onChange={setField("location")} style={inputStyle} />
               </div>
               <div>
                 <label style={labelStyle}>Ime smeri</label>
-                <input placeholder="npr. Jugozahodni raz" value={form.route_name} onChange={(e) => setForm((f) => ({ ...f, route_name: e.target.value }))} style={inputStyle} />
+                <input placeholder="npr. Jugozahodni raz" value={form.route_name} onChange={setField("route_name")} style={inputStyle} />
               </div>
               <div>
                 <label style={labelStyle}>Ocena</label>
-                <input placeholder="npr. V/IV ali 7a+" value={form.difficulty} onChange={(e) => setForm((f) => ({ ...f, difficulty: e.target.value }))} style={inputStyle} />
+                <input placeholder="npr. V/IV ali 7a+" value={form.difficulty} onChange={setField("difficulty")} style={inputStyle} />
               </div>
               <div>
                 <label style={labelStyle}>Višina smeri (m)</label>
-                <input type="number" min="0" placeholder="npr. 300" value={form.altitude} onChange={(e) => setForm((f) => ({ ...f, altitude: e.target.value }))} style={inputStyle} />
+                <input type="number" min="0" placeholder="npr. 300" value={form.altitude} onChange={setField("altitude")} style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Čas vzpona</label>
+                <input placeholder="npr. 5h30min" value={form.duration} onChange={setField("duration")} style={inputStyle} />
+              </div>
+
+              {/* Preostala polja klubskega obrazca "Pregled alpinističnih vzponov". */}
+              <div style={{ gridColumn: "1 / -1", marginTop: "6px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <span style={{ ...labelStyle, marginBottom: 0, color: theme.text, whiteSpace: "nowrap" }}>Za klubski obrazec</span>
+                  <div style={{ flex: 1, height: "1px", background: theme.border }} />
+                </div>
+                <p style={{ margin: "6px 0 0", fontFamily: "'Inter', sans-serif", fontSize: "12px", color: theme.textLow }}>
+                  Na strani niso prikazana, so pa v izvozu v Excel.
+                </p>
+              </div>
+              <div>
+                <label style={labelStyle}>Vrsta vzpona</label>
+                {codeSelect("ascent_type", ASCENT_TYPES)}
+              </div>
+              <div>
+                <label style={labelStyle}>Vrsta smeri</label>
+                {codeSelect("route_type", ROUTE_TYPES)}
+              </div>
+              <div>
+                <label style={labelStyle}>Tip vzpona</label>
+                {codeSelect("conditions", CONDITIONS)}
+              </div>
+              <div>
+                <label style={labelStyle}>Mesto v navezi</label>
+                {codeSelect("rope_position", ROPE_POSITIONS)}
               </div>
               <div style={{ gridColumn: "1 / -1" }}>
-                <label style={labelStyle}>Opomba</label>
-                <input placeholder="Neobvezno — na strani ni prikazana, je pa v izvozu v Excel" value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} style={inputStyle} />
+                <label style={labelStyle}>Komentar</label>
+                <input placeholder="Neobvezno" value={form.notes} onChange={setField("notes")} style={inputStyle} />
               </div>
               <label style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", marginTop: "4px" }}>
                 <input type="checkbox" checked={form.is_public} onChange={(e) => setForm((f) => ({ ...f, is_public: e.target.checked }))} style={{ width: "16px", height: "16px", accentColor: "#E8501A", cursor: "pointer" }} />
@@ -635,7 +612,8 @@ const gradeBadge = { fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 7
 // Ista vsebina kot AscentTable, zložena v kartice: na telefonu je sedem
 // stolpcev neberljivih, tabela pa bi se morala vleči vodoravno. Razvrščanje je
 // tu v spustnem seznamu, ker ni glav stolpcev, na katere bi se dalo klikniti.
-// Opomba se na strani ne prikazuje — je samo v izvozu v Excel.
+// Polja klubskega obrazca (širša lokacija, vrsta vzpona … komentar) se na
+// strani ne prikazujejo — so samo v izvozu v Excel.
 function AscentCards({ rows, theme, sort, onSort, canManage, onEdit, onDelete }) {
   const SORTABLE = [
     { col: "date", label: "Datum" },
@@ -718,8 +696,8 @@ function AscentCards({ rows, theme, sort, onSort, canManage, onEdit, onDelete })
 }
 
 // Stolpci so tisti, ki jih klub želi na strani: Datum, Plezalec/Soplezalec,
-// Kategorija, Ožja lokacija, Ime smeri, Ocena, Višina smeri. Opomba je samo
-// v izvozu v Excel.
+// Kategorija, Ožja lokacija, Ime smeri, Ocena, Višina smeri. Ostala polja
+// klubskega obrazca so samo v izvozu v Excel.
 function AscentTable({ rows, theme, sort, onSort, canManage, onEdit, onDelete }) {
   const arrow = (col) => sort.col === col ? (sort.dir === "asc" ? " ▲" : " ▼") : "";
   const th = (col, label, extraClass = "") => (
