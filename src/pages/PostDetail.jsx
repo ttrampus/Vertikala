@@ -15,7 +15,6 @@ import CoverImage from "../components/CoverImage";
 import Lightbox from "../components/Lightbox";
 import ElevationDivider from "../components/ElevationDivider";
 import ClimbMetaCard from "../components/ClimbMetaCard";
-import TripSignupButton from "../components/TripSignupButton";
 
 // Anonymous readers need a stable per-browser id so the server can dedupe
 // their views (one per post per day) without an account — same idea as an
@@ -265,16 +264,6 @@ export default function PostDetail() {
             <ElevationDivider label="Galerija fotografij" />
             <div className="mt-6">
               <ImageGallery images={post.images} />
-            </div>
-          </div>
-        )}
-
-        {/* Trip signup — only for events category */}
-        {post.category === "events" && (
-          <div className="mt-12">
-            <ElevationDivider label="Prijava na izlet" />
-            <div className="mt-6">
-              <TripSignupButton postId={post.id} />
             </div>
           </div>
         )}
