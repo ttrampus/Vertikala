@@ -22,6 +22,7 @@ import DateField from "@/components/DateField";
 import { formatNumber } from "@/lib/numbers";
 import PostToolbar, { NoPostsMessage } from "@/components/PostToolbar";
 import { applyPostFilters, EMPTY_FILTERS, hasActiveFilters } from "@/lib/postFilters";
+import Arrow from "@/components/Arrow";
 
 const EMPTY_ASCENT_FORM = { date: "", climber_name: "", co_climber: "", category: "alpinistični", location: "", route_name: "", difficulty: "", altitude: "", notes: "", is_public: true };
 const ASCENT_CATEGORY_LABELS = {
@@ -428,9 +429,9 @@ export default function AdminDashboard() {
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-2">
           <Shield className="h-5 w-5 text-primary" />
-          <h1 className="font-inter font-extrabold text-3xl tracking-tighter">Admin</h1>
+          <h1 className="font-sans font-extrabold text-3xl tracking-tighter">Admin</h1>
         </div>
-        <p className="text-muted-foreground text-sm font-inter">Upravljanje objav, članov in povabil</p>
+        <p className="text-muted-foreground text-sm font-sans">Upravljanje objav, članov in povabil</p>
       </div>
 
       {/* Stats */}
@@ -444,9 +445,9 @@ export default function AdminDashboard() {
           <div key={label} className="p-4 rounded-xl border border-border bg-card">
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
               <Icon className="h-4 w-4" />
-              <span className="text-xs font-inter font-medium">{label}</span>
+              <span className="text-xs font-sans font-medium">{label}</span>
             </div>
-            <p className="text-2xl font-inter font-bold">{value}</p>
+            <p className="text-2xl font-sans font-bold">{value}</p>
           </div>
         ))}
       </div>
@@ -475,7 +476,7 @@ export default function AdminDashboard() {
           )}
           {visiblePosts.length > 0 && (
             <div className="flex items-center justify-between mb-4 min-h-9">
-              <label className="flex items-center gap-2.5 text-sm text-muted-foreground font-inter cursor-pointer px-4">
+              <label className="flex items-center gap-2.5 text-sm text-muted-foreground font-sans cursor-pointer px-4">
                 <Checkbox
                   checked={visibleSelectedPosts.length === visiblePosts.length}
                   onCheckedChange={(v) => setSelectedPosts(v ? new Set(visiblePosts.map((p) => p.id)) : new Set())}
@@ -523,7 +524,7 @@ export default function AdminDashboard() {
                   {post.featured_image ? <img src={thumbUrl(post.featured_image)} onError={(e) => thumbFallback(e, post.featured_image)} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-muted" />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <Link to={`/post/${post.id}`} className="font-inter font-semibold text-sm line-clamp-2 hover:text-primary block">{post.title}</Link>
+                  <Link to={`/post/${post.id}`} className="font-sans font-semibold text-sm line-clamp-2 hover:text-primary block">{post.title}</Link>
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mt-1">
                     <button
                       onClick={() => togglePostStatus(post)}
@@ -567,7 +568,7 @@ export default function AdminDashboard() {
         {/* USERS TAB */}
         <TabsContent value="users" className="mt-6">
           <div className="space-y-2">
-            {profiles.length === 0 && <p className="text-muted-foreground text-sm font-inter py-8 text-center">Ni registriranih članov.</p>}
+            {profiles.length === 0 && <p className="text-muted-foreground text-sm font-sans py-8 text-center">Ni registriranih članov.</p>}
             {profiles.map((u) => {
               const isMe = u.id === user.id;
               const isUserAdmin = u.role === "admin";
@@ -582,14 +583,14 @@ export default function AdminDashboard() {
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-inter font-semibold text-sm break-words">{u.display_name || "Brez imena"}</p>
-                        {isMe && <span className="text-[10px] text-muted-foreground font-inter flex-shrink-0">(jaz)</span>}
+                        <p className="font-sans font-semibold text-sm break-words">{u.display_name || "Brez imena"}</p>
+                        {isMe && <span className="text-[10px] text-muted-foreground font-sans flex-shrink-0">(jaz)</span>}
                       </div>
                       <p className="text-xs text-muted-foreground truncate">{u.id}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0 pl-[52px] lg:pl-0">
-                    <span className={`px-3 py-1 rounded-full text-xs font-inter font-medium ${isOwner ? "bg-amber-500/15 text-amber-600 dark:text-amber-400" : isUserAdmin ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                    <span className={`px-3 py-1 rounded-full text-xs font-sans font-medium ${isOwner ? "bg-amber-500/15 text-amber-600 dark:text-amber-400" : isUserAdmin ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
                       {isOwner ? "lastnik" : isUserAdmin ? "admin" : "član"}
                     </span>
                     {viewerIsOwner && !isMe && !isOwner && (
@@ -641,7 +642,7 @@ export default function AdminDashboard() {
         {/* ASCENTS TAB */}
         <TabsContent value="ascents" className="mt-6">
           <div className="flex items-center justify-between mb-4">
-            <p className="text-sm text-muted-foreground font-inter">{ascents.length} vnosov</p>
+            <p className="text-sm text-muted-foreground font-sans">{ascents.length} vnosov</p>
             <Button size="sm" className="gap-1.5" onClick={() => (addingAscent ? setAddingAscent(false) : openAddAscent())}>
               <Plus className="h-4 w-4" /> Dodaj vzpon
             </Button>
@@ -649,26 +650,26 @@ export default function AdminDashboard() {
 
           {addingAscent && (
             <form onSubmit={saveAscent} className="p-5 rounded-xl border border-border bg-card mb-4 space-y-3">
-              <h3 className="font-inter font-semibold text-sm mb-1">{editingAscentId ? "Uredi vnos" : "Nov vnos"}</h3>
+              <h3 className="font-sans font-semibold text-sm mb-1">{editingAscentId ? "Uredi vnos" : "Nov vnos"}</h3>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <div className="col-span-1">
-                  <label className="text-xs text-muted-foreground font-inter block mb-1">Datum *</label>
-                  <DateField required value={ascentForm.date} onChange={(v) => setAscentForm((f) => ({ ...f, date: v }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-inter" />
+                  <label className="text-xs text-muted-foreground font-sans block mb-1">Datum *</label>
+                  <DateField required value={ascentForm.date} onChange={(v) => setAscentForm((f) => ({ ...f, date: v }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-sans" />
                 </div>
                 <div className="col-span-1">
-                  <label className="text-xs text-muted-foreground font-inter block mb-1">Plezalec *</label>
+                  <label className="text-xs text-muted-foreground font-sans block mb-1">Plezalec *</label>
                   <Input required placeholder="Ime Priimek" value={ascentForm.climber_name} onChange={(e) => setAscentForm((f) => ({ ...f, climber_name: e.target.value }))} />
                 </div>
                 <div className="col-span-1">
-                  <label className="text-xs text-muted-foreground font-inter block mb-1">Soplezalec</label>
+                  <label className="text-xs text-muted-foreground font-sans block mb-1">Soplezalec</label>
                   <Input placeholder="Ime Priimek" value={ascentForm.co_climber} onChange={(e) => setAscentForm((f) => ({ ...f, co_climber: e.target.value }))} />
                 </div>
                 <div className="col-span-1">
-                  <label className="text-xs text-muted-foreground font-inter block mb-1">Kategorija *</label>
+                  <label className="text-xs text-muted-foreground font-sans block mb-1">Kategorija *</label>
                   <select
                     value={ascentForm.category}
                     onChange={(e) => setAscentForm((f) => ({ ...f, category: e.target.value }))}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-inter"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-sans"
                   >
                     <option value="alpinistični">Alpinistični vzponi</option>
                     <option value="večraztežajne">Večraztežajne smeri</option>
@@ -677,28 +678,28 @@ export default function AdminDashboard() {
                   </select>
                 </div>
                 <div className="col-span-1">
-                  <label className="text-xs text-muted-foreground font-inter block mb-1">Lokacija</label>
+                  <label className="text-xs text-muted-foreground font-sans block mb-1">Lokacija</label>
                   <Input placeholder="Mont Blanc, Stovc…" value={ascentForm.location} onChange={(e) => setAscentForm((f) => ({ ...f, location: e.target.value }))} />
                 </div>
                 <div className="col-span-1 sm:col-span-2">
-                  <label className="text-xs text-muted-foreground font-inter block mb-1">Smer</label>
+                  <label className="text-xs text-muted-foreground font-sans block mb-1">Smer</label>
                   <Input placeholder="Trois Monts route, Botoks…" value={ascentForm.route_name} onChange={(e) => setAscentForm((f) => ({ ...f, route_name: e.target.value }))} />
                 </div>
                 <div className="col-span-1">
-                  <label className="text-xs text-muted-foreground font-inter block mb-1">Ocena</label>
+                  <label className="text-xs text-muted-foreground font-sans block mb-1">Ocena</label>
                   <Input placeholder="npr. 7a+" value={ascentForm.difficulty} onChange={(e) => setAscentForm((f) => ({ ...f, difficulty: e.target.value }))} />
                 </div>
                 <div className="col-span-1">
-                  <label className="text-xs text-muted-foreground font-inter block mb-1">Višina (m)</label>
+                  <label className="text-xs text-muted-foreground font-sans block mb-1">Višina (m)</label>
                   <Input type="number" placeholder="4808" value={ascentForm.altitude} onChange={(e) => setAscentForm((f) => ({ ...f, altitude: e.target.value }))} />
                 </div>
                 <div className="col-span-2 sm:col-span-3">
-                  <label className="text-xs text-muted-foreground font-inter block mb-1">Opomba</label>
+                  <label className="text-xs text-muted-foreground font-sans block mb-1">Opomba</label>
                   <Input placeholder="Neobvezno…" value={ascentForm.notes} onChange={(e) => setAscentForm((f) => ({ ...f, notes: e.target.value }))} />
                 </div>
                 <label className="col-span-2 sm:col-span-3 flex items-center gap-2.5 cursor-pointer">
                   <Switch checked={ascentForm.is_public} onCheckedChange={(v) => setAscentForm((f) => ({ ...f, is_public: v }))} />
-                  <span className="text-xs text-muted-foreground font-inter">{ascentForm.is_public ? "Javno viden vsem obiskovalcem" : "Viden samo prijavljenim članom"}</span>
+                  <span className="text-xs text-muted-foreground font-sans">{ascentForm.is_public ? "Javno viden vsem obiskovalcem" : "Viden samo prijavljenim članom"}</span>
                 </label>
               </div>
               <div className="flex gap-2 pt-1">
@@ -711,26 +712,26 @@ export default function AdminDashboard() {
           )}
 
           <div className="space-y-2">
-            {ascents.length === 0 && <p className="text-muted-foreground text-sm font-inter py-8 text-center">Še ni vnosov.</p>}
+            {ascents.length === 0 && <p className="text-muted-foreground text-sm font-sans py-8 text-center">Še ni vnosov.</p>}
             {ascents.map((a) => (
               <div key={a.id} className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card">
-                <div className="flex-shrink-0 w-16 text-xs font-inter text-primary font-semibold">{a.date}</div>
+                <div className="flex-shrink-0 w-16 text-xs font-sans text-primary font-semibold">{a.date}</div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-inter font-semibold text-sm">{a.climber_name}{a.co_climber ? ` / ${a.co_climber}` : ""}</span>
+                    <span className="font-sans font-semibold text-sm">{a.climber_name}{a.co_climber ? ` / ${a.co_climber}` : ""}</span>
                     {a.location && <span className="text-sm text-muted-foreground truncate">{a.location}{a.route_name ? ` — ${a.route_name}` : ""}</span>}
                   </div>
                   <div className="flex gap-2 mt-1 flex-wrap">
-                    <span className="text-[10px] font-inter px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                    <span className="text-[10px] font-sans px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
                       {ASCENT_CATEGORY_LABELS[a.category] || a.category}
                     </span>
                     {a.is_public === false && (
-                      <span className="text-[10px] font-inter px-2 py-0.5 rounded-full bg-muted text-muted-foreground flex items-center gap-1" title="Vidno samo prijavljenim članom">
+                      <span className="text-[10px] font-sans px-2 py-0.5 rounded-full bg-muted text-muted-foreground flex items-center gap-1" title="Vidno samo prijavljenim članom">
                         <Lock className="h-2.5 w-2.5" /> Zasebno
                       </span>
                     )}
-                    {a.difficulty && <span className="text-[10px] font-inter px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">{a.difficulty}</span>}
-                    {a.altitude && <span className="text-[10px] font-inter px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{formatNumber(a.altitude)} m</span>}
+                    {a.difficulty && <span className="text-[10px] font-sans px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">{a.difficulty}</span>}
+                    {a.altitude && <span className="text-[10px] font-sans px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{formatNumber(a.altitude)} m</span>}
                   </div>
                 </div>
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground flex-shrink-0" onClick={() => openEditAscent(a)}>
@@ -760,7 +761,7 @@ export default function AdminDashboard() {
 
         <TabsContent value="camps" className="mt-6">
           <div className="flex items-center justify-between mb-4">
-            <p className="text-sm text-muted-foreground font-inter">{camps.length} taborov</p>
+            <p className="text-sm text-muted-foreground font-sans">{camps.length} taborov</p>
             <Button size="sm" className="gap-1.5" onClick={() => (addingCamp ? setAddingCamp(false) : openAddCamp())}>
               <Plus className="h-4 w-4" /> Dodaj tabor
             </Button>
@@ -768,34 +769,34 @@ export default function AdminDashboard() {
 
           {addingCamp && (
             <form onSubmit={saveCamp} className="p-5 rounded-xl border border-border bg-card mb-4 space-y-3">
-              <h3 className="font-inter font-semibold text-sm mb-1">{editingCampId ? "Uredi tabor" : "Nov tabor"}</h3>
+              <h3 className="font-sans font-semibold text-sm mb-1">{editingCampId ? "Uredi tabor" : "Nov tabor"}</h3>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <div className="col-span-2 sm:col-span-1">
-                  <label className="text-xs text-muted-foreground font-inter block mb-1">Naziv *</label>
+                  <label className="text-xs text-muted-foreground font-sans block mb-1">Naziv *</label>
                   <Input required placeholder="Poletni tabor Paklenica" value={campForm.title} onChange={(e) => setCampForm((f) => ({ ...f, title: e.target.value }))} />
                 </div>
                 <div className="col-span-1">
-                  <label className="text-xs text-muted-foreground font-inter block mb-1">Datum od *</label>
-                  <DateField required value={campForm.date_from} onChange={(v) => setCampForm((f) => ({ ...f, date_from: v }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-inter" />
+                  <label className="text-xs text-muted-foreground font-sans block mb-1">Datum od *</label>
+                  <DateField required value={campForm.date_from} onChange={(v) => setCampForm((f) => ({ ...f, date_from: v }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-sans" />
                 </div>
                 <div className="col-span-1">
-                  <label className="text-xs text-muted-foreground font-inter block mb-1">Datum do</label>
-                  <DateField value={campForm.date_to} onChange={(v) => setCampForm((f) => ({ ...f, date_to: v }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-inter" />
+                  <label className="text-xs text-muted-foreground font-sans block mb-1">Datum do</label>
+                  <DateField value={campForm.date_to} onChange={(v) => setCampForm((f) => ({ ...f, date_to: v }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-sans" />
                 </div>
                 <div className="col-span-2 sm:col-span-3">
-                  <label className="text-xs text-muted-foreground font-inter block mb-1">Lokacija</label>
+                  <label className="text-xs text-muted-foreground font-sans block mb-1">Lokacija</label>
                   <Input placeholder="Paklenica, Hrvaška…" value={campForm.location} onChange={(e) => setCampForm((f) => ({ ...f, location: e.target.value }))} />
                 </div>
                 <div className="col-span-2 sm:col-span-3">
-                  <label className="text-xs text-muted-foreground font-inter block mb-1">Opis (prikazan na kartici)</label>
+                  <label className="text-xs text-muted-foreground font-sans block mb-1">Opis (prikazan na kartici)</label>
                   <Input placeholder="Kratek opis…" value={campForm.summary} onChange={(e) => setCampForm((f) => ({ ...f, summary: e.target.value }))} />
                 </div>
                 <div className="col-span-2 sm:col-span-3">
-                  <label className="text-xs text-muted-foreground font-inter block mb-1">Podrobnosti</label>
-                  <textarea rows={4} placeholder="Kje se začne in konča, kaj s seboj, pravila, program… (neobvezno)" value={campForm.description} onChange={(e) => setCampForm((f) => ({ ...f, description: e.target.value }))} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-inter resize-vertical" />
+                  <label className="text-xs text-muted-foreground font-sans block mb-1">Podrobnosti</label>
+                  <textarea rows={4} placeholder="Kje se začne in konča, kaj s seboj, pravila, program… (neobvezno)" value={campForm.description} onChange={(e) => setCampForm((f) => ({ ...f, description: e.target.value }))} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-sans resize-vertical" />
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground font-inter">Za nalaganje slike uredite tabor ali dogodek na strani /tabori-in-dogodki.</p>
+              <p className="text-xs text-muted-foreground font-sans">Za nalaganje slike uredite tabor ali dogodek na strani /tabori-in-dogodki.</p>
               <div className="flex gap-2 pt-1">
                 <Button type="submit" size="sm" disabled={savingCamp} className="gap-1.5">
                   {savingCamp && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Shrani
@@ -806,12 +807,12 @@ export default function AdminDashboard() {
           )}
 
           <div className="space-y-2">
-            {camps.length === 0 && <p className="text-muted-foreground text-sm font-inter py-8 text-center">Še ni taborov ali dogodkov.</p>}
+            {camps.length === 0 && <p className="text-muted-foreground text-sm font-sans py-8 text-center">Še ni taborov ali dogodkov.</p>}
             {camps.map((c) => (
               <div key={c.id} className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card">
-                <div className="flex-shrink-0 w-24 text-xs font-inter text-primary font-semibold">{c.date_from}{c.date_to ? ` – ${c.date_to}` : ""}</div>
+                <div className="flex-shrink-0 w-24 text-xs font-sans text-primary font-semibold">{c.date_from}{c.date_to ? ` – ${c.date_to}` : ""}</div>
                 <div className="flex-1 min-w-0">
-                  <span className="font-inter font-semibold text-sm">{c.title}</span>
+                  <span className="font-sans font-semibold text-sm">{c.title}</span>
                   {c.location && <span className="text-sm text-muted-foreground truncate ml-2">{c.location}</span>}
                 </div>
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground flex-shrink-0" onClick={() => openEditCamp(c)}>
@@ -847,13 +848,13 @@ export default function AdminDashboard() {
             <div className="flex gap-1 p-1 bg-muted rounded-lg mb-5 w-fit">
               <button
                 onClick={() => { setBulkMode(false); setBulkProgress(null); }}
-                className={`px-4 py-1.5 rounded-md text-sm font-inter font-medium transition-colors ${!bulkMode ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                className={`px-4 py-1.5 rounded-md text-sm font-sans font-medium transition-colors ${!bulkMode ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
               >
                 Posamezno
               </button>
               <button
                 onClick={() => { setBulkMode(true); setInviteResult(null); }}
-                className={`px-4 py-1.5 rounded-md text-sm font-inter font-medium transition-colors flex items-center gap-1.5 ${bulkMode ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                className={`px-4 py-1.5 rounded-md text-sm font-sans font-medium transition-colors flex items-center gap-1.5 ${bulkMode ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
               >
                 <List className="h-3.5 w-3.5" /> Množično
               </button>
@@ -862,12 +863,12 @@ export default function AdminDashboard() {
             {!bulkMode ? (
               /* ── Single invite ── */
               <div className="p-6 rounded-xl border border-border bg-card">
-                <h3 className="font-inter font-semibold text-base mb-1">Povabi člana</h3>
-                <p className="text-sm text-muted-foreground font-inter mb-5">
+                <h3 className="font-sans font-semibold text-base mb-1">Povabi člana</h3>
+                <p className="text-sm text-muted-foreground font-sans mb-5">
                   Vnesite e-poštni naslov. Član bo prejel e-pošto s povabilno povezavo.
                 </p>
                 {inviteResult && (
-                  <div className={`mb-4 p-3 rounded-lg text-sm font-inter flex items-center gap-2 ${inviteResult.ok ? "bg-green-500/10 text-green-600 border border-green-500/20" : "bg-destructive/10 text-destructive border border-destructive/20"}`}>
+                  <div className={`mb-4 p-3 rounded-lg text-sm font-sans flex items-center gap-2 ${inviteResult.ok ? "bg-green-500/10 text-green-600 border border-green-500/20" : "bg-destructive/10 text-destructive border border-destructive/20"}`}>
                     {inviteResult.ok ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
                     {inviteResult.msg}
                   </div>
@@ -890,8 +891,8 @@ export default function AdminDashboard() {
             ) : (
               /* ── Bulk invite ── */
               <div className="p-6 rounded-xl border border-border bg-card">
-                <h3 className="font-inter font-semibold text-base mb-1">Množično povabilo</h3>
-                <p className="text-sm text-muted-foreground font-inter mb-4">
+                <h3 className="font-sans font-semibold text-base mb-1">Množično povabilo</h3>
+                <p className="text-sm text-muted-foreground font-sans mb-4">
                   Prilepite e-poštne naslove — vsak v svojo vrstico ali ločene z vejico.
                 </p>
 
@@ -902,10 +903,10 @@ export default function AdminDashboard() {
                       onChange={(e) => setBulkText(e.target.value)}
                       placeholder={"jan.novak@email.com\nana.kovac@email.com\npeter.kos@email.com"}
                       rows={8}
-                      className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm font-inter resize-none focus:outline-none focus:ring-1 focus:ring-primary/50 placeholder:text-muted-foreground/50"
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm font-sans resize-none focus:outline-none focus:ring-1 focus:ring-primary/50 placeholder:text-muted-foreground/50"
                     />
                     {bulkText.trim() && (
-                      <p className="text-xs text-muted-foreground font-inter mt-1.5">
+                      <p className="text-xs text-muted-foreground font-sans mt-1.5">
                         {bulkText.split(/[\n,;]+/).map(e => e.trim()).filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)).length} veljavnih naslovov
                       </p>
                     )}
@@ -922,7 +923,7 @@ export default function AdminDashboard() {
                   <>
                     {/* Progress bar */}
                     <div className="mb-4">
-                      <div className="flex justify-between text-xs font-inter text-muted-foreground mb-1.5">
+                      <div className="flex justify-between text-xs font-sans text-muted-foreground mb-1.5">
                         <span>{bulkRunning ? "Pošiljam…" : "Končano"}</span>
                         <span>{bulkProgress.sent} / {bulkProgress.total}</span>
                       </div>
@@ -937,7 +938,7 @@ export default function AdminDashboard() {
                     {/* Results list */}
                     <div className="space-y-1 max-h-64 overflow-y-auto">
                       {bulkProgress.results.map((r) => (
-                        <div key={r.email} className="flex items-center gap-2 py-1.5 px-2 rounded-lg text-sm font-inter">
+                        <div key={r.email} className="flex items-center gap-2 py-1.5 px-2 rounded-lg text-sm font-sans">
                           {r.ok
                             ? <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
                             : <XCircle className="h-4 w-4 text-destructive shrink-0" />}
@@ -946,7 +947,7 @@ export default function AdminDashboard() {
                         </div>
                       ))}
                       {bulkRunning && bulkProgress.sent < bulkProgress.total && (
-                        <div className="flex items-center gap-2 py-1.5 px-2 text-sm text-muted-foreground font-inter">
+                        <div className="flex items-center gap-2 py-1.5 px-2 text-sm text-muted-foreground font-sans">
                           <Loader2 className="h-4 w-4 animate-spin shrink-0" />
                           <span>Čakam…</span>
                         </div>
@@ -968,13 +969,13 @@ export default function AdminDashboard() {
 
         {/* TRASH TAB */}
         <TabsContent value="trash" className="mt-6">
-          <p className="text-sm text-muted-foreground font-inter mb-4">
+          <p className="text-sm text-muted-foreground font-sans mb-4">
             Izbrisane objave ostanejo tu (skrite z javnih strani). Obnovite jih z enim klikom ali jih trajno izbrišite.
             Po {TRASH_RETENTION_DAYS} dneh se objave iz koša samodejno trajno izbrišejo, skupaj s slikami.
           </p>
           <div className="space-y-2">
             {trashedPosts.length === 0 && (
-              <p className="text-muted-foreground text-sm font-inter py-8 text-center">Koš je prazen.</p>
+              <p className="text-muted-foreground text-sm font-sans py-8 text-center">Koš je prazen.</p>
             )}
             {trashedPosts.map((post) => (
               <div key={post.id} className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card">
@@ -982,7 +983,7 @@ export default function AdminDashboard() {
                   {post.featured_image ? <img src={thumbUrl(post.featured_image)} onError={(e) => thumbFallback(e, post.featured_image)} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-muted" />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span className="font-inter font-semibold text-sm line-clamp-2 text-muted-foreground">{post.title}</span>
+                  <span className="font-sans font-semibold text-sm line-clamp-2 text-muted-foreground">{post.title}</span>
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mt-1">
                     {post.category && <TagBadge tag={post.category} small />}
                     <span>izbrisano {formatDateTime(post.deleted_at)}</span>
@@ -1017,12 +1018,12 @@ export default function AdminDashboard() {
 
         {/* AUDIT LOG TAB */}
         <TabsContent value="audit" className="mt-6">
-          <p className="text-sm text-muted-foreground font-inter mb-4">
+          <p className="text-sm text-muted-foreground font-sans mb-4">
             Zapis pomembnih dejanj: brisanje in obnovitev objav ter spremembe vlog članov — z avtorjem in časom.
           </p>
           <div className="space-y-2">
             {auditLog.length === 0 && (
-              <p className="text-muted-foreground text-sm font-inter py-8 text-center">Ni zabeleženih dejanj.</p>
+              <p className="text-muted-foreground text-sm font-sans py-8 text-center">Ni zabeleženih dejanj.</p>
             )}
             {auditLog.map((e) => {
               const labels = {
@@ -1035,10 +1036,10 @@ export default function AdminDashboard() {
               return (
                 <div key={e.id} className="flex items-start gap-3 p-3 rounded-xl border border-border bg-card text-sm">
                   <div className="flex-1 min-w-0">
-                    <span className="font-inter font-medium">{labels[e.action] || e.action}</span>
+                    <span className="font-sans font-medium">{labels[e.action] || e.action}</span>
                     {e.summary && <span className="text-muted-foreground"> — „{e.summary}“</span>}
                     {e.action === "role_change" && e.details && (
-                      <span className="text-muted-foreground"> ({e.details.from} → {e.details.to})</span>
+                      <span className="text-muted-foreground"> ({e.details.from} <Arrow /> {e.details.to})</span>
                     )}
                     <div className="text-xs text-muted-foreground mt-0.5">
                       {actor} · {formatDateTime(e.created_at)}

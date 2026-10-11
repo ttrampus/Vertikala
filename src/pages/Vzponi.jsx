@@ -13,7 +13,7 @@ import { NameField, NamesField } from "@/components/ClimberNameField";
 import { formatDate } from "@/lib/dates";
 import { exportAscentsToExcel, ASCENT_TYPES, ROUTE_TYPES, CONDITIONS, ROPE_POSITIONS } from "@/lib/ascentsExcel";
 import { normName, normKey, coClimbersOf, peopleOf, involves } from "@/lib/ascentPeople";
-import { Trash2, Pencil, Lock, Search, Download, Plus, UserRound } from "lucide-react";
+import { Trash2, Pencil, Lock, Search, Download, Plus, UserRound, Heart, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -21,6 +21,7 @@ import {
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useBackdropClose } from "@/lib/useBackdropClose";
+import Arrow from "@/components/Arrow";
 
 const CATEGORIES = [
   { key: "vse", label: "Vsi" },
@@ -232,12 +233,12 @@ export default function Vzponi() {
     width: "100%", boxSizing: "border-box",
     background: theme.inputBg, border: `1px solid ${theme.border}`,
     borderRadius: "6px", padding: "10px 12px",
-    color: theme.text, fontFamily: "'Inter', sans-serif", fontSize: "14px",
+    color: theme.text, fontFamily: "var(--font-sans)", fontSize: "14px",
     outline: "none", transition: "border-color 0.2s, background 0.4s",
     colorScheme: theme.isDark ? "dark" : "light",
   };
   const labelStyle = {
-    fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600,
+    fontFamily: "var(--font-display)", fontWeight: 600,
     fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase",
     color: theme.textLow, display: "block", marginBottom: "6px",
   };
@@ -259,9 +260,9 @@ export default function Vzponi() {
         <HeroBg src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1600&q=80" position="center 30%" />
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(10,10,10,0.95) 100%)" }} />
         <div style={{ position: "relative", zIndex: 1, padding: "0 var(--page-x) 72px", maxWidth: "1100px" }}>
-          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "12px", letterSpacing: "0.3em", textTransform: "uppercase", color: "#E8501A", marginBottom: "16px", opacity: 0, animation: "fadeUp 0.8s 0.3s forwards" }}>Dosežki</div>
-          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "clamp(56px, 8vw, 96px)", lineHeight: 0.95, letterSpacing: "-0.01em", margin: "0 0 16px", color: "#fff", opacity: 0, animation: "fadeUp 0.8s 0.5s forwards" }}>Vzponi</h1>
-          <p style={{ fontFamily: "'Inter', sans-serif", fontWeight: 300, fontSize: "18px", color: "rgba(255,255,255,0.6)", maxWidth: "520px", opacity: 0, animation: "fadeUp 0.8s 0.7s forwards" }}>Knjiga vzponov članov kluba — alpinistični vzponi, plezalni projekti in gorski smuki</p>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: "12px", letterSpacing: "0.3em", textTransform: "uppercase", color: "#E8501A", marginBottom: "16px", opacity: 0, animation: "fadeUp 0.8s 0.3s forwards" }}>Dosežki</div>
+          <h1 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "clamp(56px, 8vw, 96px)", lineHeight: 0.95, letterSpacing: "-0.01em", margin: "0 0 16px", color: "#fff", opacity: 0, animation: "fadeUp 0.8s 0.5s forwards" }}>Vzponi</h1>
+          <p style={{ fontFamily: "var(--font-sans)", fontWeight: 300, fontSize: "18px", color: "rgba(255,255,255,0.6)", maxWidth: "520px", opacity: 0, animation: "fadeUp 0.8s 0.7s forwards" }}>Knjiga vzponov članov kluba — alpinistični vzponi, plezalni projekti in gorski smuki</p>
         </div>
       </div>
 
@@ -293,7 +294,7 @@ export default function Vzponi() {
                     background: active ? "#E8501A" : (theme.isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.045)"),
                     border: active ? "1px solid #E8501A" : "1px solid transparent",
                     borderRadius: "999px", padding: "8px 16px", cursor: "pointer",
-                    fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600,
+                    fontFamily: "var(--font-display)", fontWeight: 600,
                     fontSize: "12.5px", letterSpacing: "0.07em", textTransform: "uppercase",
                     color: active ? "#fff" : theme.textMid,
                     transition: "all 0.2s",
@@ -315,7 +316,7 @@ export default function Vzponi() {
                   background: mine ? "rgba(232,80,26,0.1)" : "transparent",
                   border: `1px solid ${mine ? "#E8501A" : theme.border}`,
                   borderRadius: "999px", padding: "8px 16px", cursor: "pointer",
-                  fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600,
+                  fontFamily: "var(--font-display)", fontWeight: 600,
                   fontSize: "12.5px", letterSpacing: "0.07em", textTransform: "uppercase",
                   color: mine ? "#E8501A" : theme.textMid,
                   transition: "all 0.2s",
@@ -336,7 +337,7 @@ export default function Vzponi() {
                 style={{
                   background: theme.inputBg, border: `1px solid ${theme.border}`,
                   borderRadius: "8px", padding: "9px 14px 9px 36px", width: "100%", boxSizing: "border-box",
-                  color: theme.text, fontFamily: "'Inter', sans-serif", fontSize: "13px",
+                  color: theme.text, fontFamily: "var(--font-sans)", fontSize: "13px",
                   outline: "none", transition: "border-color 0.2s, background 0.4s",
                 }}
                 onFocus={(e) => (e.target.style.borderColor = "rgba(232,80,26,0.5)")}
@@ -354,7 +355,7 @@ export default function Vzponi() {
                     display: "flex", alignItems: "center", gap: "7px",
                     background: "transparent", color: theme.textMid, border: `1px solid ${theme.border}`,
                     cursor: sorted.length === 0 ? "default" : "pointer", opacity: sorted.length === 0 ? 0.5 : 1,
-                    fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "13px",
+                    fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "13px",
                     letterSpacing: "0.08em", textTransform: "uppercase", padding: "9px 18px",
                     borderRadius: "8px", whiteSpace: "nowrap", transition: "border-color 0.2s, color 0.2s",
                   }}
@@ -366,7 +367,7 @@ export default function Vzponi() {
                   style={{
                     display: "flex", alignItems: "center", gap: "6px",
                     background: "#E8501A", color: "#fff", border: "none", cursor: "pointer",
-                    fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "13px",
+                    fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "13px",
                     letterSpacing: "0.08em", textTransform: "uppercase", padding: "9px 18px",
                     borderRadius: "8px", whiteSpace: "nowrap", transition: "background 0.2s",
                   }}
@@ -379,18 +380,18 @@ export default function Vzponi() {
         </div>
 
         {!user && (
-          <div style={{ marginBottom: "24px", fontFamily: "'Inter', sans-serif", fontSize: "13px", color: theme.textLow }}>
+          <div style={{ marginBottom: "24px", fontFamily: "var(--font-sans)", fontSize: "13px", color: theme.textLow }}>
             Ste član kluba? <span onClick={() => navigate("/login")} style={{ color: "#E8501A", cursor: "pointer", fontWeight: 600 }}>Prijavite se</span>, da dodate svoje vzpone ali jih izvozite v Excel.
           </div>
         )}
 
         {loading && (
-          <div style={{ textAlign: "center", padding: "80px 0", fontFamily: "'Inter', sans-serif", color: theme.textLow }}>Nalagam…</div>
+          <div style={{ textAlign: "center", padding: "80px 0", fontFamily: "var(--font-sans)", color: theme.textLow }}>Nalagam…</div>
         )}
 
         {!loading && sorted.length === 0 && (
           <div style={{ textAlign: "center", padding: "80px 0" }}>
-            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "22px", color: theme.textLow }}>Ni vzponov za prikaz</div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: "22px", color: theme.textLow }}>Ni vzponov za prikaz</div>
           </div>
         )}
 
@@ -424,9 +425,9 @@ export default function Vzponi() {
       {climbPosts.length > 0 && (
         <div className="vzponi-stories" style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 var(--page-x) 80px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "32px" }}>
-            <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "28px", letterSpacing: "-0.01em", margin: 0, whiteSpace: "nowrap" }}>Zgodbe & poročila</h2>
+            <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "28px", letterSpacing: "-0.01em", margin: 0, whiteSpace: "nowrap" }}>Zgodbe & poročila</h2>
             <div style={{ flex: 1, height: "1px", background: theme.border }} />
-            <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "12px", color: theme.textLow, whiteSpace: "nowrap" }}>daljša poročila o vzponih</span>
+            <span style={{ fontFamily: "var(--font-sans)", fontSize: "12px", color: theme.textLow, whiteSpace: "nowrap" }}>daljša poročila o vzponih</span>
           </div>
           <div className="vzponi-posts-grid" style={{ display: "grid", gridTemplateColumns: "var(--col-3)", gap: "20px" }}>
             {climbPosts.map((post) => (
@@ -453,21 +454,21 @@ export default function Vzponi() {
                   <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%)" }} />
                 </CardImage>
                 <div style={{ padding: "16px 18px" }}>
-                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "11px", color: theme.textLow, marginBottom: "6px" }}>
+                  <div style={{ fontFamily: "var(--font-sans)", fontSize: "11px", color: theme.textLow, marginBottom: "6px" }}>
                     {formatDate(post.created_date)}
                   </div>
-                  <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "18px", lineHeight: 1.2, color: theme.text, margin: "0 0 6px" }}>{post.title}</h3>
+                  <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "18px", lineHeight: 1.2, color: theme.text, margin: "0 0 6px" }}>{post.title}</h3>
                   {post.is_public === false && (
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", marginBottom: "6px", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "10px", letterSpacing: "0.05em", textTransform: "uppercase", background: theme.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)", color: theme.textLow, padding: "2px 7px", borderRadius: "999px" }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", marginBottom: "6px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "10px", letterSpacing: "0.05em", textTransform: "uppercase", background: theme.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)", color: theme.textLow, padding: "2px 7px", borderRadius: "999px" }}>
                       <Lock size={9} /> Zasebno
                     </span>
                   )}
                   {post.summary && (
-                    <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "12px", color: theme.textMid, lineHeight: 1.5, margin: "0 0 12px", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{post.summary}</p>
+                    <p style={{ fontFamily: "var(--font-sans)", fontSize: "12px", color: theme.textMid, lineHeight: 1.5, margin: "0 0 12px", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{post.summary}</p>
                   )}
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "11px", color: theme.textLow }}>{post.author_name || "Član"} · ♥ {post.likes_count || 0}</span>
-                    <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "12px", letterSpacing: "0.08em", color: "#E8501A", textTransform: "uppercase" }}>Preberi →</span>
+                    <span style={{ fontFamily: "var(--font-sans)", fontSize: "11px", color: theme.textLow }}>{post.author_name || "Član"} · <Heart size={10} fill="currentColor" strokeWidth={0} style={{ display: 'inline', verticalAlign: '-1px' }} aria-label="všečki" /> {post.likes_count || 0}</span>
+                    <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "12px", letterSpacing: "0.08em", color: "#E8501A", textTransform: "uppercase" }}>Preberi <Arrow /></span>
                   </div>
                 </div>
               </div>
@@ -488,8 +489,8 @@ export default function Vzponi() {
             style={{ background: theme.bg, border: `1px solid ${theme.border}`, borderRadius: "14px", width: "100%", maxWidth: "560px", padding: "32px" }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-              <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "28px", margin: 0 }}>{editingId ? "Uredi vzpon" : "Dodaj vzpon"}</h2>
-              <button type="button" onClick={() => setShowForm(false)} style={{ background: "none", border: "none", color: theme.textLow, fontSize: "24px", cursor: "pointer", lineHeight: 1 }}>×</button>
+              <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "28px", margin: 0 }}>{editingId ? "Uredi vzpon" : "Dodaj vzpon"}</h2>
+              <button type="button" onClick={() => setShowForm(false)} style={{ background: "none", border: "none", color: theme.textLow, cursor: "pointer", lineHeight: 1, display: "flex", padding: 0 }} aria-label="Zapri"><X size={22} aria-hidden="true" /></button>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "var(--col-2)", gap: "16px" }}>
@@ -557,7 +558,7 @@ export default function Vzponi() {
                   <span style={{ ...labelStyle, marginBottom: 0, color: theme.text, whiteSpace: "nowrap" }}>Za klubski obrazec</span>
                   <div style={{ flex: 1, height: "1px", background: theme.border }} />
                 </div>
-                <p style={{ margin: "6px 0 0", fontFamily: "'Inter', sans-serif", fontSize: "12px", color: theme.textLow }}>
+                <p style={{ margin: "6px 0 0", fontFamily: "var(--font-sans)", fontSize: "12px", color: theme.textLow }}>
                   Na strani niso prikazana, so pa v izvozu v Excel.
                 </p>
               </div>
@@ -583,18 +584,18 @@ export default function Vzponi() {
               </div>
               <label style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", marginTop: "4px" }}>
                 <input type="checkbox" checked={form.is_public} onChange={(e) => setForm((f) => ({ ...f, is_public: e.target.checked }))} style={{ width: "16px", height: "16px", accentColor: "#E8501A", cursor: "pointer" }} />
-                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", color: theme.textMid }}>
+                <span style={{ fontFamily: "var(--font-sans)", fontSize: "13px", color: theme.textMid }}>
                   {form.is_public ? "Javno viden vsem obiskovalcem" : "Viden samo prijavljenim članom"}
                 </span>
               </label>
             </div>
 
             {formError && (
-              <div style={{ marginTop: "16px", fontFamily: "'Inter', sans-serif", fontSize: "13px", color: "#ef4444" }}>{formError}</div>
+              <div style={{ marginTop: "16px", fontFamily: "var(--font-sans)", fontSize: "13px", color: "#ef4444" }}>{formError}</div>
             )}
 
             {duplicate && (
-              <div style={{ marginTop: "16px", padding: "12px 14px", borderRadius: "8px", border: "1px solid rgba(232,80,26,0.35)", background: "rgba(232,80,26,0.07)", fontFamily: "'Inter', sans-serif", fontSize: "13px", lineHeight: 1.5, color: theme.text }}>
+              <div style={{ marginTop: "16px", padding: "12px 14px", borderRadius: "8px", border: "1px solid rgba(232,80,26,0.35)", background: "rgba(232,80,26,0.07)", fontFamily: "var(--font-sans)", fontSize: "13px", lineHeight: 1.5, color: theme.text }}>
                 <div style={{ fontWeight: 600 }}>Ta vzpon je morda že vpisan</div>
                 <div style={{ marginTop: "2px" }}>
                   {formatDate(duplicate.date)} · {duplicate.climber_name}{duplicate.co_climber ? ` / ${duplicate.co_climber}` : ""}
@@ -607,10 +608,10 @@ export default function Vzponi() {
             )}
 
             <div style={{ display: "flex", gap: "10px", marginTop: "24px" }}>
-              <button type="submit" disabled={saving} style={{ background: saving ? "#7a2c0d" : "#E8501A", color: "#fff", border: "none", cursor: saving ? "default" : "pointer", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "14px", letterSpacing: "0.08em", textTransform: "uppercase", padding: "12px 28px", borderRadius: "8px" }}>
+              <button type="submit" disabled={saving} style={{ background: saving ? "#7a2c0d" : "#E8501A", color: "#fff", border: "none", cursor: saving ? "default" : "pointer", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "14px", letterSpacing: "0.08em", textTransform: "uppercase", padding: "12px 28px", borderRadius: "8px" }}>
                 {saving ? "Shranjujem…" : editingId ? "Shrani spremembe" : duplicate ? "Vseeno dodaj" : "Shrani vzpon"}
               </button>
-              <button type="button" onClick={() => setShowForm(false)} style={{ background: "none", border: `1px solid ${theme.border}`, color: theme.text, cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600, fontSize: "13px", letterSpacing: "0.08em", textTransform: "uppercase", padding: "12px 24px", borderRadius: "8px" }}>Prekliči</button>
+              <button type="button" onClick={() => setShowForm(false)} style={{ background: "none", border: `1px solid ${theme.border}`, color: theme.text, cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 600, fontSize: "13px", letterSpacing: "0.08em", textTransform: "uppercase", padding: "12px 24px", borderRadius: "8px" }}>Prekliči</button>
             </div>
           </form>
         </div>
@@ -682,7 +683,7 @@ function PrivatePill({ theme }) {
       title="Vidno samo prijavljenim članom"
       style={{
         display: "inline-flex", alignItems: "center", gap: "3px", flexShrink: 0,
-        fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "10px",
+        fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "10px",
         letterSpacing: "0.05em", textTransform: "uppercase",
         background: theme.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
         color: theme.textLow, padding: "2px 7px", borderRadius: "999px",
@@ -691,7 +692,7 @@ function PrivatePill({ theme }) {
   );
 }
 
-const gradeBadge = { fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "12px", letterSpacing: "0.06em", background: "rgba(232,80,26,0.12)", color: "#E8501A", padding: "3px 10px", borderRadius: "4px", whiteSpace: "nowrap" };
+const gradeBadge = { fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "12px", letterSpacing: "0.06em", background: "rgba(232,80,26,0.12)", color: "#E8501A", padding: "3px 10px", borderRadius: "4px", whiteSpace: "nowrap" };
 
 // Ista vsebina kot AscentTable, zložena v kartice: na telefonu je sedem
 // stolpcev neberljivih, tabela pa bi se morala vleči vodoravno. Razvrščanje je
@@ -708,7 +709,7 @@ function AscentCards({ rows, theme, sort, onSort, canManage, onEdit, onDelete })
     { col: "difficulty", label: "Ocena" },
     { col: "altitude", label: "Višina smeri" },
   ];
-  const label = (t) => ({ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: theme.textLow, ...t });
+  const label = (t) => ({ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: theme.textLow, ...t });
 
   return (
     <div>
@@ -721,7 +722,7 @@ function AscentCards({ rows, theme, sort, onSort, canManage, onEdit, onDelete })
           style={{
             flex: 1, minWidth: 0, padding: "8px 10px", borderRadius: "8px",
             border: `1px solid ${theme.border}`, background: theme.bgCard, color: theme.text,
-            fontFamily: "'Inter', sans-serif", fontSize: "14px",
+            fontFamily: "var(--font-sans)", fontSize: "14px",
           }}
         >
           {SORTABLE.map((s) => <option key={s.col} value={s.col}>{s.label}</option>)}
@@ -741,7 +742,7 @@ function AscentCards({ rows, theme, sort, onSort, canManage, onEdit, onDelete })
         {rows.map((a) => (
           <div key={a.id} style={{ background: theme.bgCard, border: `1px solid ${theme.border}`, borderRadius: "10px", padding: "14px 16px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", minHeight: "32px" }}>
-              <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "13px", letterSpacing: "0.04em", color: "#E8501A" }}>
+              <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "13px", letterSpacing: "0.04em", color: "#E8501A" }}>
                 {formatDate(a.date)}
               </span>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -750,13 +751,13 @@ function AscentCards({ rows, theme, sort, onSort, canManage, onEdit, onDelete })
               </div>
             </div>
 
-            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "15px", fontWeight: 600, color: theme.text, marginTop: "4px", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+            <div style={{ fontFamily: "var(--font-sans)", fontSize: "15px", fontWeight: 600, color: theme.text, marginTop: "4px", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
               <span>{a.climber_name}{a.co_climber ? ` / ${a.co_climber}` : ""}</span>
               {a.is_public === false && <PrivatePill theme={theme} />}
             </div>
 
             {(a.location || a.route_name) && (
-              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "14px", color: theme.textMid, marginTop: "3px" }}>
+              <div style={{ fontFamily: "var(--font-sans)", fontSize: "14px", color: theme.textMid, marginTop: "3px" }}>
                 {a.location && <span style={{ color: theme.text }}>{a.location}</span>}
                 {a.location && a.route_name && <span style={{ color: theme.textLow }}> — </span>}
                 {a.route_name}
@@ -790,7 +791,7 @@ function AscentTable({ rows, theme, sort, onSort, canManage, onEdit, onDelete })
       onClick={() => onSort(col)}
       style={{
         textAlign: "left", padding: "12px 12px", cursor: "pointer", userSelect: "none",
-        fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "12px",
+        fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "12px",
         letterSpacing: "0.1em", textTransform: "uppercase",
         color: sort.col === col ? "#E8501A" : theme.textLow,
         borderBottom: `2px solid ${theme.border}`, whiteSpace: "nowrap",
@@ -798,7 +799,7 @@ function AscentTable({ rows, theme, sort, onSort, canManage, onEdit, onDelete })
     >{label}{arrow(col)}</th>
   );
 
-  const td = { padding: "13px 12px", fontFamily: "'Inter', sans-serif", fontSize: "14px", borderBottom: `1px solid ${theme.border}`, verticalAlign: "top" };
+  const td = { padding: "13px 12px", fontFamily: "var(--font-sans)", fontSize: "14px", borderBottom: `1px solid ${theme.border}`, verticalAlign: "top" };
 
   return (
     <div style={{ overflowX: "auto" }}>
@@ -823,7 +824,7 @@ function AscentTable({ rows, theme, sort, onSort, canManage, onEdit, onDelete })
               onMouseEnter={(e) => (e.currentTarget.style.background = theme.isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)")}
               onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
             >
-              <td style={{ ...td, whiteSpace: "nowrap", color: "#E8501A", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "13px", letterSpacing: "0.04em" }}>
+              <td style={{ ...td, whiteSpace: "nowrap", color: "#E8501A", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "13px", letterSpacing: "0.04em" }}>
                 {formatDate(a.date)}
               </td>
               <td style={{ ...td, fontWeight: 600, color: theme.text }}>

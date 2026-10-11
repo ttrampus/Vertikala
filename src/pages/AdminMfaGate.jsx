@@ -92,7 +92,7 @@ export default function AdminMfaGate({ children }) {
       <div className="w-full max-w-md bg-card border border-border rounded-2xl p-8 shadow-sm">
         <div className="flex items-center gap-2.5 mb-2">
           <ShieldCheck className="h-5 w-5 text-primary" />
-          <h1 className="font-inter font-extrabold text-xl tracking-tight">Dvostopenjska prijava</h1>
+          <h1 className="font-sans font-extrabold text-xl tracking-tight">Dvostopenjska prijava</h1>
         </div>
 
         {phase === "error" && (

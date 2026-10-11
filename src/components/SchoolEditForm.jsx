@@ -51,16 +51,16 @@ export default function SchoolEditForm({ initial, theme, onSave, onClose, saving
     width: "100%", boxSizing: "border-box",
     background: theme.inputBg, border: `1px solid ${theme.border}`,
     borderRadius: "6px", padding: "9px 12px",
-    color: theme.text, fontFamily: "'Inter', sans-serif", fontSize: "14px",
+    color: theme.text, fontFamily: "var(--font-sans)", fontSize: "14px",
     outline: "none", colorScheme: theme.isDark ? "dark" : "light",
   };
   const label = {
-    fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600,
+    fontFamily: "var(--font-display)", fontWeight: 600,
     fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase",
     color: theme.textLow, display: "block", marginBottom: "6px",
   };
   const section = {
-    fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "20px",
+    fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "20px",
     margin: "0 0 14px", paddingTop: "24px", borderTop: `1px solid ${theme.border}`, color: theme.text,
   };
   const rowCard = {
@@ -70,7 +70,7 @@ export default function SchoolEditForm({ initial, theme, onSave, onClose, saving
   const smallBtn = {
     display: "inline-flex", alignItems: "center", gap: "6px",
     background: "none", border: `1px solid ${theme.border}`, color: theme.textMid, cursor: "pointer",
-    fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "12px",
+    fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "12px",
     letterSpacing: "0.08em", textTransform: "uppercase", padding: "8px 14px", borderRadius: "6px",
   };
 
@@ -87,10 +87,10 @@ export default function SchoolEditForm({ initial, theme, onSave, onClose, saving
         style={{ background: theme.bg, border: `1px solid ${theme.border}`, borderRadius: "14px", width: "100%", maxWidth: "680px", padding: "32px" }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-          <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "28px", margin: 0 }}>Uredi stran</h2>
-          <button type="button" onClick={onClose} style={{ background: "none", border: "none", color: theme.textLow, fontSize: "24px", cursor: "pointer", lineHeight: 1 }}>×</button>
+          <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "28px", margin: 0 }}>Uredi stran</h2>
+          <button type="button" onClick={onClose} style={{ background: "none", border: "none", color: theme.textLow, cursor: "pointer", lineHeight: 1, display: "flex", padding: 0 }} aria-label="Zapri"><X size={22} aria-hidden="true" /></button>
         </div>
-        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", color: theme.textLow, margin: "0 0 8px" }}>
+        <p style={{ fontFamily: "var(--font-sans)", fontSize: "13px", color: theme.textLow, margin: "0 0 8px" }}>
           Module in inštruktorje lahko prevlečete za spremembo vrstnega reda. Spremembe so vidne vsem takoj po shranjevanju.
         </p>
 
@@ -120,7 +120,7 @@ export default function SchoolEditForm({ initial, theme, onSave, onClose, saving
               <label style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "110px", borderRadius: "8px", border: `1.5px dashed ${theme.border}`, cursor: uploading ? "default" : "pointer", gap: "8px" }}>
                 {uploading ? <Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.textLow }} />
                   : <><Upload className="h-6 w-6" style={{ color: theme.textLow }} />
-                    <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", color: theme.textLow }}>Kliknite za nalaganje slike</span></>}
+                    <span style={{ fontFamily: "var(--font-sans)", fontSize: "13px", color: theme.textLow }}>Kliknite za nalaganje slike</span></>}
                 <input type="file" accept="image/*" onChange={handleImage} disabled={uploading} style={{ display: "none" }} />
               </label>
             )}
@@ -182,7 +182,7 @@ export default function SchoolEditForm({ initial, theme, onSave, onClose, saving
             <div style={rowCard}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 {/* Numbered by position, so dragging renumbers them automatically. */}
-                <span style={{ ...label, marginBottom: 0 }}>Modul {String(i + 1).padStart(2, "0")}</span>
+                <span style={{ ...label, marginBottom: 0 }}>Modul {i + 1}</span>
                 <button type="button" onClick={() => removeListItem("modules", i)} aria-label="Odstrani modul" style={{ ...smallBtn, padding: "6px 8px" }}><Trash2 className="h-3.5 w-3.5" /></button>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "var(--col-2)", gap: "10px" }}>
@@ -232,11 +232,11 @@ export default function SchoolEditForm({ initial, theme, onSave, onClose, saving
           <Field labelStyle={label} lbl="Besedilo opozorila"><AutoTextarea minRows={2} value={form.sidebar.noticeText} onChange={(e) => setSection("sidebar", "noticeText", e.target.value)} style={input} /></Field>
         </div>
 
-        {error && <div style={{ marginTop: "16px", color: "#E8501A", fontSize: "13px", fontFamily: "'Inter', sans-serif" }}>{error}</div>}
+        {error && <div style={{ marginTop: "16px", color: "#E8501A", fontSize: "13px", fontFamily: "var(--font-sans)" }}>{error}</div>}
 
         <div style={{ display: "flex", gap: "10px", marginTop: "24px", paddingTop: "20px", borderTop: `1px solid ${theme.border}` }}>
           <button type="submit" disabled={saving}
-            style={{ background: "#E8501A", color: "#fff", border: "none", cursor: saving ? "default" : "pointer", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "14px", letterSpacing: "0.08em", textTransform: "uppercase", padding: "12px 24px", borderRadius: "8px", opacity: saving ? 0.7 : 1 }}>
+            style={{ background: "#E8501A", color: "#fff", border: "none", cursor: saving ? "default" : "pointer", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "14px", letterSpacing: "0.08em", textTransform: "uppercase", padding: "12px 24px", borderRadius: "8px", opacity: saving ? 0.7 : 1 }}>
             {saving ? "Shranjujem…" : "Shrani"}
           </button>
           <button type="button" onClick={onClose} style={{ ...smallBtn, fontSize: "14px", padding: "12px 24px" }}>Prekliči</button>

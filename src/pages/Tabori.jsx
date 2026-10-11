@@ -19,6 +19,7 @@ import {
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useBackdropClose } from "@/lib/useBackdropClose";
+import Arrow from "@/components/Arrow";
 
 // Razmerja okvirov za sliko tabora: kartica v seznamu in glava podrobnosti.
 const CAMP_PREVIEWS = [
@@ -154,12 +155,12 @@ export default function Tabori() {
     width: "100%", boxSizing: "border-box",
     background: theme.inputBg, border: `1px solid ${theme.border}`,
     borderRadius: "6px", padding: "10px 12px",
-    color: theme.text, fontFamily: "'Inter', sans-serif", fontSize: "14px",
+    color: theme.text, fontFamily: "var(--font-sans)", fontSize: "14px",
     outline: "none", transition: "border-color 0.2s, background 0.4s",
     colorScheme: theme.isDark ? "dark" : "light",
   };
   const labelStyle = {
-    fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600,
+    fontFamily: "var(--font-display)", fontWeight: 600,
     fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase",
     color: theme.textLow, display: "block", marginBottom: "6px",
   };
@@ -181,9 +182,9 @@ export default function Tabori() {
         <HeroBg src="https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=1600&q=80" position="center 40%" />
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(10,10,10,0.95) 100%)" }} />
         <div style={{ position: "relative", zIndex: 1, padding: "0 var(--page-x) 72px", maxWidth: "1100px" }}>
-          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "12px", letterSpacing: "0.3em", textTransform: "uppercase", color: "#E8501A", marginBottom: "16px", opacity: 0, animation: "fadeUp 0.8s 0.3s forwards" }}>Skupaj v gore</div>
-          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "clamp(56px, 8vw, 96px)", lineHeight: 0.95, letterSpacing: "-0.01em", margin: "0 0 16px", color: "#fff", opacity: 0, animation: "fadeUp 0.8s 0.5s forwards" }}>Tabori in dogodki</h1>
-          <p style={{ fontFamily: "'Inter', sans-serif", fontWeight: 300, fontSize: "18px", color: "rgba(255,255,255,0.6)", maxWidth: "520px", opacity: 0, animation: "fadeUp 0.8s 0.7s forwards" }}>Klubski tabori, dogodki in večdnevna srečanja</p>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: "12px", letterSpacing: "0.3em", textTransform: "uppercase", color: "#E8501A", marginBottom: "16px", opacity: 0, animation: "fadeUp 0.8s 0.3s forwards" }}>Skupaj v gore</div>
+          <h1 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "clamp(56px, 8vw, 96px)", lineHeight: 0.95, letterSpacing: "-0.01em", margin: "0 0 16px", color: "#fff", opacity: 0, animation: "fadeUp 0.8s 0.5s forwards" }}>Tabori in dogodki</h1>
+          <p style={{ fontFamily: "var(--font-sans)", fontWeight: 300, fontSize: "18px", color: "rgba(255,255,255,0.6)", maxWidth: "520px", opacity: 0, animation: "fadeUp 0.8s 0.7s forwards" }}>Klubski tabori, dogodki in večdnevna srečanja</p>
         </div>
       </div>
 
@@ -196,7 +197,7 @@ export default function Tabori() {
               onClick={openAddForm}
               style={{
                 background: "#E8501A", color: "#fff", border: "none", cursor: "pointer",
-                fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "13px",
+                fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "13px",
                 letterSpacing: "0.08em", textTransform: "uppercase", padding: "9px 18px",
                 borderRadius: "8px", whiteSpace: "nowrap", transition: "background 0.2s",
               }}
@@ -207,18 +208,18 @@ export default function Tabori() {
         </div>
 
         {!user && (
-          <div style={{ marginBottom: "24px", fontFamily: "'Inter', sans-serif", fontSize: "13px", color: theme.textLow }}>
+          <div style={{ marginBottom: "24px", fontFamily: "var(--font-sans)", fontSize: "13px", color: theme.textLow }}>
             Ste član kluba? <span onClick={() => navigate("/login")} style={{ color: "#E8501A", cursor: "pointer", fontWeight: 600 }}>Prijavite se</span> in dodajte tabor ali dogodek.
           </div>
         )}
 
         {loading && (
-          <div style={{ textAlign: "center", padding: "80px 0", fontFamily: "'Inter', sans-serif", color: theme.textLow }}>Nalagam…</div>
+          <div style={{ textAlign: "center", padding: "80px 0", fontFamily: "var(--font-sans)", color: theme.textLow }}>Nalagam…</div>
         )}
 
         {!loading && camps.length === 0 && (
           <div style={{ textAlign: "center", padding: "80px 0" }}>
-            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "22px", color: theme.textLow }}>Ni taborov ali dogodkov za prikaz</div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: "22px", color: theme.textLow }}>Ni taborov ali dogodkov za prikaz</div>
           </div>
         )}
 
@@ -240,16 +241,16 @@ export default function Tabori() {
                   style={{ height: "280px" }}
                 >
                   <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 45%)" }} />
-                  <span style={{ position: "absolute", top: "16px", left: "16px", background: "rgba(10,10,10,0.75)", backdropFilter: "blur(8px)", color: "#E8501A", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "12px", letterSpacing: "0.1em", textTransform: "uppercase", padding: "6px 12px", borderRadius: "4px" }}>{formatTerm(c)}</span>
+                  <span style={{ position: "absolute", top: "16px", left: "16px", background: "rgba(10,10,10,0.75)", backdropFilter: "blur(8px)", color: "#E8501A", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "12px", letterSpacing: "0.1em", textTransform: "uppercase", padding: "6px 12px", borderRadius: "4px" }}>{formatTerm(c)}</span>
                   <div style={{ position: "absolute", bottom: "20px", left: "24px", right: "24px" }}>
-                    <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "clamp(24px, 3vw, 30px)", lineHeight: 1.1, color: "#fff", margin: 0 }}>{c.title}</h3>
-                    {c.location && <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "14px", color: "rgba(255,255,255,0.75)", marginTop: "4px" }}>{c.location}</div>}
+                    <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "clamp(24px, 3vw, 30px)", lineHeight: 1.1, color: "#fff", margin: 0 }}>{c.title}</h3>
+                    {c.location && <div style={{ fontFamily: "var(--font-sans)", fontSize: "14px", color: "rgba(255,255,255,0.75)", marginTop: "4px" }}>{c.location}</div>}
                   </div>
                 </CardImage>
                 <div style={{ padding: "24px 28px" }}>
-                  {c.summary && <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "14px", lineHeight: 1.6, color: theme.textMid, margin: "0 0 20px", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{c.summary}</p>}
+                  {c.summary && <p style={{ fontFamily: "var(--font-sans)", fontSize: "14px", lineHeight: 1.6, color: theme.textMid, margin: "0 0 20px", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{c.summary}</p>}
                   <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                    <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "13px", letterSpacing: "0.08em", color: "#E8501A", textTransform: "uppercase" }}>Odpri →</span>
+                    <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "13px", letterSpacing: "0.08em", color: "#E8501A", textTransform: "uppercase" }}>Odpri <Arrow /></span>
                   </div>
                 </div>
               </div>
@@ -282,14 +283,14 @@ export default function Tabori() {
               ><X className="h-4 w-4" style={{ color: "#fff" }} /></button>
             </div>
             <div style={{ padding: "32px" }}>
-              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "13px", letterSpacing: "0.08em", color: "#E8501A", marginBottom: "10px" }}>{formatTerm(detailCamp)}</div>
-              <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "32px", lineHeight: 1.1, margin: "0 0 10px", color: theme.text }}>{detailCamp.title}</h2>
-              {detailCamp.location && <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "14px", color: theme.textMid, marginBottom: "20px" }}>{detailCamp.location}</div>}
+              <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "13px", letterSpacing: "0.08em", color: "#E8501A", marginBottom: "10px" }}>{formatTerm(detailCamp)}</div>
+              <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "32px", lineHeight: 1.1, margin: "0 0 10px", color: theme.text }}>{detailCamp.title}</h2>
+              {detailCamp.location && <div style={{ fontFamily: "var(--font-sans)", fontSize: "14px", color: theme.textMid, marginBottom: "20px" }}>{detailCamp.location}</div>}
               {detailCamp.summary && (
-                <p style={{ fontFamily: "'Inter', sans-serif", fontWeight: 500, fontSize: "16px", lineHeight: 1.7, color: theme.text, margin: detailCamp.description ? "0 0 20px" : 0 }}>{detailCamp.summary}</p>
+                <p style={{ fontFamily: "var(--font-sans)", fontWeight: 500, fontSize: "16px", lineHeight: 1.7, color: theme.text, margin: detailCamp.description ? "0 0 20px" : 0 }}>{detailCamp.summary}</p>
               )}
               {detailCamp.description && (
-                <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "15px", lineHeight: 1.8, color: theme.textMid, margin: 0, whiteSpace: "pre-wrap" }}>{detailCamp.description}</p>
+                <p style={{ fontFamily: "var(--font-sans)", fontSize: "15px", lineHeight: 1.8, color: theme.textMid, margin: 0, whiteSpace: "pre-wrap" }}>{detailCamp.description}</p>
               )}
 
               {canManage(detailCamp) && (
@@ -299,7 +300,7 @@ export default function Tabori() {
                     style={{
                       display: "flex", alignItems: "center", gap: "6px",
                       background: "none", border: `1px solid ${theme.border}`, color: theme.textMid, cursor: "pointer",
-                      fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "13px",
+                      fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "13px",
                       letterSpacing: "0.08em", textTransform: "uppercase", padding: "10px 18px", borderRadius: "8px",
                     }}
                   ><Pencil className="h-3.5 w-3.5" /> Uredi</button>
@@ -339,8 +340,8 @@ export default function Tabori() {
             style={{ background: theme.bg, border: `1px solid ${theme.border}`, borderRadius: "14px", width: "100%", maxWidth: "560px", padding: "32px" }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-              <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "28px", margin: 0 }}>{editingId ? "Uredi tabor / dogodek" : "Dodaj tabor / dogodek"}</h2>
-              <button type="button" onClick={() => setShowForm(false)} style={{ background: "none", border: "none", color: theme.textLow, fontSize: "24px", cursor: "pointer", lineHeight: 1 }}>×</button>
+              <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "28px", margin: 0 }}>{editingId ? "Uredi tabor / dogodek" : "Dodaj tabor / dogodek"}</h2>
+              <button type="button" onClick={() => setShowForm(false)} style={{ background: "none", border: "none", color: theme.textLow, cursor: "pointer", lineHeight: 1, display: "flex", padding: 0 }} aria-label="Zapri"><X size={22} aria-hidden="true" /></button>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "var(--col-2)", gap: "16px" }}>
@@ -362,11 +363,11 @@ export default function Tabori() {
               </div>
               <div style={{ gridColumn: "1 / -1" }}>
                 <label style={labelStyle}>Opis</label>
-                <textarea rows={2} placeholder="Kratek opis, prikazan na kartici…" value={form.summary} onChange={(e) => setForm((f) => ({ ...f, summary: e.target.value }))} style={{ ...inputStyle, resize: "vertical", fontFamily: "'Inter', sans-serif" }} />
+                <textarea rows={2} placeholder="Kratek opis, prikazan na kartici…" value={form.summary} onChange={(e) => setForm((f) => ({ ...f, summary: e.target.value }))} style={{ ...inputStyle, resize: "vertical", fontFamily: "var(--font-sans)" }} />
               </div>
               <div style={{ gridColumn: "1 / -1" }}>
                 <label style={labelStyle}>Podrobnosti</label>
-                <textarea rows={7} placeholder="Vse ostalo: kje se začne in konča, kaj s seboj, pravila, program… (neobvezno)" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} style={{ ...inputStyle, resize: "vertical", fontFamily: "'Inter', sans-serif" }} />
+                <textarea rows={7} placeholder="Vse ostalo: kje se začne in konča, kaj s seboj, pravila, program… (neobvezno)" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} style={{ ...inputStyle, resize: "vertical", fontFamily: "var(--font-sans)" }} />
               </div>
               <div style={{ gridColumn: "1 / -1" }}>
                 <label style={labelStyle}>Slika</label>
@@ -382,7 +383,7 @@ export default function Tabori() {
               </div>
             </div>
 
-            {formError && <div style={{ marginTop: "14px", color: "#E8501A", fontSize: "13px", fontFamily: "'Inter', sans-serif" }}>{formError}</div>}
+            {formError && <div style={{ marginTop: "14px", color: "#E8501A", fontSize: "13px", fontFamily: "var(--font-sans)" }}>{formError}</div>}
 
             <div style={{ display: "flex", gap: "10px", marginTop: "24px" }}>
               <button
@@ -390,7 +391,7 @@ export default function Tabori() {
                 disabled={saving}
                 style={{
                   background: "#E8501A", color: "#fff", border: "none", cursor: saving ? "default" : "pointer",
-                  fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "14px",
+                  fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "14px",
                   letterSpacing: "0.08em", textTransform: "uppercase", padding: "12px 24px",
                   borderRadius: "8px", opacity: saving ? 0.7 : 1,
                 }}
@@ -400,7 +401,7 @@ export default function Tabori() {
                 onClick={() => setShowForm(false)}
                 style={{
                   background: "none", border: `1px solid ${theme.border}`, color: theme.textMid, cursor: "pointer",
-                  fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "14px",
+                  fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "14px",
                   letterSpacing: "0.08em", textTransform: "uppercase", padding: "12px 24px", borderRadius: "8px",
                 }}
               >Prekliči</button>

@@ -127,7 +127,7 @@ export default function FeaturedImagePicker({
         </button>
       </div>
 
-      <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground font-inter">
+      <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground font-sans">
         <span className="flex items-center gap-1.5">
           <Crosshair className="h-3.5 w-3.5" />
           Kliknite ali povlecite po sliki: izbrana točka ostane vidna, ko se slika obreže.
@@ -148,7 +148,7 @@ export default function FeaturedImagePicker({
           <div key={p.label}>
             {/* Napis nad sliko: okvirji imajo različna razmerja, zato bi se
                 napisi pod njimi lovili vsak na svoji višini. */}
-            <div className="mb-1.5 text-[11px] text-muted-foreground font-inter">{p.label}</div>
+            <div className="mb-1.5 text-[11px] text-muted-foreground font-sans">{p.label}</div>
             <CardImage
               src={value}
               focus={focus}

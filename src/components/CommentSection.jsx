@@ -79,7 +79,7 @@ export default function CommentSection({ postId, onCountChange }) {
     <div className="space-y-6">
       <div className="flex items-center gap-2">
         <MessageCircle className="h-5 w-5 text-foreground" />
-        <h3 className="font-inter font-bold text-lg">Komentarji ({comments.length})</h3>
+        <h3 className="font-sans font-bold text-lg">Komentarji ({comments.length})</h3>
       </div>
 
       {isAuthenticated ? (
@@ -130,7 +130,7 @@ export default function CommentSection({ postId, onCountChange }) {
                       : (displayName?.[0]?.toUpperCase() || "?")}
                   </div>
                   <div>
-                    <span className="font-inter font-semibold text-sm">{displayName}</span>
+                    <span className="font-sans font-semibold text-sm">{displayName}</span>
                     <span className="text-muted-foreground text-xs ml-2">
                       {formatRelativeDate(comment.created_at)}
                     </span>

@@ -64,7 +64,7 @@ export default function Lightbox({ images = [], index = null, onClose }) {
             onClick={(e) => e.stopPropagation()}
           />
           {images.length > 1 && (
-            <div className="absolute bottom-4 text-white/60 text-sm font-inter">
+            <div className="absolute bottom-4 text-white/60 text-sm font-sans">
               {idx + 1} / {images.length}
             </div>
           )}

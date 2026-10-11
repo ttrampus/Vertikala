@@ -13,9 +13,9 @@ function StatCell({ icon: Icon, label, value, accent }) {
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-1.5 text-muted-foreground">
         <Icon className="h-3.5 w-3.5" />
-        <span className="text-xs font-inter">{label}</span>
+        <span className="text-xs font-sans">{label}</span>
       </div>
-      <span className={`font-inter font-bold text-sm ${accent || "text-foreground"}`}>{value}</span>
+      <span className={`font-sans font-bold text-sm ${accent || "text-foreground"}`}>{value}</span>
     </div>
   );
 }
@@ -29,9 +29,9 @@ export default function ClimbMetaCard({ meta }) {
     <div className="rounded-2xl border border-border bg-card p-6 mb-8">
       <div className="flex items-center gap-2 mb-5">
         <Mountain className="h-5 w-5 text-primary" />
-        <h3 className="font-inter font-bold text-base">Podatki o vzponu</h3>
+        <h3 className="font-sans font-bold text-base">Podatki o vzponu</h3>
         {cond && (
-          <span className={`ml-auto px-3 py-1 rounded-full text-xs font-inter font-semibold ${cond.bg} ${cond.color}`}>
+          <span className={`ml-auto px-3 py-1 rounded-full text-xs font-sans font-semibold ${cond.bg} ${cond.color}`}>
             {cond.label} pogoji
           </span>
         )}

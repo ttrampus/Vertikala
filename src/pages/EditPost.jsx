@@ -32,6 +32,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
 import { useBackdropClose } from "@/lib/useBackdropClose";
+import Arrow from "@/components/Arrow";
 
 const categories = ["climbs", "trips", "events", "training", "news"];
 const categoryLabels = { climbs: "Vzponi", trips: "Izleti", events: "Tabori in dogodki", training: "Trening", news: "Novice" };
@@ -357,7 +358,7 @@ function SideBySideModal({ editor, onClose }) {
             <h3 className="font-semibold text-base">Slike drug ob drugem</h3>
             <p className="text-xs text-muted-foreground mt-0.5">Izberite 2–4 slike za vrstico</p>
           </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground text-xl leading-none">✕</button>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground flex" aria-label="Zapri"><X className="h-5 w-5" aria-hidden="true" /></button>
         </div>
         <div className="grid gap-2 mb-4" style={{ gridTemplateColumns: `repeat(${slots.length}, 1fr)` }}>
           {slots.map((_, i) => (
@@ -371,7 +372,7 @@ function SideBySideModal({ editor, onClose }) {
               </label>
               {slots.length > 2 && (
                 <button onClick={() => removeSlot(i)}
-                  className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-black/60 text-white text-xs flex items-center justify-center hover:bg-black/80">✕</button>
+                  className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-black/60 text-white text-xs flex items-center justify-center hover:bg-black/80" aria-label="Odstrani"><X className="h-3 w-3" aria-hidden="true" /></button>
               )}
             </div>
           ))}
@@ -565,11 +566,11 @@ export default function EditPost() {
         <ArrowLeft className="h-4 w-4" /> Nazaj
       </button>
 
-      <h1 className="font-inter font-extrabold text-3xl tracking-tighter mb-8">Uredi objavo</h1>
+      <h1 className="font-sans font-extrabold text-3xl tracking-tighter mb-8">Uredi objavo</h1>
 
       <div className="space-y-8">
         <div>
-          <label className="block text-sm font-inter font-medium mb-2">Naslovna slika</label>
+          <label className="block text-sm font-sans font-medium mb-2">Naslovna slika</label>
           <FeaturedImagePicker
             value={form.featured_image}
             focus={form.focal_point}
@@ -581,19 +582,19 @@ export default function EditPost() {
         </div>
 
         <div>
-          <label className="block text-sm font-inter font-medium mb-2">Naslov</label>
+          <label className="block text-sm font-sans font-medium mb-2">Naslov</label>
           <Input value={form.title} onChange={(e) => updateForm("title", e.target.value)}
-            placeholder="Naslov vaše objave…" className="text-xl font-inter font-bold h-14 border-border" />
+            placeholder="Naslov vaše objave…" className="text-xl font-sans font-bold h-14 border-border" />
         </div>
 
         <div>
-          <label className="block text-sm font-inter font-medium mb-2">Povzetek</label>
+          <label className="block text-sm font-sans font-medium mb-2">Povzetek</label>
           <Textarea value={form.summary} onChange={(e) => updateForm("summary", e.target.value)}
             placeholder="Kratek opis vaše objave…" className="font-serif resize-none" rows={3} />
         </div>
 
         <div>
-          <label className="block text-sm font-inter font-medium mb-2">Kategorija</label>
+          <label className="block text-sm font-sans font-medium mb-2">Kategorija</label>
           <Select value={form.category} onValueChange={(v) => updateForm("category", v)}>
             <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -603,18 +604,18 @@ export default function EditPost() {
         </div>
 
         <div>
-          <label className="block text-sm font-inter font-medium mb-2">Vidnost</label>
+          <label className="block text-sm font-sans font-medium mb-2">Vidnost</label>
           <label className="flex items-center gap-2.5 cursor-pointer w-fit">
             <Switch checked={form.is_public} onCheckedChange={(v) => updateForm("is_public", v)} />
-            <span className="text-sm text-muted-foreground font-inter">{form.is_public ? "Javno vidno vsem obiskovalcem" : "Vidno samo prijavljenim članom"}</span>
+            <span className="text-sm text-muted-foreground font-sans">{form.is_public ? "Javno vidno vsem obiskovalcem" : "Vidno samo prijavljenim članom"}</span>
           </label>
         </div>
 
         <div>
-          <label className="block text-sm font-inter font-medium mb-2">Oznake</label>
+          <label className="block text-sm font-sans font-medium mb-2">Oznake</label>
           <div className="flex flex-wrap gap-2 mb-2">
             {form.tags.map((tag) => (
-              <span key={tag} className="flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm font-inter">
+              <span key={tag} className="flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm font-sans">
                 #{tag}
                 <button onClick={() => removeTag(tag)} className="ml-1 hover:text-destructive"><X className="h-3 w-3" /></button>
               </span>
@@ -637,7 +638,7 @@ export default function EditPost() {
         )}
 
         <div>
-          <label className="block text-sm font-inter font-medium mb-2">Vsebina</label>
+          <label className="block text-sm font-sans font-medium mb-2">Vsebina</label>
           <div ref={editorContainerRef} className="rounded-xl border border-border bg-background shadow-sm"
             style={{ position: "relative", overflow: "visible" }}>
             <div className="flex flex-wrap items-center gap-0.5 px-3 py-2 border-b border-border bg-muted/30 rounded-t-xl">
@@ -677,15 +678,15 @@ export default function EditPost() {
           <div className="mt-2.5 rounded-lg bg-muted/40 border border-border px-4 py-2.5 grid grid-cols-2 gap-x-6 gap-y-1">
             <p className="col-span-2 text-xs font-semibold text-foreground/60 mb-0.5">Namigi</p>
             <p className="text-xs text-muted-foreground"><ImageIcon className="inline h-3 w-3 mr-1" />Kliknite sliko: vogali spremenijo velikost, povlecite jo za premik, Delete jo izbriše</p>
-            <p className="text-xs text-muted-foreground"><ImageIcon className="inline h-3 w-3 mr-1" />Orodna vrstica nad izbrano sliko → poravnava ali besedilo ob sliki</p>
-            <p className="text-xs text-muted-foreground"><Columns2 className="inline h-3 w-3 mr-1" />Ikona stolpcev → 2–4 slike drug ob drugem</p>
-            <p className="text-xs text-muted-foreground"><Video className="inline h-3 w-3 mr-1" />Ikona videa → YouTube povezava ali nalaganje z naprave</p>
-            <p className="text-xs text-muted-foreground"><ImageIcon className="inline h-3 w-3 mr-1" />Ikona slike → naložite fotografijo na mesto kazalca</p>
+            <p className="text-xs text-muted-foreground"><ImageIcon className="inline h-3 w-3 mr-1" />Orodna vrstica nad izbrano sliko <Arrow /> poravnava ali besedilo ob sliki</p>
+            <p className="text-xs text-muted-foreground"><Columns2 className="inline h-3 w-3 mr-1" />Ikona stolpcev <Arrow /> 2–4 slike drug ob drugem</p>
+            <p className="text-xs text-muted-foreground"><Video className="inline h-3 w-3 mr-1" />Ikona videa <Arrow /> YouTube povezava ali nalaganje z naprave</p>
+            <p className="text-xs text-muted-foreground"><ImageIcon className="inline h-3 w-3 mr-1" />Ikona slike <Arrow /> naložite fotografijo na mesto kazalca</p>
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-inter font-medium mb-2">Galerija fotografij</label>
+          <label className="block text-sm font-sans font-medium mb-2">Galerija fotografij</label>
           <ImageUploader images={form.images} onChange={(imgs) => updateForm("images", imgs)} />
         </div>
 

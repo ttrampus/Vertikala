@@ -86,7 +86,7 @@ export default function PostToolbar({ filters, onChange, shown, total, className
       </div>
 
       {active && (
-        <div className="flex items-center gap-3 text-xs text-muted-foreground font-inter">
+        <div className="flex items-center gap-3 text-xs text-muted-foreground font-sans">
           <span>
             Prikazanih {shown} od {total} {total === 1 ? "objave" : "objav"}
           </span>
@@ -106,10 +106,10 @@ export default function PostToolbar({ filters, onChange, shown, total, className
 // Prazen seznam po filtriranju ni isto kot „še ni objav“ — sporočilo mora
 // povedati, katero od obojega je, sicer je videti kot okvara.
 export function NoPostsMessage({ filtered, empty, onReset }) {
-  if (!filtered) return <p className="text-muted-foreground text-sm font-inter py-8 text-center">{empty}</p>;
+  if (!filtered) return <p className="text-muted-foreground text-sm font-sans py-8 text-center">{empty}</p>;
   return (
     <div className="py-8 text-center">
-      <p className="text-muted-foreground text-sm font-inter">Nobena objava ne ustreza iskanju.</p>
+      <p className="text-muted-foreground text-sm font-sans">Nobena objava ne ustreza iskanju.</p>
       <Button variant="link" size="sm" onClick={onReset}>Počisti filtre</Button>
     </div>
   );

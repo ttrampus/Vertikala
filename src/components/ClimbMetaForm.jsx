@@ -19,12 +19,12 @@ export default function ClimbMetaForm({ value = {}, onChange }) {
     <div className="rounded-xl border border-border bg-muted/20 p-5">
       <div className="flex items-center gap-2 mb-5">
         <Mountain className="h-4 w-4 text-primary" />
-        <h3 className="font-inter font-semibold text-sm">Podatki o vzponu</h3>
+        <h3 className="font-sans font-semibold text-sm">Podatki o vzponu</h3>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-inter font-medium text-muted-foreground mb-1.5">
+          <label className="block text-xs font-sans font-medium text-muted-foreground mb-1.5">
             Vrh / cilj
           </label>
           <Input
@@ -35,7 +35,7 @@ export default function ClimbMetaForm({ value = {}, onChange }) {
         </div>
 
         <div>
-          <label className="block text-xs font-inter font-medium text-muted-foreground mb-1.5">
+          <label className="block text-xs font-sans font-medium text-muted-foreground mb-1.5">
             Nadmorska višina (m)
           </label>
           <Input
@@ -47,7 +47,7 @@ export default function ClimbMetaForm({ value = {}, onChange }) {
         </div>
 
         <div>
-          <label className="block text-xs font-inter font-medium text-muted-foreground mb-1.5">
+          <label className="block text-xs font-sans font-medium text-muted-foreground mb-1.5">
             Ime smeri
           </label>
           <Input
@@ -58,7 +58,7 @@ export default function ClimbMetaForm({ value = {}, onChange }) {
         </div>
 
         <div>
-          <label className="block text-xs font-inter font-medium text-muted-foreground mb-1.5">
+          <label className="block text-xs font-sans font-medium text-muted-foreground mb-1.5">
             Izhodišče
           </label>
           <Input
@@ -69,7 +69,7 @@ export default function ClimbMetaForm({ value = {}, onChange }) {
         </div>
 
         <div>
-          <label className="block text-xs font-inter font-medium text-muted-foreground mb-1.5">
+          <label className="block text-xs font-sans font-medium text-muted-foreground mb-1.5">
             Ocena težavnosti
           </label>
           <Input
@@ -80,7 +80,7 @@ export default function ClimbMetaForm({ value = {}, onChange }) {
         </div>
 
         <div>
-          <label className="block text-xs font-inter font-medium text-muted-foreground mb-1.5">
+          <label className="block text-xs font-sans font-medium text-muted-foreground mb-1.5">
             Čas vzpona (ure)
           </label>
           <DecimalField
@@ -92,7 +92,7 @@ export default function ClimbMetaForm({ value = {}, onChange }) {
         </div>
 
         <div>
-          <label className="block text-xs font-inter font-medium text-muted-foreground mb-1.5">
+          <label className="block text-xs font-sans font-medium text-muted-foreground mb-1.5">
             Razdalja (km)
           </label>
           <DecimalField
@@ -104,7 +104,7 @@ export default function ClimbMetaForm({ value = {}, onChange }) {
         </div>
 
         <div>
-          <label className="block text-xs font-inter font-medium text-muted-foreground mb-1.5">
+          <label className="block text-xs font-sans font-medium text-muted-foreground mb-1.5">
             Pogoji
           </label>
           <Select

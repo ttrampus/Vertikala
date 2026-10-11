@@ -24,7 +24,7 @@ function Banner({ msg }) {
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: "8px", marginTop: "16px",
-      fontFamily: "'Inter', sans-serif", fontSize: "13px",
+      fontFamily: "var(--font-sans)", fontSize: "13px",
       color: msg.ok ? "#16a34a" : "#ef4444",
     }}>
       {msg.ok ? <Check size={15} /> : <AlertCircle size={15} />} {msg.text}
@@ -62,12 +62,12 @@ export default function Profile() {
     width: "100%", boxSizing: "border-box",
     background: theme.inputBg, border: `1px solid ${theme.border}`,
     borderRadius: "8px", padding: "12px 14px",
-    color: theme.text, fontFamily: "'Inter', sans-serif", fontSize: "14px",
+    color: theme.text, fontFamily: "var(--font-sans)", fontSize: "14px",
     outline: "none", transition: "border-color 0.2s, background 0.4s",
     colorScheme: theme.isDark ? "dark" : "light",
   };
   const labelStyle = {
-    fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600,
+    fontFamily: "var(--font-display)", fontWeight: 600,
     fontSize: "12px", letterSpacing: "0.12em", textTransform: "uppercase",
     color: theme.textLow, display: "block", marginBottom: "8px",
   };
@@ -77,11 +77,11 @@ export default function Profile() {
     transition: "background 0.4s",
   };
   const sectionTitle = {
-    fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800,
+    fontFamily: "var(--font-display)", fontWeight: 800,
     fontSize: "24px", margin: "0 0 4px",
   };
   const sectionSub = {
-    fontFamily: "'Inter', sans-serif", fontSize: "13px", color: theme.textLow, margin: "0 0 24px",
+    fontFamily: "var(--font-sans)", fontSize: "13px", color: theme.textLow, margin: "0 0 24px",
   };
   const focusOn = (e) => (e.target.style.borderColor = "rgba(232,80,26,0.5)");
   const focusOff = (e) => (e.target.style.borderColor = theme.border);
@@ -89,7 +89,7 @@ export default function Profile() {
   const primaryBtn = (disabled) => ({
     background: disabled ? "#7a2c0d" : "#E8501A", color: "#fff", border: "none",
     cursor: disabled ? "default" : "pointer",
-    fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "14px",
+    fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "14px",
     letterSpacing: "0.08em", textTransform: "uppercase", padding: "12px 28px",
     borderRadius: "8px", display: "inline-flex", alignItems: "center", gap: "8px",
   });
@@ -222,7 +222,7 @@ export default function Profile() {
     <div style={{ background: theme.bg, minHeight: "100vh", color: theme.text, transition: "background 0.4s, color 0.4s" }}>
       <div style={{ maxWidth: "640px", margin: "0 auto", padding: "140px 24px 96px" }}>
         <div style={{ width: "40px", height: "3px", background: "#E8501A", borderRadius: "2px", marginBottom: "20px" }} />
-        <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "clamp(40px,6vw,56px)", lineHeight: 1, margin: "0 0 40px" }}>Moj profil</h1>
+        <h1 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "clamp(40px,6vw,56px)", lineHeight: 1, margin: "0 0 40px" }}>Moj profil</h1>
 
         {/* ── Profile card ── */}
         <form onSubmit={saveProfile} style={cardStyle}>
@@ -239,7 +239,7 @@ export default function Profile() {
                 {avatarUrl ? (
                   <img src={avatarUrl} alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 ) : (
-                  <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "30px", color: "#E8501A" }}>{initials(name)}</span>
+                  <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "30px", color: "#E8501A" }}>{initials(name)}</span>
                 )}
               </div>
               {uploading && (
@@ -251,12 +251,12 @@ export default function Profile() {
             <div>
               <input ref={fileRef} type="file" accept="image/*" onChange={onPickFile} style={{ display: "none" }} />
               <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}
-                style={{ background: "none", border: `1px solid ${theme.border}`, color: theme.text, cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600, fontSize: "13px", letterSpacing: "0.06em", textTransform: "uppercase", padding: "9px 16px", borderRadius: "8px", display: "inline-flex", alignItems: "center", gap: "7px" }}>
+                style={{ background: "none", border: `1px solid ${theme.border}`, color: theme.text, cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 600, fontSize: "13px", letterSpacing: "0.06em", textTransform: "uppercase", padding: "9px 16px", borderRadius: "8px", display: "inline-flex", alignItems: "center", gap: "7px" }}>
                 <Camera size={15} /> Spremeni sliko
               </button>
               {avatarUrl && (
                 <button type="button" onClick={() => setAvatarUrl("")}
-                  style={{ background: "none", border: "none", color: theme.textLow, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "12px", marginLeft: "12px", textDecoration: "underline" }}>
+                  style={{ background: "none", border: "none", color: theme.textLow, cursor: "pointer", fontFamily: "var(--font-sans)", fontSize: "12px", marginLeft: "12px", textDecoration: "underline" }}>
                   Odstrani
                 </button>
               )}
@@ -272,7 +272,7 @@ export default function Profile() {
             <label style={labelStyle}>E-pošta</label>
             <input value={user?.email || ""} readOnly disabled
               style={{ ...inputStyle, opacity: 0.65, cursor: "not-allowed" }} />
-            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "12px", color: theme.textLow, margin: "8px 0 0" }}>
+            <p style={{ fontFamily: "var(--font-sans)", fontSize: "12px", color: theme.textLow, margin: "8px 0 0" }}>
               E-pošta je vaš prijavni naslov in je ni mogoče spremeniti tukaj. Za spremembo se obrnite na administratorja.
             </p>
           </div>
@@ -322,7 +322,7 @@ export default function Profile() {
       {profile?.is_owner !== true && (
         <div style={{ ...cardStyle, borderColor: "rgba(239,68,68,0.35)" }}>
           <h2 style={sectionTitle}>Izbriši račun</h2>
-          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", lineHeight: 1.7, color: theme.textMid, margin: "0 0 20px" }}>
+          <p style={{ fontFamily: "var(--font-sans)", fontSize: "13px", lineHeight: 1.7, color: theme.textMid, margin: "0 0 20px" }}>
             Vaš račun bo trajno izbrisan in prijava ne bo več mogoča. Vaše objave, vzponi in
             komentarji ostanejo na strani kot del zgodovine kluba, le niso več vezani na vaš račun.
             Tega dejanja ni mogoče razveljaviti.
@@ -337,7 +337,7 @@ export default function Profile() {
                   display: "inline-flex", alignItems: "center", gap: "8px",
                   background: "none", border: "1px solid rgba(239,68,68,0.5)", color: "#ef4444",
                   cursor: deleting ? "default" : "pointer",
-                  fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "14px",
+                  fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "14px",
                   letterSpacing: "0.08em", textTransform: "uppercase", padding: "12px 28px",
                   borderRadius: "8px", marginTop: "16px",
                 }}

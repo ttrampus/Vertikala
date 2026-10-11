@@ -40,13 +40,13 @@ function SuggestionList({ items, active, onPick, onHover, theme }) {
           style={{
             display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px",
             padding: "8px 10px", borderRadius: "6px", cursor: "pointer",
-            fontFamily: "'Inter', sans-serif", fontSize: "14px", color: theme.text,
+            fontFamily: "var(--font-sans)", fontSize: "14px", color: theme.text,
             background: i === active ? (theme.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)") : "transparent",
           }}
         >
           <span>{s.name}</span>
           {s.member && (
-            <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "10px", letterSpacing: "0.08em", textTransform: "uppercase", color: theme.textLow }}>Član</span>
+            <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "10px", letterSpacing: "0.08em", textTransform: "uppercase", color: theme.textLow }}>Član</span>
           )}
         </div>
       ))}
@@ -139,7 +139,7 @@ export function NamesField({ value, onChange, suggestions, theme, style, placeho
             style={{
               display: "inline-flex", alignItems: "center", gap: "2px", padding: "3px 4px 3px 10px",
               borderRadius: "999px", background: "rgba(232,80,26,0.1)", color: theme.text,
-              fontFamily: "'Inter', sans-serif", fontSize: "13px", lineHeight: 1.4,
+              fontFamily: "var(--font-sans)", fontSize: "13px", lineHeight: 1.4,
             }}
           >
             {n}
@@ -166,7 +166,7 @@ export function NamesField({ value, onChange, suggestions, theme, style, placeho
           }}
           onKeyDown={onKeyDown}
           onBlur={() => setOpen(false)}
-          style={{ flex: 1, minWidth: "120px", border: "none", outline: "none", background: "transparent", color: theme.text, fontFamily: "'Inter', sans-serif", fontSize: "14px", padding: "4px 2px" }}
+          style={{ flex: 1, minWidth: "120px", border: "none", outline: "none", background: "transparent", color: theme.text, fontFamily: "var(--font-sans)", fontSize: "14px", padding: "4px 2px" }}
         />
       </div>
       <SuggestionList items={items} active={active} onPick={add} onHover={setActive} theme={theme} />

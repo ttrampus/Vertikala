@@ -21,7 +21,7 @@ export default function TagBadge({ tag, small = false }) {
   const label = categoryLabels[tag] || tag;
 
   return (
-    <span className={`inline-flex items-center rounded-full border font-inter font-medium capitalize ${colors} ${
+    <span className={`inline-flex items-center rounded-full border font-sans font-medium capitalize ${colors} ${
       small ? "px-2 py-0.5 text-[10px]" : "px-3 py-1 text-xs"
     }`}>
       {label}

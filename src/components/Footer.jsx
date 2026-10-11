@@ -39,7 +39,7 @@ export default function Footer() {
                 onMouseLeave={e => { e.currentTarget.style.opacity = theme.isDark ? '0.85' : '0.75'; }}
               />
             </div>
-            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '14px', color: theme.textLow, maxWidth: '320px', lineHeight: 1.6 }}>
+            <p style={{ fontFamily: "var(--font-sans)", fontSize: '14px', color: theme.textLow, maxWidth: '320px', lineHeight: 1.6 }}>
               Alpinistični klub — skupnost strastnih alpinistov, plezalcev in ljubiteljev gora.
             </p>
           </div>
@@ -47,7 +47,7 @@ export default function Footer() {
             {links.map(l => (
               <button key={l.path} onClick={() => navigate(l.path)} style={{
                 background: 'none', border: 'none', cursor: 'pointer',
-                fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600,
+                fontFamily: "var(--font-display)", fontWeight: 600,
                 fontSize: '13px', letterSpacing: '0.12em', textTransform: 'uppercase',
                 color: theme.textLow, transition: 'color 0.2s',
               }}
@@ -59,10 +59,10 @@ export default function Footer() {
         </div>
         <div style={{ height: '1px', background: theme.border, marginBottom: '24px' }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: theme.textFaint }}>
+          <span style={{ fontFamily: "var(--font-sans)", fontSize: '12px', color: theme.textFaint }}>
             © {new Date().getFullYear()} AK Vertikala · Vse pravice pridržane.
           </span>
-          <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '12px', letterSpacing: '0.15em', textTransform: 'uppercase', color: theme.textFaint }}>
+          <span style={{ fontFamily: "var(--font-display)", fontSize: '12px', letterSpacing: '0.15em', textTransform: 'uppercase', color: theme.textFaint }}>
             PZS · Slovenija
           </span>
         </div>

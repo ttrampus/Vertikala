@@ -12,7 +12,8 @@ import StatsSection from "../components/StatsSection";
 import CardImage from "../components/CardImage";
 import HeroBg from "../components/HeroBg";
 import PrivateBadge from "../components/PrivateBadge";
-import { Lock } from "lucide-react";
+import { Lock, Heart } from "lucide-react";
+import Arrow from "@/components/Arrow";
 
 const CATEGORIES = [
   { key: '', label: 'Vse' },
@@ -203,32 +204,32 @@ export default function Home() {
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.5) 60%, rgba(10,10,10,1) 100%)', zIndex: 2 }} />
         <HeroBg src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1600&q=80" position="center 30%" zIndex={1} bgRef={heroBgRef} bgStyle={{ willChange: 'transform' }} />
         <div style={{ position: 'relative', zIndex: 3, textAlign: 'center', padding: '0 24px', maxWidth: '900px' }}>
-          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 400, fontSize: '13px', letterSpacing: '0.3em', textTransform: 'uppercase', color: '#E8501A', marginBottom: '20px', opacity: 0, animation: 'fadeUp 0.8s 0.3s cubic-bezier(0.16,1,0.3,1) forwards' }}>EST. 1992 — SLOVENIJA</div>
+          <div style={{ fontFamily: "var(--font-display)", fontWeight: 400, fontSize: '13px', letterSpacing: '0.3em', textTransform: 'uppercase', color: '#E8501A', marginBottom: '20px', opacity: 0, animation: 'fadeUp 0.8s 0.3s cubic-bezier(0.16,1,0.3,1) forwards' }}>EST. 1992 — SLOVENIJA</div>
           <img
             src="/logo.png"
             alt="AK Vertikala"
             style={{ width: 'clamp(280px, 40vw, 560px)', height: 'auto', display: 'block', margin: '0 auto 24px', filter: 'brightness(0) invert(1)', opacity: 0, animation: 'fadeUp 0.8s 0.5s cubic-bezier(0.16,1,0.3,1) forwards' }}
           />
-          <p style={{ fontFamily: "'Inter', sans-serif", fontWeight: 300, fontSize: '18px', lineHeight: 1.6, color: 'rgba(255,255,255,0.75)', maxWidth: '480px', margin: '0 auto 40px', opacity: 0, animation: 'fadeUp 0.8s 0.7s cubic-bezier(0.16,1,0.3,1) forwards' }}>
+          <p style={{ fontFamily: "var(--font-sans)", fontWeight: 300, fontSize: '18px', lineHeight: 1.6, color: 'rgba(255,255,255,0.75)', maxWidth: '480px', margin: '0 auto 40px', opacity: 0, animation: 'fadeUp 0.8s 0.7s cubic-bezier(0.16,1,0.3,1) forwards' }}>
             Zgodbe z vrhov — plezalci, raziskovalci &amp; ljubitelji gora
           </p>
           <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap', opacity: 0, animation: 'fadeUp 0.8s 0.9s cubic-bezier(0.16,1,0.3,1) forwards' }}>
             <button
               onClick={() => document.getElementById('posts-section')?.scrollIntoView({ block: 'start' })}
-              style={{ background: '#E8501A', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '15px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '14px 32px', borderRadius: '4px', transition: 'all 0.2s' }}
+              style={{ background: '#E8501A', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "var(--font-display)", fontWeight: 700, fontSize: '15px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '14px 32px', borderRadius: '4px', transition: 'all 0.2s' }}
               onMouseEnter={e => e.currentTarget.style.background = '#c73d10'}
               onMouseLeave={e => e.currentTarget.style.background = '#E8501A'}
             >Beri objave</button>
             <button
               onClick={() => navigate('/alpine-school')}
-              style={{ background: 'transparent', color: '#fff', border: '1.5px solid rgba(255,255,255,0.4)', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '15px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '14px 32px', borderRadius: '4px', transition: 'all 0.2s' }}
+              style={{ background: 'transparent', color: '#fff', border: '1.5px solid rgba(255,255,255,0.4)', cursor: 'pointer', fontFamily: "var(--font-display)", fontWeight: 700, fontSize: '15px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '14px 32px', borderRadius: '4px', transition: 'all 0.2s' }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = '#fff'; e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)'; e.currentTarget.style.background = 'transparent'; }}
-            >Alpinistična šola →</button>
+            >Alpinistična šola <Arrow /></button>
           </div>
         </div>
         <div style={{ position: 'absolute', bottom: '40px', left: '50%', transform: 'translateX(-50%)', zIndex: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', opacity: 0, animation: 'fadeUp 0.8s 1.3s cubic-bezier(0.16,1,0.3,1) forwards' }}>
-          <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '11px', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Pomakni navzdol</span>
+          <span style={{ fontFamily: "var(--font-display)", fontSize: '11px', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Pomakni navzdol</span>
           <div style={{ width: '1px', height: '48px', background: 'linear-gradient(to bottom, rgba(255,255,255,0.4), transparent)', animation: 'scrollPulse 2s infinite' }} />
         </div>
       </div>
@@ -252,7 +253,7 @@ export default function Home() {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Išči objave…"
-              style={{ width: '100%', boxSizing: 'border-box', background: theme.inputBg, border: `1px solid ${theme.border}`, borderRadius: '6px', padding: '11px 14px 11px 40px', color: theme.text, fontFamily: "'Inter', sans-serif", fontSize: '14px', outline: 'none', transition: 'border-color 0.2s, background 0.4s' }}
+              style={{ width: '100%', boxSizing: 'border-box', background: theme.inputBg, border: `1px solid ${theme.border}`, borderRadius: '6px', padding: '11px 14px 11px 40px', color: theme.text, fontFamily: "var(--font-sans)", fontSize: '14px', outline: 'none', transition: 'border-color 0.2s, background 0.4s' }}
               onFocus={e => e.target.style.borderColor = 'rgba(232,80,26,0.5)'}
               onBlur={e => e.target.style.borderColor = theme.border}
             />
@@ -267,7 +268,7 @@ export default function Home() {
                   border: activeCategory === cat.key ? '1px solid #E8501A' : `1px solid ${theme.border}`,
                   color: activeCategory === cat.key ? '#fff' : theme.textMid,
                   cursor: 'pointer', borderRadius: '4px', padding: '8px 16px',
-                  fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600, fontSize: '13px',
+                  fontFamily: "var(--font-display)", fontWeight: 600, fontSize: '13px',
                   letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'all 0.2s',
                 }}
               >{cat.label}</button>
@@ -276,18 +277,18 @@ export default function Home() {
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '80px 0', color: theme.textLow, fontFamily: "'Barlow Condensed', sans-serif", fontSize: '16px', letterSpacing: '0.1em' }}>NALAGANJE...</div>
+          <div style={{ textAlign: 'center', padding: '80px 0', color: theme.textLow, fontFamily: "var(--font-display)", fontSize: '16px', letterSpacing: '0.1em' }}>NALAGANJE...</div>
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px 0' }}>
-            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 'clamp(44px, 10vw, 80px)', color: theme.border }}>404</div>
-            <p style={{ fontFamily: "'Inter', sans-serif", color: theme.textLow }}>Ni najdenih objav.</p>
+            <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 'clamp(44px, 10vw, 80px)', color: theme.border }}>404</div>
+            <p style={{ fontFamily: "var(--font-sans)", color: theme.textLow }}>Ni najdenih objav.</p>
           </div>
         ) : (
           <>
             {/* Featured */}
             {featuredPost && (
               <div data-reveal="featured" style={{ ...rev('featured'), marginBottom: '64px' }}>
-                <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '11px', letterSpacing: '0.25em', textTransform: 'uppercase', color: theme.textFaint, marginBottom: '16px' }}>— Izpostavljeno</div>
+                <div style={{ fontFamily: "var(--font-display)", fontSize: '11px', letterSpacing: '0.25em', textTransform: 'uppercase', color: theme.textFaint, marginBottom: '16px' }}>— Izpostavljeno</div>
                 <Link to={featuredPost.href || `/post/${featuredPost.id}`} style={{ textDecoration: 'none' }}>
                   <div
                     style={{ display: 'grid', gridTemplateColumns: 'var(--col-feat)', background: theme.bgCard, border: `1px solid ${theme.border}`, borderRadius: '8px', overflow: 'hidden', transition: 'border-color 0.3s, transform 0.3s, background 0.4s', cursor: 'pointer' }}
@@ -301,18 +302,18 @@ export default function Home() {
                     <div style={{ padding: 'var(--feat-pad)', minHeight: 'var(--feat-text-min)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                       <div>
                         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '20px' }}>
-                          <span style={{ background: '#E8501A', color: '#fff', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 10px', borderRadius: '3px' }}>{CAT_LABEL[featuredPost.category] || featuredPost.category || 'Objava'}</span>
+                          <span style={{ background: '#E8501A', color: '#fff', fontFamily: "var(--font-display)", fontWeight: 700, fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 10px', borderRadius: '3px' }}>{CAT_LABEL[featuredPost.category] || featuredPost.category || 'Objava'}</span>
                           {featuredPost.is_public === false && <PrivateBadge small />}
-                          <span style={{ color: theme.textLow, fontFamily: "'Inter', sans-serif", fontSize: '13px' }}>{formatDate(featuredPost.created_date)}</span>
+                          <span style={{ color: theme.textLow, fontFamily: "var(--font-sans)", fontSize: '13px' }}>{formatDate(featuredPost.created_date)}</span>
                         </div>
                         {/* lineHeight 1.2, not tighter: the two-line clamp hides overflow, and below
-                            ~1.19 Barlow's g/j/p/y hang past the box and get sliced off flat. */}
-                        <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 'clamp(28px, 5.5vw, 42px)', lineHeight: 1.2, letterSpacing: '-0.01em', margin: '0 0 16px', color: theme.text, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{featuredPost.title}</h2>
-                        {featuredPost.summary && <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '15px', lineHeight: 1.7, color: theme.textMid, margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{featuredPost.summary}</p>}
+                            ~1.19 the display font's g/j/p/y hang past the box and get sliced off flat. */}
+                        <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 'clamp(28px, 5.5vw, 42px)', lineHeight: 1.2, letterSpacing: '-0.01em', margin: '0 0 16px', color: theme.text, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{featuredPost.title}</h2>
+                        {featuredPost.summary && <p style={{ fontFamily: "var(--font-sans)", fontSize: '15px', lineHeight: 1.7, color: theme.textMid, margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{featuredPost.summary}</p>}
                       </div>
                       <div style={{ marginTop: '32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: theme.textLow }}>{featuredPost.author_name || 'Član'}{!featuredPost.isCamp && ` · ♥ ${featuredPost.likes_count || 0}`}</span>
-                        <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '14px', letterSpacing: '0.08em', color: '#E8501A', textTransform: 'uppercase' }}>Preberi →</span>
+                        <span style={{ fontFamily: "var(--font-sans)", fontSize: '13px', color: theme.textLow }}>{featuredPost.author_name || 'Član'}{!featuredPost.isCamp && <> · <Heart size={12} fill="currentColor" strokeWidth={0} style={{ display: 'inline', verticalAlign: '-1px' }} aria-label="všečki" /> {featuredPost.likes_count || 0}</>}</span>
+                        <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: '14px', letterSpacing: '0.08em', color: '#E8501A', textTransform: 'uppercase' }}>Preberi <Arrow /></span>
                       </div>
                     </div>
                     <CardImage
@@ -355,20 +356,20 @@ export default function Home() {
                       eager={i < 3}
                       style={{ height: '180px' }}
                     >
-                      <span style={{ position: 'absolute', top: '12px', left: '12px', background: 'rgba(10,10,10,0.75)', backdropFilter: 'blur(8px)', color: '#E8501A', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 10px', borderRadius: '3px' }}>{CAT_LABEL[post.category] || post.category || 'Objava'}</span>
+                      <span style={{ position: 'absolute', top: '12px', left: '12px', background: 'rgba(10,10,10,0.75)', backdropFilter: 'blur(8px)', color: '#E8501A', fontFamily: "var(--font-display)", fontWeight: 700, fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 10px', borderRadius: '3px' }}>{CAT_LABEL[post.category] || post.category || 'Objava'}</span>
                       {post.is_public === false && (
-                        <span style={{ position: 'absolute', top: '12px', right: '12px', display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(10,10,10,0.75)', backdropFilter: 'blur(8px)', color: '#fff', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '4px 10px', borderRadius: '3px' }}>
+                        <span style={{ position: 'absolute', top: '12px', right: '12px', display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(10,10,10,0.75)', backdropFilter: 'blur(8px)', color: '#fff', fontFamily: "var(--font-display)", fontWeight: 700, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '4px 10px', borderRadius: '3px' }}>
                           <Lock size={10} /> Zasebno
                         </span>
                       )}
                     </CardImage>
                     <div style={{ padding: '24px' }}>
-                      <div style={{ color: theme.textLow, fontFamily: "'Inter', sans-serif", fontSize: '12px', marginBottom: '10px' }}>{formatDate(post.created_date)}</div>
-                      <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '22px', lineHeight: 1.15, color: theme.text, margin: '0 0 10px' }}>{post.title}</h3>
-                      {post.summary && <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', lineHeight: 1.6, color: theme.textMid, margin: '0 0 20px', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{post.summary}</p>}
+                      <div style={{ color: theme.textLow, fontFamily: "var(--font-sans)", fontSize: '12px', marginBottom: '10px' }}>{formatDate(post.created_date)}</div>
+                      <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: '22px', lineHeight: 1.15, color: theme.text, margin: '0 0 10px' }}>{post.title}</h3>
+                      {post.summary && <p style={{ fontFamily: "var(--font-sans)", fontSize: '13px', lineHeight: 1.6, color: theme.textMid, margin: '0 0 20px', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{post.summary}</p>}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: theme.textLow }}>{post.author_name || 'Član'}{!post.isCamp && ` · ♥ ${post.likes_count || 0}`}</span>
-                        <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '13px', letterSpacing: '0.08em', color: '#E8501A', textTransform: 'uppercase' }}>Preberi →</span>
+                        <span style={{ fontFamily: "var(--font-sans)", fontSize: '12px', color: theme.textLow }}>{post.author_name || 'Član'}{!post.isCamp && <> · <Heart size={11} fill="currentColor" strokeWidth={0} style={{ display: 'inline', verticalAlign: '-1px' }} aria-label="všečki" /> {post.likes_count || 0}</>}</span>
+                        <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: '13px', letterSpacing: '0.08em', color: '#E8501A', textTransform: 'uppercase' }}>Preberi <Arrow /></span>
                       </div>
                     </div>
                   </div>
@@ -381,7 +382,7 @@ export default function Home() {
               <div style={{ textAlign: 'center', marginTop: '48px' }}>
                 <button
                   onClick={() => setVisibleCount((c) => c + pageSize)}
-                  style={{ background: 'transparent', color: theme.text, border: `1.5px solid ${theme.border}`, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '15px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '14px 40px', borderRadius: '4px', transition: 'all 0.2s' }}
+                  style={{ background: 'transparent', color: theme.text, border: `1.5px solid ${theme.border}`, cursor: 'pointer', fontFamily: "var(--font-display)", fontWeight: 700, fontSize: '15px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '14px 40px', borderRadius: '4px', transition: 'all 0.2s' }}
                   onMouseEnter={e => { e.currentTarget.style.borderColor = '#E8501A'; e.currentTarget.style.color = '#E8501A'; }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.text; }}
                 >Pokaži več ({filtered.length - 1 - otherPosts.length})</button>
@@ -396,16 +397,16 @@ export default function Home() {
         <div style={{ background: theme.isDark ? 'linear-gradient(135deg, #1a0a05 0%, #2a1008 50%, #1a0a05 100%)' : 'linear-gradient(135deg, #fff3ee 0%, #ffe8df 50%, #fff3ee 100%)', border: '1px solid rgba(232,80,26,0.25)', borderRadius: '12px', padding: '64px var(--page-x)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '40px', flexWrap: 'wrap', position: 'relative', overflow: 'hidden', transition: 'background 0.4s' }}>
           <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '240px', height: '240px', background: 'radial-gradient(circle, rgba(232,80,26,0.12) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
           <div>
-            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '12px', letterSpacing: '0.25em', textTransform: 'uppercase', color: '#E8501A', marginBottom: '12px' }}>Program 2026</div>
-            <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 'clamp(30px, 6vw, 48px)', lineHeight: 1, margin: '0 0 12px', color: theme.text }}>Alpinistična šola</h2>
-            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '15px', color: theme.textMid, maxWidth: '420px', lineHeight: 1.6, margin: 0 }}>Celovit program za vse, ki želijo varno in odgovorno stopiti v svet alpinizma.</p>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: '12px', letterSpacing: '0.25em', textTransform: 'uppercase', color: '#E8501A', marginBottom: '12px' }}>Program 2026</div>
+            <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 'clamp(30px, 6vw, 48px)', lineHeight: 1, margin: '0 0 12px', color: theme.text }}>Alpinistična šola</h2>
+            <p style={{ fontFamily: "var(--font-sans)", fontSize: '15px', color: theme.textMid, maxWidth: '420px', lineHeight: 1.6, margin: 0 }}>Celovit program za vse, ki želijo varno in odgovorno stopiti v svet alpinizma.</p>
           </div>
           <button
             onClick={() => navigate('/alpine-school')}
-            style={{ background: '#E8501A', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '16px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '18px 40px', borderRadius: '6px', whiteSpace: 'nowrap', transition: 'all 0.2s' }}
+            style={{ background: '#E8501A', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "var(--font-display)", fontWeight: 700, fontSize: '16px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '18px 40px', borderRadius: '6px', whiteSpace: 'nowrap', transition: 'all 0.2s' }}
             onMouseEnter={e => { e.currentTarget.style.background = '#c73d10'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
             onMouseLeave={e => { e.currentTarget.style.background = '#E8501A'; e.currentTarget.style.transform = 'translateY(0)'; }}
-          >Več o šoli →</button>
+          >Več o šoli <Arrow /></button>
         </div>
       </div>
 

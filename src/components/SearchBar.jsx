@@ -9,7 +9,7 @@ export default function SearchBar({ value, onChange, placeholder = "Search posts
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="pl-10 pr-8 h-11 bg-card border-border font-inter"
+        className="pl-10 pr-8 h-11 bg-card border-border font-sans"
       />
       {value && (
         <button

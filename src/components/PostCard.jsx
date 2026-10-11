@@ -29,7 +29,7 @@ export default function PostCard({ post, featured = false }) {
               {formatDate(post.created_date)}
             </span>
           </div>
-          <h2 className="font-inter font-extrabold text-2xl lg:text-4xl text-white leading-tight mb-2 tracking-tight">
+          <h2 className="font-sans font-extrabold text-2xl lg:text-4xl text-white leading-tight mb-2 tracking-tight">
             {post.title}
           </h2>
           {post.summary && (
@@ -68,7 +68,7 @@ export default function PostCard({ post, featured = false }) {
           {formatDate(post.created_date)}
         </span>
       </div>
-      <h3 className="font-inter font-bold text-lg leading-snug mb-1.5 group-hover:text-primary transition-colors tracking-tight">
+      <h3 className="font-sans font-bold text-lg leading-snug mb-1.5 group-hover:text-primary transition-colors tracking-tight">
         {post.title}
       </h3>
       {post.summary && (

@@ -59,7 +59,7 @@ export default function LikeButton({ postId, initialCount = 0, onCountChange }) 
       >
         <Heart className={`h-4 w-4 ${liked ? "fill-current" : ""}`} />
       </motion.div>
-      <span className="text-sm font-inter font-medium">{count}</span>
+      <span className="text-sm font-sans font-medium">{count}</span>
     </button>
   );
 }

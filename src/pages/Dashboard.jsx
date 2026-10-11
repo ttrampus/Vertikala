@@ -114,7 +114,7 @@ export default function Dashboard() {
 
       {visiblePosts.length > 0 && (
         <div className="flex items-center justify-between mb-4 min-h-9">
-          <label className="flex items-center gap-2.5 text-sm text-muted-foreground font-inter cursor-pointer px-4">
+          <label className="flex items-center gap-2.5 text-sm text-muted-foreground font-sans cursor-pointer px-4">
             <Checkbox
               checked={visibleSelected.length === visiblePosts.length}
               onCheckedChange={(v) => setSelected(v ? new Set(visiblePosts.map((p) => p.id)) : new Set())}
@@ -175,7 +175,7 @@ export default function Dashboard() {
               <div className="flex items-center gap-2 mb-0.5">
                 <Link
                   to={`/post/${post.id}`}
-                  className="font-inter font-semibold text-sm truncate hover:text-primary"
+                  className="font-sans font-semibold text-sm truncate hover:text-primary"
                 >
                   {post.title}
                 </Link>

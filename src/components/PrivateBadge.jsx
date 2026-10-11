@@ -6,7 +6,7 @@ export default function PrivateBadge({ small = false }) {
   return (
     <span
       title="Vidno samo prijavljenim članom"
-      className={`inline-flex items-center gap-1 rounded-full bg-muted text-muted-foreground font-inter font-medium flex-shrink-0 ${
+      className={`inline-flex items-center gap-1 rounded-full bg-muted text-muted-foreground font-sans font-medium flex-shrink-0 ${
         small ? "px-2 py-0.5 text-[10px]" : "px-3 py-1 text-xs"
       }`}
     >

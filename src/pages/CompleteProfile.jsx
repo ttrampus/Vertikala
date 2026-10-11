@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/lib/AuthContext";
 import { ThemeCtx } from "@/lib/ThemeContext";
+import Arrow from "@/components/Arrow";
 
 export default function CompleteProfile() {
   const navigate = useNavigate();
@@ -60,12 +61,12 @@ export default function CompleteProfile() {
     width: "100%", boxSizing: "border-box",
     background: theme.inputBg, border: `1px solid ${theme.border}`,
     borderRadius: "6px", padding: "13px 16px",
-    color: theme.text, fontFamily: "'Inter', sans-serif", fontSize: "14px",
+    color: theme.text, fontFamily: "var(--font-sans)", fontSize: "14px",
     outline: "none", transition: "border-color 0.2s, background 0.4s",
   };
 
   const labelStyle = {
-    fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600,
+    fontFamily: "var(--font-display)", fontWeight: 600,
     fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase",
     color: theme.textLow, display: "block", marginBottom: "8px",
   };
@@ -111,19 +112,19 @@ export default function CompleteProfile() {
               <div style={{ width: "56px", height: "56px", background: "rgba(34,197,94,0.1)", border: "2px solid rgba(34,197,94,0.3)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
               </div>
-              <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "22px", letterSpacing: "0.02em", marginBottom: "8px" }}>
+              <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "22px", letterSpacing: "0.02em", marginBottom: "8px" }}>
                 {isNewUser ? "Dobrodošli!" : "Geslo posodobljeno!"}
               </h2>
-              <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "14px", color: theme.textMid }}>Preusmerjam na domačo stran…</p>
+              <p style={{ fontFamily: "var(--font-sans)", fontSize: "14px", color: theme.textMid }}>Preusmerjam na domačo stran…</p>
             </div>
 
           ) : (
             <>
               <div style={{ marginBottom: "28px" }}>
-                <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "22px", letterSpacing: "0.02em", marginBottom: "6px" }}>
+                <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "22px", letterSpacing: "0.02em", marginBottom: "6px" }}>
                   {isNewUser ? "Nastavite račun" : "Spremenite geslo"}
                 </h2>
-                <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", color: theme.textMid }}>
+                <p style={{ fontFamily: "var(--font-sans)", fontSize: "13px", color: theme.textMid }}>
                   {isNewUser
                     ? "Povabljeni ste v AK Vertikala. Nastavite ime in geslo za prijavo."
                     : `Prijavljeni ste kot ${user?.email}. Nastavite novo geslo.`}
@@ -131,7 +132,7 @@ export default function CompleteProfile() {
               </div>
 
               {error && (
-                <div style={{ marginBottom: "20px", padding: "12px 16px", borderRadius: "6px", background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.2)", fontFamily: "'Inter', sans-serif", fontSize: "13px", color: "#ef4444" }}>
+                <div style={{ marginBottom: "20px", padding: "12px 16px", borderRadius: "6px", background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.2)", fontFamily: "var(--font-sans)", fontSize: "13px", color: "#ef4444" }}>
                   {error}
                 </div>
               )}
@@ -198,13 +199,13 @@ export default function CompleteProfile() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  style={{ background: submitting ? "#7a2c0d" : "#E8501A", color: "#fff", border: "none", cursor: submitting ? "not-allowed" : "pointer", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "15px", letterSpacing: "0.1em", textTransform: "uppercase", padding: "15px", borderRadius: "8px", marginTop: "4px", transition: "all 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+                  style={{ background: submitting ? "#7a2c0d" : "#E8501A", color: "#fff", border: "none", cursor: submitting ? "not-allowed" : "pointer", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "15px", letterSpacing: "0.1em", textTransform: "uppercase", padding: "15px", borderRadius: "8px", marginTop: "4px", transition: "all 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
                   onMouseEnter={(e) => { if (!submitting) e.currentTarget.style.background = "#c73d10"; }}
                   onMouseLeave={(e) => { if (!submitting) e.currentTarget.style.background = "#E8501A"; }}
                 >
                   {submitting
                     ? <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" style={{ animation: "spin 0.8s linear infinite" }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Shranjujem...</>
-                    : isNewUser ? "Aktiviraj račun →" : "Posodobi geslo →"
+                    : <>{isNewUser ? "Aktiviraj račun" : "Posodobi geslo"} <Arrow /></>
                   }
                 </button>
               </form>

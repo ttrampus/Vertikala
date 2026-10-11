@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 
 /**
  * Shared stats band, homepage style: theme.statBg strip with centered orange
- * Barlow numbers that count up when scrolled into view. Items are
+ * Display-font numbers that count up when scrolled into view. Items are
  * { val, label }; numeric vals animate, strings ("Mar", "∞", "PZS") render
  * as-is. Isolated component so the ~70 animation state updates re-render
  * only these numbers, never the parent page.
@@ -48,10 +48,10 @@ export default function StatsSection({ theme, items }) {
       <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'grid', gridTemplateColumns: cols }}>
         {items.map((s, i) => (
           <div key={i} style={{ padding: '40px 24px', textAlign: 'center', borderRight: i < items.length - 1 ? `1px solid ${theme.border}` : 'none' }}>
-            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 'clamp(34px, 7vw, 52px)', color: '#E8501A', lineHeight: 1 }}>
+            <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 'clamp(34px, 7vw, 52px)', color: '#E8501A', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
               {typeof s.val === "number" ? Math.round(s.val * progress) : s.val}
             </div>
-            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 500, fontSize: '12px', letterSpacing: '0.2em', textTransform: 'uppercase', color: theme.textLow, marginTop: '8px' }}>{s.label}</div>
+            <div style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: '12px', letterSpacing: '0.2em', textTransform: 'uppercase', color: theme.textLow, marginTop: '8px' }}>{s.label}</div>
           </div>
         ))}
       </div>

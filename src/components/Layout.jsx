@@ -122,7 +122,7 @@ export default function Layout() {
 
   const navBtnStyle = (active) => ({
     background: 'none', border: 'none', cursor: 'pointer',
-    fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600,
+    fontFamily: "var(--font-display)", fontWeight: 600,
     fontSize: '14px', letterSpacing: '0.12em', textTransform: 'uppercase',
     whiteSpace: 'nowrap',
     color: linkColor(active), transition: 'color 0.2s',
@@ -230,7 +230,7 @@ export default function Layout() {
                   background: 'transparent',
                   border: '1.5px solid rgba(232,80,26,0.55)',
                   cursor: 'pointer',
-                  fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700,
+                  fontFamily: "var(--font-display)", fontWeight: 700,
                   fontSize: '13px', letterSpacing: '0.12em', textTransform: 'uppercase',
                   color: '#E8501A', padding: '8px 18px', borderRadius: '4px',
                   transition: 'all 0.2s',
@@ -243,7 +243,7 @@ export default function Layout() {
                 onClick={() => navigate('/login')}
                 style={{
                   background: '#E8501A', border: 'none', cursor: 'pointer',
-                  fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700,
+                  fontFamily: "var(--font-display)", fontWeight: 700,
                   fontSize: '13px', letterSpacing: '0.12em', textTransform: 'uppercase',
                   color: '#fff', padding: '9px 20px', borderRadius: '4px',
                   transition: 'background 0.2s, transform 0.2s',
@@ -286,25 +286,25 @@ export default function Layout() {
             {navLinks.map(l => (
               <button key={l.path} onClick={() => navigate(l.path)} style={{
                 background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
-                fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600,
+                fontFamily: "var(--font-display)", fontWeight: 600,
                 fontSize: '18px', letterSpacing: '0.1em', textTransform: 'uppercase',
                 color: isActive(l.path) ? '#E8501A' : theme.text,
               }}>{l.label}</button>
             ))}
             {user && <>
-              <button onClick={() => navigate('/create')} style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600, fontSize: '18px', letterSpacing: '0.1em', textTransform: 'uppercase', color: isActive('/create') ? '#E8501A' : theme.text }}>Nova objava</button>
-              <button onClick={() => navigate('/dashboard')} style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600, fontSize: '18px', letterSpacing: '0.1em', textTransform: 'uppercase', color: isActive('/dashboard') ? '#E8501A' : theme.text }}>Moje objave</button>
-              <button onClick={() => navigate('/profile')} style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600, fontSize: '18px', letterSpacing: '0.1em', textTransform: 'uppercase', color: isActive('/profile') ? '#E8501A' : theme.text }}>Profil</button>
-              {isAdmin && <button onClick={() => navigate('/admin')} style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600, fontSize: '18px', letterSpacing: '0.1em', textTransform: 'uppercase', color: isActive('/admin') ? '#E8501A' : theme.text }}>Admin</button>}
+              <button onClick={() => navigate('/create')} style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: "var(--font-display)", fontWeight: 600, fontSize: '18px', letterSpacing: '0.1em', textTransform: 'uppercase', color: isActive('/create') ? '#E8501A' : theme.text }}>Nova objava</button>
+              <button onClick={() => navigate('/dashboard')} style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: "var(--font-display)", fontWeight: 600, fontSize: '18px', letterSpacing: '0.1em', textTransform: 'uppercase', color: isActive('/dashboard') ? '#E8501A' : theme.text }}>Moje objave</button>
+              <button onClick={() => navigate('/profile')} style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: "var(--font-display)", fontWeight: 600, fontSize: '18px', letterSpacing: '0.1em', textTransform: 'uppercase', color: isActive('/profile') ? '#E8501A' : theme.text }}>Profil</button>
+              {isAdmin && <button onClick={() => navigate('/admin')} style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: "var(--font-display)", fontWeight: 600, fontSize: '18px', letterSpacing: '0.1em', textTransform: 'uppercase', color: isActive('/admin') ? '#E8501A' : theme.text }}>Admin</button>}
             </>}
             <div style={{ height: '1px', background: theme.border }} />
-            <button onClick={toggleDark} style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600, fontSize: '16px', letterSpacing: '0.1em', textTransform: 'uppercase', color: theme.textLow, display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button onClick={toggleDark} style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: "var(--font-display)", fontWeight: 600, fontSize: '16px', letterSpacing: '0.1em', textTransform: 'uppercase', color: theme.textLow, display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span style={{ color: iconColor }}>{darkMode ? <SunIcon /> : <MoonIcon />}</span>
               {darkMode ? 'Svetli način' : 'Temni način'}
             </button>
             {user
-              ? <button onClick={logout} style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600, fontSize: '18px', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#E8501A' }}>Odjava</button>
-              : <button onClick={() => navigate('/login')} style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600, fontSize: '18px', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#E8501A' }}>Prijava</button>
+              ? <button onClick={logout} style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: "var(--font-display)", fontWeight: 600, fontSize: '18px', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#E8501A' }}>Odjava</button>
+              : <button onClick={() => navigate('/login')} style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: "var(--font-display)", fontWeight: 600, fontSize: '18px', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#E8501A' }}>Prijava</button>
             }
           </div>
         )}

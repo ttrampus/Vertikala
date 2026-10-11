@@ -21,11 +21,11 @@ export default function PageHero({ image, title, alt, subtitle, tag, height = "4
         className="absolute bottom-0 left-0 right-0 px-6 lg:px-16 pb-12"
       >
         {tag && (
-          <p className="text-[10px] font-inter font-semibold tracking-[0.25em] uppercase text-muted-foreground mb-1">
+          <p className="text-[10px] font-sans font-semibold tracking-[0.25em] uppercase text-muted-foreground mb-1">
             {tag}
           </p>
         )}
-        <h1 className="font-inter font-extrabold text-4xl lg:text-5xl tracking-tighter">
+        <h1 className="font-sans font-extrabold text-4xl lg:text-5xl tracking-tighter">
           {title}
         </h1>
         {subtitle && (

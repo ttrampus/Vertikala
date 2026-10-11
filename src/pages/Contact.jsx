@@ -1,6 +1,8 @@
 import { useState, useEffect, useContext } from "react";
 import { ThemeCtx } from "@/lib/ThemeContext";
 import HeroBg from "@/components/HeroBg";
+import { Check } from "lucide-react";
+import Arrow from "@/components/Arrow";
 
 export default function Contact() {
   const theme = useContext(ThemeCtx);
@@ -28,12 +30,12 @@ export default function Contact() {
     width: '100%', boxSizing: 'border-box',
     background: theme.inputBg, border: `1px solid ${theme.border}`,
     borderRadius: '6px', padding: '14px 16px',
-    color: theme.text, fontFamily: "'Inter', sans-serif", fontSize: '14px',
+    color: theme.text, fontFamily: "var(--font-sans)", fontSize: '14px',
     outline: 'none', transition: 'border-color 0.2s, background 0.4s',
   };
 
   const labelStyle = {
-    fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600,
+    fontFamily: "var(--font-display)", fontWeight: 600,
     fontSize: '12px', letterSpacing: '0.15em', textTransform: 'uppercase',
     color: theme.textLow, display: 'block', marginBottom: '8px',
   };
@@ -55,9 +57,9 @@ export default function Contact() {
         <HeroBg src="https://images.unsplash.com/photo-1491555103944-7c647fd857e6?w=1600&q=80" position="center 40%" />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(10,10,10,0.97) 100%)' }} />
         <div style={{ position: 'relative', zIndex: 1, padding: '0 var(--page-x) 64px' }}>
-          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '12px', letterSpacing: '0.3em', textTransform: 'uppercase', color: '#E8501A', marginBottom: '16px', opacity: 0, animation: 'fadeUp 0.8s 0.3s forwards' }}>Kontakt</div>
-          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 'clamp(56px,8vw,96px)', lineHeight: 0.95, margin: '0 0 16px', color: '#fff', opacity: 0, animation: 'fadeUp 0.8s 0.5s forwards' }}>Stopite v stik</h1>
-          <p style={{ fontFamily: "'Inter', sans-serif", fontWeight: 300, fontSize: '17px', color: 'rgba(255,255,255,0.55)', opacity: 0, animation: 'fadeUp 0.8s 0.7s forwards' }}>Z veseljem odgovorimo na vsa vaša vprašanja.</p>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: '12px', letterSpacing: '0.3em', textTransform: 'uppercase', color: '#E8501A', marginBottom: '16px', opacity: 0, animation: 'fadeUp 0.8s 0.3s forwards' }}>Kontakt</div>
+          <h1 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 'clamp(56px,8vw,96px)', lineHeight: 0.95, margin: '0 0 16px', color: '#fff', opacity: 0, animation: 'fadeUp 0.8s 0.5s forwards' }}>Stopite v stik</h1>
+          <p style={{ fontFamily: "var(--font-sans)", fontWeight: 300, fontSize: '17px', color: 'rgba(255,255,255,0.55)', opacity: 0, animation: 'fadeUp 0.8s 0.7s forwards' }}>Z veseljem odgovorimo na vsa vaša vprašanja.</p>
         </div>
       </div>
 
@@ -66,7 +68,7 @@ export default function Contact() {
           {/* Info */}
           <div data-reveal="contact-info" style={{ ...rev('contact-info') }}>
             <div style={{ width: '40px', height: '3px', background: '#E8501A', borderRadius: '2px', marginBottom: '32px' }} />
-            <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: '36px', margin: '0 0 32px', lineHeight: 1 }}>Kontaktni podatki</h2>
+            <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: '36px', margin: '0 0 32px', lineHeight: 1 }}>Kontaktni podatki</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               {[
                 {
@@ -85,8 +87,8 @@ export default function Contact() {
                 <div key={i} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
                   <div style={{ width: '44px', height: '44px', borderRadius: '8px', background: 'rgba(232,80,26,0.1)', border: '1px solid rgba(232,80,26,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{c.icon}</div>
                   <div>
-                    <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '12px', letterSpacing: '0.15em', textTransform: 'uppercase', color: theme.textLow, marginBottom: '4px' }}>{c.label}</div>
-                    <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '14px', color: theme.textMid, lineHeight: 1.5, whiteSpace: 'pre-line' }}>{c.val}</div>
+                    <div style={{ fontFamily: "var(--font-display)", fontSize: '12px', letterSpacing: '0.15em', textTransform: 'uppercase', color: theme.textLow, marginBottom: '4px' }}>{c.label}</div>
+                    <div style={{ fontFamily: "var(--font-sans)", fontSize: '14px', color: theme.textMid, lineHeight: 1.5, whiteSpace: 'pre-line' }}>{c.val}</div>
                   </div>
                 </div>
               ))}
@@ -100,10 +102,10 @@ export default function Contact() {
           <div data-reveal="contact-form" style={{ ...rev('contact-form', 0.15) }}>
             {sent ? (
               <div style={{ textAlign: 'center', padding: '80px 40px', background: theme.bgCard, borderRadius: '12px', border: '1px solid rgba(232,80,26,0.2)', transition: 'background 0.4s' }}>
-                <div style={{ fontSize: 'clamp(30px, 6vw, 48px)', marginBottom: '20px', color: '#E8501A' }}>✓</div>
-                <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: '36px', margin: '0 0 12px', color: '#E8501A' }}>Sporočilo poslano!</h3>
-                <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '15px', color: theme.textMid, lineHeight: 1.6 }}>Hvala za vaše sporočilo. Odgovorili vam bomo v najkrajšem možnem času.</p>
-                <button onClick={() => { setSent(false); setForm({ name: '', email: '', subject: '', message: '' }); }} style={{ marginTop: '28px', background: 'none', border: `1px solid ${theme.border}`, color: theme.text, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600, fontSize: '13px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '10px 24px', borderRadius: '4px', cursor: 'pointer' }}>Novo sporočilo</button>
+                <Check size={44} color="#E8501A" strokeWidth={2.5} style={{ display: 'block', margin: '0 auto 20px' }} aria-hidden="true" />
+                <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: '36px', margin: '0 0 12px', color: '#E8501A' }}>Sporočilo poslano!</h3>
+                <p style={{ fontFamily: "var(--font-sans)", fontSize: '15px', color: theme.textMid, lineHeight: 1.6 }}>Hvala za vaše sporočilo. Odgovorili vam bomo v najkrajšem možnem času.</p>
+                <button onClick={() => { setSent(false); setForm({ name: '', email: '', subject: '', message: '' }); }} style={{ marginTop: '28px', background: 'none', border: `1px solid ${theme.border}`, color: theme.text, fontFamily: "var(--font-display)", fontWeight: 600, fontSize: '13px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '10px 24px', borderRadius: '4px', cursor: 'pointer' }}>Novo sporočilo</button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -133,13 +135,13 @@ export default function Contact() {
                 <button
                   type="submit"
                   disabled={sending}
-                  style={{ background: sending ? '#7a2c0d' : '#E8501A', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '15px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '16px 36px', borderRadius: '6px', alignSelf: 'flex-start', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '8px' }}
+                  style={{ background: sending ? '#7a2c0d' : '#E8501A', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "var(--font-display)", fontWeight: 700, fontSize: '15px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '16px 36px', borderRadius: '6px', alignSelf: 'flex-start', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '8px' }}
                   onMouseEnter={e => { if (!sending) e.currentTarget.style.background = '#c73d10'; }}
                   onMouseLeave={e => { if (!sending) e.currentTarget.style.background = '#E8501A'; }}
                 >
                   {sending ? (
                     <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" style={{ animation: 'spin 0.8s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Pošiljam...</>
-                  ) : 'Pošlji sporočilo →'}
+                  ) : <>Pošlji sporočilo <Arrow /></>}
                 </button>
               </form>
             )}

@@ -1,6 +1,6 @@
 import { useState, useContext } from "react";
 import { ThemeCtx } from "@/lib/ThemeContext";
-import { ChevronDown, ChevronUp, ArrowUpRight } from "lucide-react";
+import { ChevronDown, ChevronUp, ArrowUpRight, Link2 } from "lucide-react";
 
 const LINKS = [
   { label: "Dokumenti AK Vertikala", url: "https://drive.google.com/drive/folders/0B5LWMyPGscYsMmdBNTIySlFWcjg" },
@@ -36,9 +36,9 @@ export default function UsefulLinks() {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 20 }}>🔗</span>
+          <Link2 size={20} color="#E8501A" strokeWidth={1.75} aria-hidden="true" />
           <span style={{
-            fontFamily: "'Barlow Condensed', sans-serif",
+            fontFamily: "var(--font-display)",
             fontWeight: 700, fontSize: 15,
             letterSpacing: "0.08em", textTransform: "uppercase",
             color: theme.text,
@@ -47,7 +47,7 @@ export default function UsefulLinks() {
           </span>
           <span style={{
             fontSize: 11, color: theme.textLow,
-            fontFamily: "'Barlow Condensed', sans-serif",
+            fontFamily: "var(--font-display)",
             letterSpacing: "0.04em",
           }}>{LINKS.length} virov</span>
         </div>
@@ -66,7 +66,7 @@ export default function UsefulLinks() {
               rel="noopener noreferrer"
               style={{
                 display: "inline-flex", alignItems: "center", gap: 6,
-                fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600,
+                fontFamily: "var(--font-display)", fontWeight: 600,
                 fontSize: 13, letterSpacing: "0.06em",
                 color: theme.textMid, textDecoration: "none",
                 background: theme.bgAlt, border: `1px solid ${theme.border}`,

@@ -1,6 +1,10 @@
 import { useState, useEffect, useContext } from "react";
 import { ThemeCtx } from "@/lib/ThemeContext";
-import { Cloud, Wind, Thermometer, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
+import {
+  Wind, Thermometer, ChevronDown, ChevronUp, ExternalLink, MountainSnow,
+  Sun, CloudSun, Cloudy, CloudFog, CloudDrizzle, CloudRain, CloudRainWind,
+  CloudSnow, Snowflake, CloudHail, CloudSunRain, CloudLightning,
+} from "lucide-react";
 
 const LOCATIONS = [
   { name: "Triglav", lat: 46.3793, lon: 13.8396, elevation: 2864 },
@@ -20,15 +24,15 @@ const WMO_LABELS = {
   95: "Nevihta", 96: "Nevihta s točo", 99: "Huda nevihta s točo",
 };
 
-const WMO_EMOJI = {
-  0: "☀️", 1: "🌤️", 2: "⛅", 3: "☁️",
-  45: "🌫️", 48: "🌫️",
-  51: "🌦️", 53: "🌦️", 55: "🌧️",
-  61: "🌧️", 63: "🌧️", 65: "🌧️",
-  71: "🌨️", 73: "❄️", 75: "❄️", 77: "🌨️",
-  80: "🌦️", 81: "🌧️", 82: "⛈️",
-  85: "🌨️", 86: "❄️",
-  95: "⛈️", 96: "⛈️", 99: "⛈️",
+const WMO_ICONS = {
+  0: Sun, 1: CloudSun, 2: CloudSun, 3: Cloudy,
+  45: CloudFog, 48: CloudFog,
+  51: CloudDrizzle, 53: CloudDrizzle, 55: CloudDrizzle,
+  61: CloudRain, 63: CloudRain, 65: CloudRainWind,
+  71: CloudSnow, 73: CloudSnow, 75: Snowflake, 77: CloudHail,
+  80: CloudSunRain, 81: CloudRain, 82: CloudLightning,
+  85: CloudSnow, 86: Snowflake,
+  95: CloudLightning, 96: CloudLightning, 99: CloudLightning,
 };
 
 const DAYS_SL = ["Ned", "Pon", "Tor", "Sre", "Čet", "Pet", "Sob"];
@@ -36,8 +40,11 @@ const DAYS_SL = ["Ned", "Pon", "Tor", "Sre", "Čet", "Pet", "Sob"];
 function weatherLabel(code) {
   return WMO_LABELS[code] ?? "Neznano";
 }
-function weatherEmoji(code) {
-  return WMO_EMOJI[code] ?? "🌡️";
+// `label` names the icon for screen readers where no text sits next to it.
+function WeatherIcon({ code, size, color, label }) {
+  const Icon = WMO_ICONS[code] ?? Thermometer;
+  const a11y = label ? { role: "img", "aria-label": label } : { "aria-hidden": true };
+  return <Icon size={size} color={color} strokeWidth={size > 24 ? 1.5 : 1.75} style={{ flexShrink: 0 }} {...a11y} />;
 }
 
 async function fetchWeather(lat, lon) {
@@ -102,9 +109,9 @@ export default function WeatherWidget() {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 20 }}>🏔️</span>
+          <MountainSnow size={20} color="#E8501A" strokeWidth={1.75} aria-hidden="true" />
           <span style={{
-            fontFamily: "'Barlow Condensed', sans-serif",
+            fontFamily: "var(--font-display)",
             fontWeight: 700, fontSize: 15,
             letterSpacing: "0.08em", textTransform: "uppercase",
             color: theme.text,
@@ -113,7 +120,7 @@ export default function WeatherWidget() {
           </span>
           <span style={{
             fontSize: 11, color: theme.textLow,
-            fontFamily: "'Barlow Condensed', sans-serif",
+            fontFamily: "var(--font-display)",
             letterSpacing: "0.04em",
           }}>via Open-Meteo</span>
         </div>
@@ -137,7 +144,7 @@ export default function WeatherWidget() {
                   background: selected === i ? "rgba(232,80,26,0.12)" : "none",
                   color: selected === i ? "#E8501A" : theme.textMid,
                   cursor: "pointer",
-                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontFamily: "var(--font-display)",
                   fontWeight: 600, fontSize: 13,
                   letterSpacing: "0.06em",
                   transition: "all 0.15s",
@@ -166,14 +173,12 @@ export default function WeatherWidget() {
               }}>
                 <div style={{
                   fontSize: 11, color: theme.textLow,
-                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontFamily: "var(--font-display)",
                   letterSpacing: "0.08em", textTransform: "uppercase",
                   marginBottom: 12,
                 }}>Trenutno · {loc.name}</div>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
-                  <span style={{ fontSize: 40, lineHeight: 1 }}>
-                    {weatherEmoji(current?.weather_code)}
-                  </span>
+                  <WeatherIcon code={current?.weather_code} size={40} color="#E8501A" />
                   <div>
                     <div style={{ fontSize: 32, fontWeight: 700, color: theme.text, lineHeight: 1 }}>
                       {Math.round(current?.temperature_2m ?? 0)}°C
@@ -199,7 +204,7 @@ export default function WeatherWidget() {
               }}>
                 <div style={{
                   fontSize: 11, color: theme.textLow,
-                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontFamily: "var(--font-display)",
                   letterSpacing: "0.08em", textTransform: "uppercase",
                   marginBottom: 12,
                 }}>3-dnevna napoved</div>
@@ -210,7 +215,7 @@ export default function WeatherWidget() {
                     return (
                       <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                         <span style={{ fontSize: 12, color: theme.textMid, width: 50 }}>{dayName}</span>
-                        <span style={{ fontSize: 16 }}>{weatherEmoji(daily.weather_code[i])}</span>
+                        <WeatherIcon code={daily.weather_code[i]} size={16} color={theme.textMid} label={weatherLabel(daily.weather_code[i])} />
                         <span style={{ fontSize: 12, color: theme.text, fontWeight: 600 }}>
                           {Math.round(daily.temperature_2m_min[i])}° / {Math.round(daily.temperature_2m_max[i])}°
                         </span>
@@ -230,7 +235,7 @@ export default function WeatherWidget() {
               style={{
                 display: "inline-flex", alignItems: "center", gap: 5,
                 fontSize: 12, color: "#E8501A", textDecoration: "none",
-                fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600, letterSpacing: "0.02em",
+                fontFamily: "var(--font-display)", fontWeight: 600, letterSpacing: "0.02em",
               }}
             >
               Podrobna gorska napoved na vremehribi.si <ExternalLink size={11} />

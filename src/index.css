@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Newsreader:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&display=swap');
-
 /* stylelint-disable at-rule-no-unknown */
 @tailwind base;
 @tailwind components;
@@ -7,8 +5,11 @@
 
 @layer base {
   :root {
-    --font-inter: 'Inter', sans-serif;
-    --font-serif: 'Newsreader', serif;
+    /* Pisave se naložijo v index.html. Archivo je tam zahtevan samo v ozki
+       širini (wdth 66), zato je naslovna pisava ozka brez dodatnega CSS. */
+    --font-display: 'Archivo', 'Arial Narrow', Arial, sans-serif;
+    --font-sans: 'Libre Franklin', 'Helvetica Neue', Arial, sans-serif;
+    --font-serif: 'Gentium Book Plus', Georgia, serif;
 
     --background: 210 20% 98%;
     --foreground: 222 47% 11%;
@@ -86,7 +87,7 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground font-inter;
+    @apply bg-background text-foreground font-sans;
   }
 
   /* Enhanced focus styles */
@@ -136,16 +137,6 @@
     }
   }
 
-  /* Glassmorphism effect */
-  .glass {
-    @apply bg-white/30 backdrop-blur-lg border border-white/20;
-  }
-
-  /* Gradient text */
-  .gradient-text {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-orange-400;
-  }
-
   /* Hover lift effect */
   .hover-lift {
     @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
@@ -177,6 +168,12 @@
     @apply translate-y-0;
   }
 }
+
+/* Naslovna pisava je povsod nastavljena v vrstici (style), zato pravilo
+   cilja na ta atribut. Širino 66 % zahtevamo tudi izrecno, da ozka oblika
+   ni odvisna od tega, kako brskalnik izbere edino naloženo širino. Ozki
+   Archivo ima tesen presledek med besedami, zato ga malo razširimo. */
+[style*="--font-display"], .font-display { font-stretch: 66%; word-spacing: 0.06em; }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {

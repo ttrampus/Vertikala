@@ -60,7 +60,7 @@ export const DEFAULT_SCHOOL = {
     address: "Pločanska 8, Tacen, Ljubljana",
     accreditationTitle: "Akreditacija",
     accreditationText: "Program „Skalni plezalci“ pod okriljem Komisije za alpinizem PZS.",
-    noticeTitle: "⚠ Omejeno število mest",
+    noticeTitle: "Omejeno število mest",
     noticeText: "Prijavite se čim prej — število udeležencev je omejeno.",
   },
 };

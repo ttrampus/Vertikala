@@ -15,6 +15,7 @@ import CoverImage from "../components/CoverImage";
 import Lightbox from "../components/Lightbox";
 import ElevationDivider from "../components/ElevationDivider";
 import ClimbMetaCard from "../components/ClimbMetaCard";
+import Arrow from "@/components/Arrow";
 
 // Anonymous readers need a stable per-browser id so the server can dedupe
 // their views (one per post per day) without an account — same idea as an
@@ -144,7 +145,7 @@ export default function PostDetail() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <p className="font-serif text-lg text-muted-foreground">Objava ni najdena</p>
-        <Link to="/" className="text-primary hover:underline font-inter text-sm">← Nazaj na domačo stran</Link>
+        <Link to="/" className="text-primary hover:underline font-sans text-sm"><Arrow left /> Nazaj na domačo stran</Link>
       </div>
     );
   }
@@ -164,7 +165,7 @@ export default function PostDetail() {
               {post.is_public === false && <PrivateBadge />}
             </div>
           )}
-          <h1 className="font-inter font-extrabold text-3xl lg:text-4xl tracking-tighter leading-tight mb-3">
+          <h1 className="font-sans font-extrabold text-3xl lg:text-4xl tracking-tighter leading-tight mb-3">
             {post.title}
           </h1>
           {post.summary && (
@@ -173,7 +174,7 @@ export default function PostDetail() {
             </p>
           )}
           <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1.5 font-inter font-medium text-foreground/80">
+            <span className="flex items-center gap-1.5 font-sans font-medium text-foreground/80">
               {post.author_avatar
                 ? <img src={post.author_avatar} alt="" className="h-5 w-5 rounded-full object-cover" />
                 : <User className="h-4 w-4" />}
@@ -228,7 +229,7 @@ export default function PostDetail() {
             {post.tags.map((tag) => (
               <span
                 key={tag}
-                className="px-3 py-1 rounded-full bg-muted text-muted-foreground text-xs font-inter"
+                className="px-3 py-1 rounded-full bg-muted text-muted-foreground text-xs font-sans"
               >
                 #{tag}
               </span>

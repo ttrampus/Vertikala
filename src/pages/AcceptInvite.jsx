@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/lib/AuthContext";
 import { ThemeCtx } from "@/lib/ThemeContext";
+import Arrow from "@/components/Arrow";
 
 export default function AcceptInvite() {
   const { token } = useParams();
@@ -102,12 +103,12 @@ export default function AcceptInvite() {
     width: "100%", boxSizing: "border-box",
     background: theme.inputBg, border: `1px solid ${theme.border}`,
     borderRadius: "6px", padding: "13px 16px",
-    color: theme.text, fontFamily: "'Inter', sans-serif", fontSize: "14px",
+    color: theme.text, fontFamily: "var(--font-sans)", fontSize: "14px",
     outline: "none", transition: "border-color 0.2s, background 0.4s",
   };
 
   const labelStyle = {
-    fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600,
+    fontFamily: "var(--font-display)", fontWeight: 600,
     fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase",
     color: theme.textLow, display: "block", marginBottom: "8px",
   };
@@ -153,9 +154,9 @@ export default function AcceptInvite() {
               <div style={{ width: "56px", height: "56px", background: "rgba(220,38,38,0.1)", border: "2px solid rgba(220,38,38,0.2)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               </div>
-              <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "20px", letterSpacing: "0.02em", marginBottom: "12px" }}>Povabilo ni veljavno</h2>
-              <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "14px", color: theme.textMid, lineHeight: 1.6 }}>{tokenError}</p>
-              <button onClick={() => navigate("/")} style={{ marginTop: "24px", background: "none", border: `1px solid ${theme.border}`, borderRadius: "8px", padding: "10px 20px", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "13px", color: theme.textMid }}>← Domov</button>
+              <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "20px", letterSpacing: "0.02em", marginBottom: "12px" }}>Povabilo ni veljavno</h2>
+              <p style={{ fontFamily: "var(--font-sans)", fontSize: "14px", color: theme.textMid, lineHeight: 1.6 }}>{tokenError}</p>
+              <button onClick={() => navigate("/")} style={{ marginTop: "24px", background: "none", border: `1px solid ${theme.border}`, borderRadius: "8px", padding: "10px 20px", cursor: "pointer", fontFamily: "var(--font-sans)", fontSize: "13px", color: theme.textMid }}><Arrow left /> Domov</button>
             </div>
 
           ) : done ? (
@@ -163,28 +164,28 @@ export default function AcceptInvite() {
               <div style={{ width: "56px", height: "56px", background: "rgba(34,197,94,0.1)", border: "2px solid rgba(34,197,94,0.3)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
               </div>
-              <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "20px", letterSpacing: "0.02em", marginBottom: "12px" }}>Dobrodošli!</h2>
-              <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "14px", color: theme.textMid, lineHeight: 1.6, marginBottom: "24px" }}>
+              <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "20px", letterSpacing: "0.02em", marginBottom: "12px" }}>Dobrodošli!</h2>
+              <p style={{ fontFamily: "var(--font-sans)", fontSize: "14px", color: theme.textMid, lineHeight: 1.6, marginBottom: "24px" }}>
                 Vaš račun je bil ustvarjen. {" "}
                 {import.meta.env.VITE_SUPABASE_EMAIL_CONFIRM !== "false" && "Preverite e-pošto za potrditveno sporočilo, nato se "}
                 Prijavite se z vašim e-poštnim naslovom in geslom.
               </p>
-              <button onClick={() => navigate("/login")} style={{ background: "#E8501A", color: "#fff", border: "none", borderRadius: "8px", padding: "13px 28px", cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "15px", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                Prijava →
+              <button onClick={() => navigate("/login")} style={{ background: "#E8501A", color: "#fff", border: "none", borderRadius: "8px", padding: "13px 28px", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "15px", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                Prijava <Arrow />
               </button>
             </div>
 
           ) : (
             <>
               <div style={{ marginBottom: "28px" }}>
-                <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "22px", letterSpacing: "0.02em", marginBottom: "6px" }}>Ustvarite račun</h2>
-                <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", color: theme.textMid }}>
+                <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "22px", letterSpacing: "0.02em", marginBottom: "6px" }}>Ustvarite račun</h2>
+                <p style={{ fontFamily: "var(--font-sans)", fontSize: "13px", color: theme.textMid }}>
                   Povabljeni ste bili z naslovom <strong style={{ color: theme.text }}>{invite?.email}</strong>
                 </p>
               </div>
 
               {formError && (
-                <div style={{ marginBottom: "20px", padding: "12px 16px", borderRadius: "6px", background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.2)", fontFamily: "'Inter', sans-serif", fontSize: "13px", color: "#ef4444" }}>
+                <div style={{ marginBottom: "20px", padding: "12px 16px", borderRadius: "6px", background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.2)", fontFamily: "var(--font-sans)", fontSize: "13px", color: "#ef4444" }}>
                   {formError}
                 </div>
               )}
@@ -251,13 +252,13 @@ export default function AcceptInvite() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  style={{ background: submitting ? "#7a2c0d" : "#E8501A", color: "#fff", border: "none", cursor: submitting ? "not-allowed" : "pointer", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "15px", letterSpacing: "0.1em", textTransform: "uppercase", padding: "15px", borderRadius: "8px", marginTop: "4px", transition: "all 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+                  style={{ background: submitting ? "#7a2c0d" : "#E8501A", color: "#fff", border: "none", cursor: submitting ? "not-allowed" : "pointer", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "15px", letterSpacing: "0.1em", textTransform: "uppercase", padding: "15px", borderRadius: "8px", marginTop: "4px", transition: "all 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
                   onMouseEnter={(e) => { if (!submitting) e.currentTarget.style.background = "#c73d10"; }}
                   onMouseLeave={(e) => { if (!submitting) e.currentTarget.style.background = "#E8501A"; }}
                 >
                   {submitting
                     ? <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" style={{ animation: "spin 0.8s linear infinite" }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Ustvarjam račun...</>
-                    : "Ustvari račun →"
+                    : <>Ustvari račun <Arrow /></>
                   }
                 </button>
               </form>
@@ -266,9 +267,9 @@ export default function AcceptInvite() {
         </div>
 
         <div style={{ textAlign: "center", marginTop: "24px" }}>
-          <button onClick={() => navigate("/")} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "13px", color: theme.textFaint, transition: "color 0.2s" }}
+          <button onClick={() => navigate("/")} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-sans)", fontSize: "13px", color: theme.textFaint, transition: "color 0.2s" }}
             onMouseEnter={(e) => e.target.style.color = theme.textMid}
-            onMouseLeave={(e) => e.target.style.color = theme.textFaint}>← Nazaj na domačo stran</button>
+            onMouseLeave={(e) => e.target.style.color = theme.textFaint}><Arrow left /> Nazaj na domačo stran</button>
         </div>
       </div>
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
