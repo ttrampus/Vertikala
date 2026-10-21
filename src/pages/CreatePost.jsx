@@ -23,11 +23,13 @@ import {
   Minus, Undo, Redo, Columns2,
 } from "lucide-react";
 
-import { useEditor, EditorContent, Node, mergeAttributes } from "@tiptap/react";
+import { useEditor, EditorContent, Node } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import TextAlign from "@tiptap/extension-text-align";
 import { FigureNode } from "@/lib/FigureNode";
 import { RawHtmlNode } from "@/lib/RawHtmlNode";
+import { ImageRow } from "@/lib/ImageRowNode";
+import SideBySideModal from "@/components/SideBySideModal";
 import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
@@ -134,69 +136,6 @@ const VideoNode = Node.create({
         video.style.cssText = "width:100%;display:block;max-height:480px;background:#000;";
         wrapper.appendChild(video);
       }
-
-      return { dom: wrapper };
-    };
-  },
-});
-
-// ── Custom TipTap node for side-by-side images ────────────────────────────────
-const ImageRow = Node.create({
-  name: "imageRow",
-  group: "block",
-  atom: true,
-  draggable: true,
-
-  addAttributes() {
-    return {
-      urls: { default: [] },
-      gap: { default: 8 },
-    };
-  },
-
-  parseHTML() {
-    return [{ tag: 'div[data-type="image-row"]' }];
-  },
-
-  renderHTML({ HTMLAttributes, node }) {
-    const { urls, gap } = node.attrs;
-    const gapPx = parseInt(gap, 10);
-    const pct = Math.floor(100 / urls.length);
-
-    const cells = urls.map((url) => {
-      const cell = document.createElement("div");
-      cell.style.cssText = `width:${pct}%;padding:0 ${gapPx / 2}px;box-sizing:border-box;`;
-      const img = document.createElement("img");
-      img.src = url;
-      img.style.cssText = "width:100%;height:auto;display:block;border-radius:6px;";
-      cell.appendChild(img);
-      return cell.outerHTML;
-    }).join("");
-
-    return ["div", mergeAttributes(HTMLAttributes, {
-      "data-type": "image-row",
-      style: `display:flex;flex-direction:row;width:100%;margin:12px 0;`,
-    }), ["span", { innerHTML: cells }]];
-  },
-
-  addNodeView() {
-    return ({ node }) => {
-      const { urls, gap } = node.attrs;
-      const gapPx = parseInt(gap, 10);
-
-      const wrapper = document.createElement("div");
-      wrapper.style.cssText = "display:flex;flex-direction:row;width:100%;margin:12px 0;overflow:hidden;";
-      wrapper.setAttribute("data-type", "image-row");
-
-      urls.forEach((url) => {
-        const cell = document.createElement("div");
-        cell.style.cssText = `flex:1;min-width:0;padding:0 ${gapPx / 2}px;box-sizing:border-box;`;
-        const img = document.createElement("img");
-        img.src = url;
-        img.style.cssText = "width:100%;height:auto;display:block;border-radius:6px;";
-        cell.appendChild(img);
-        wrapper.appendChild(cell);
-      });
 
       return { dom: wrapper };
     };
@@ -335,102 +274,6 @@ function LinkModal({ onInsert, onClose }) {
         <div className="flex gap-2 justify-end mt-4">
           <Button variant="outline" size="sm" onClick={onClose}>Prekliči</Button>
           <Button size="sm" onClick={handle} disabled={!url.trim()}>Vstavi</Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Side-by-side modal ────────────────────────────────────────────────────────
-function SideBySideModal({ editor, onClose }) {
-  const [slots, setSlots] = useState([null, null]);
-  const [previews, setPreviews] = useState([null, null]);
-  const [uploading, setUploading] = useState(false);
-  const [gap, setGap] = useState("8");
-
-  const pick = (i) => (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const ns = [...slots]; ns[i] = file; setSlots(ns);
-    const np = [...previews]; np[i] = URL.createObjectURL(file); setPreviews(np);
-  };
-  const addSlot = () => { if (slots.length < 4) { setSlots([...slots, null]); setPreviews([...previews, null]); } };
-  const removeSlot = (i) => { setSlots(slots.filter((_, j) => j !== i)); setPreviews(previews.filter((_, j) => j !== i)); };
-
-  const insert = async () => {
-    const files = slots.filter(Boolean);
-    if (files.length < 2) return alert("Izberite vsaj 2 sliki.");
-    setUploading(true);
-    try {
-      const urls = await Promise.all(files.map((f) => uploadToSupabase(f, "inline")));
-      editor.chain().focus().insertContent({
-        type: "imageRow",
-        attrs: { urls, gap: parseInt(gap, 10) },
-      }).run();
-      onClose();
-    } catch (err) {
-      alert(`Nalaganje ni uspelo: ${err.message}`);
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const backdrop = useBackdropClose(onClose);
-  return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
-      {...backdrop}>
-      <div className="bg-background rounded-2xl p-6 w-full max-w-lg shadow-2xl border border-border">
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <h3 className="font-semibold text-base">Slike drug ob drugem</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">Izberite 2–4 slike za vrstico</p>
-          </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground flex" aria-label="Zapri"><X className="h-5 w-5" aria-hidden="true" /></button>
-        </div>
-
-        <div className="grid gap-2 mb-4" style={{ gridTemplateColumns: `repeat(${slots.length}, 1fr)` }}>
-          {slots.map((_, i) => (
-            <div key={i} className="relative">
-              <label className="flex flex-col items-center justify-center cursor-pointer overflow-hidden rounded-xl"
-                style={{ aspectRatio: "4/3", border: previews[i] ? "none" : "2px dashed hsl(var(--border))", background: previews[i] ? "none" : "hsl(var(--muted))" }}>
-                {previews[i]
-                  ? <img src={previews[i]} className="w-full h-full object-cover" alt="" />
-                  : <div className="text-center text-muted-foreground">
-                      <ImageIcon size={20} className="mx-auto mb-1" />
-                      <span className="text-xs">Slika {i + 1}</span>
-                    </div>}
-                <input type="file" accept="image/*" onChange={pick(i)} className="hidden" />
-              </label>
-              {slots.length > 2 && (
-                <button onClick={() => removeSlot(i)}
-                  className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-black/60 text-white text-xs flex items-center justify-center hover:bg-black/80" aria-label="Odstrani"><X className="h-3 w-3" aria-hidden="true" /></button>
-              )}
-            </div>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-3 mb-5">
-          {slots.length < 4 && (
-            <button onClick={addSlot} className="text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors">+ Dodaj stolpec</button>
-          )}
-          <label className="ml-auto text-xs text-muted-foreground flex items-center gap-2">
-            Razmik:
-            <select value={gap} onChange={(e) => setGap(e.target.value)}
-              className="border border-border rounded-md px-2 py-1 text-xs bg-background">
-              <option value="4">Tesno</option>
-              <option value="8">Normalno</option>
-              <option value="16">Široko</option>
-              <option value="24">Zelo široko</option>
-            </select>
-          </label>
-        </div>
-
-        <div className="flex gap-2 justify-end">
-          <Button variant="outline" size="sm" onClick={onClose}>Prekliči</Button>
-          <Button size="sm" onClick={insert} disabled={uploading || slots.filter(Boolean).length < 2} className="gap-2">
-            {uploading && <Loader2 size={13} className="animate-spin" />}
-            {uploading ? "Nalagam…" : "Vstavi slike"}
-          </Button>
         </div>
       </div>
     </div>

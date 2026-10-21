@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -24,6 +24,19 @@ export default function Lightbox({ images = [], index = null, onClose }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [open, images.length, onClose]);
 
+  // Swipe left/right on a phone to change photo.
+  const touchX = useRef(null);
+  const onTouchStart = (e) => { touchX.current = e.touches[0].clientX; };
+  const onTouchEnd = (e) => {
+    if (touchX.current === null || images.length < 2) return;
+    const delta = e.changedTouches[0].clientX - touchX.current;
+    touchX.current = null;
+    if (Math.abs(delta) > 50) (delta < 0 ? next : prev)();
+  };
+
+  // Round dark buttons stay visible over bright photos and the site header.
+  const btn = "absolute z-10 flex items-center justify-center w-11 h-11 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors";
+
   return (
     <AnimatePresence>
       {open && (
@@ -31,25 +44,29 @@ export default function Lightbox({ images = [], index = null, onClose }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center"
+          className="fixed inset-0 z-[110] bg-black/95 flex items-center justify-center"
           onClick={onClose}
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
         >
-          <button className="absolute top-4 right-4 text-white/80 hover:text-white z-10" onClick={onClose}>
-            <X className="h-8 w-8" />
+          <button type="button" aria-label="Zapri" className={`${btn} right-4`}
+            style={{ top: "max(1rem, env(safe-area-inset-top))" }}
+            onClick={(e) => { e.stopPropagation(); onClose(); }}>
+            <X className="h-6 w-6" />
           </button>
           {images.length > 1 && (
             <>
-              <button
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-white/80 hover:text-white z-10"
+              <button type="button" aria-label="Prejšnja slika"
+                className={`${btn} left-3 top-1/2 -translate-y-1/2`}
                 onClick={(e) => { e.stopPropagation(); prev(); }}
               >
-                <ChevronLeft className="h-10 w-10" />
+                <ChevronLeft className="h-7 w-7" />
               </button>
-              <button
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/80 hover:text-white z-10"
+              <button type="button" aria-label="Naslednja slika"
+                className={`${btn} right-3 top-1/2 -translate-y-1/2`}
                 onClick={(e) => { e.stopPropagation(); next(); }}
               >
-                <ChevronRight className="h-10 w-10" />
+                <ChevronRight className="h-7 w-7" />
               </button>
             </>
           )}

@@ -1,12 +1,18 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { NodeSelection } from "@tiptap/pm/state";
-import { AlignLeft, AlignCenter, AlignRight } from "lucide-react";
+import { AlignLeft, AlignCenter, AlignRight, ArrowLeftRight } from "lucide-react";
 import { WRAP_MAX_FRACTION } from "@/lib/FigureNode";
+import SideBySideModal from "@/components/SideBySideModal";
+import GalleryOrderModal, { gallerySources } from "@/components/GalleryOrderModal";
 
 // Block nodes that carry images in the post editor. Clicking an <img> inside
 // one of these selects the whole node — that's what Delete removes and what
 // a drag moves.
-const IMAGE_NODES = new Set(["figure", "imageRow", "videoNode"]);
+const IMAGE_NODES = new Set(["figure", "imageRow", "videoNode", "rawHtml"]);
+// Side-by-side rows and imported WordPress galleries are selected as a whole:
+// the box goes around all their photos and the toolbar edits them together.
+const GROUP_NODES = new Set(["imageRow", "rawHtml"]);
 const DRAG_THRESHOLD = 5; // px of movement before a click becomes a move
 // Overlay chrome — clicking these must not deselect the image they act on.
 const CHROME = "[data-resize-handle], [data-image-toolbar]";
@@ -59,6 +65,14 @@ function findImageNodePos(view, img) {
   return found;
 }
 
+// What the selection box frames for a click on `img`: the whole row or
+// gallery, or just that image.
+function selectionEl(view, pos, img) {
+  const node = pos === null ? null : view.state.doc.nodeAt(pos);
+  const dom = node && GROUP_NODES.has(node.type.name) ? view.nodeDOM(pos) : null;
+  return dom instanceof Element ? dom : img;
+}
+
 // Where a dragged block would land for a pointer at (x, y): the boundary
 // before or after the top-level block under the pointer, whichever half of
 // that block the pointer is in. Returns { pos, lineY } in viewport coords.
@@ -88,6 +102,7 @@ function dropTarget(view, x, y) {
 export default function ImageResizeOverlay({ editorContainerRef, editor }) {
   const [selected, setSelected] = useState(null);
   const [dropLine, setDropLine] = useState(null); // { x, y, w } while moving
+  const [editing, setEditing] = useState(null); // { type, pos } while a row or gallery dialog is open
   const dragRef = useRef(null);
   const overlayBoxRef = useRef(null);
   const toolbarRef = useRef(null);
@@ -104,15 +119,21 @@ export default function ImageResizeOverlay({ editorContainerRef, editor }) {
   const reselectAt = (pos) => {
     const dom = editor.view.nodeDOM(pos);
     const img = dom instanceof Element ? dom.querySelector("img") : null;
-    setSelected(img ? rectFor(img) : null);
+    setSelected(img ? rectFor(selectionEl(editor.view, pos, img)) : null);
+  };
+
+  // The image block behind the current selection, or null.
+  const selectedNode = () => {
+    if (!selected || !editor) return null;
+    const pos = findImageNodePos(editor.view, selected.el);
+    const node = pos === null ? null : editor.view.state.doc.nodeAt(pos);
+    return node ? { pos, node } : null;
   };
 
   // The figure node behind the current selection, or null for rows and videos.
   const figureAt = () => {
-    if (!selected || !editor) return null;
-    const pos = findImageNodePos(editor.view, selected.el);
-    const node = pos === null ? null : editor.view.state.doc.nodeAt(pos);
-    return node?.type.name === "figure" ? { pos, node } : null;
+    const found = selectedNode();
+    return found?.node.type.name === "figure" ? found : null;
   };
 
   const setFigureAttrs = (patch) => {
@@ -146,8 +167,9 @@ export default function ImageResizeOverlay({ editorContainerRef, editor }) {
           view.focus();
           view.dispatch(view.state.tr.setSelection(NodeSelection.create(view.state.doc, pos)));
         }
-        setSelected(rectFor(img));
-        if (pos !== null) startMove(e, img, pos);
+        const el = selectionEl(view, pos, img);
+        setSelected(rectFor(el));
+        if (pos !== null) startMove(e, el, pos);
       } else if (!e.target.closest(CHROME)) {
         setSelected(null);
       }
@@ -345,12 +367,30 @@ export default function ImageResizeOverlay({ editorContainerRef, editor }) {
     <div style={{ position: "absolute", left: dropLine.x, top: dropLine.y - 1.5, width: dropLine.w, height: 3, background: "hsl(221,83%,53%)", borderRadius: 2, pointerEvents: "none", zIndex: 42 }} />
   );
 
-  if (!selected) return line;
+  // Portalled out of the editor container, whose mousedown handler would
+  // otherwise treat the dialog's photos as editor images.
+  const close = () => setEditing(null);
+  const dialog = editing && createPortal(
+    editing.type === "imageRow"
+      ? <SideBySideModal editor={editor} pos={editing.pos} onClose={close} />
+      : <GalleryOrderModal editor={editor} pos={editing.pos} onClose={close} />,
+    document.body,
+  );
+
+  if (!selected) return <>{line}{dialog}</>;
   const { x, y, w, h } = selected;
   // Resize and layout only apply to single figures; side-by-side rows and
   // videos keep their own layout.
   const resizable = !!selected.el.closest('figure[data-type="figure"]');
   const attrs = resizable ? figureAt()?.node.attrs : null;
+  // A side-by-side row, or an imported gallery with photos to reorder.
+  const group = (() => {
+    const found = resizable ? null : selectedNode();
+    const type = found?.node.type.name;
+    if (type === "imageRow") return { type, pos: found.pos, label: "Uredi slike" };
+    if (type === "rawHtml" && gallerySources(found.node.attrs.html).length > 1) return { type, pos: found.pos, label: "Vrstni red slik" };
+    return null;
+  })();
   const [tbX, tbY] = toolbarPos(x, y);
   const handles = [
     { id: "nw", style: { top: y - 5, left: x - 5, cursor: "nw-resize" } },
@@ -362,6 +402,7 @@ export default function ImageResizeOverlay({ editorContainerRef, editor }) {
   return (
     <>
       {line}
+      {dialog}
       <div ref={overlayBoxRef} style={{ position: "absolute", top: y, left: x, width: w, height: h, border: "2px solid hsl(221,83%,53%)", borderRadius: 6, pointerEvents: "none", zIndex: 40 }} />
       {attrs && !dropLine && (
         <div ref={toolbarRef} data-image-toolbar
@@ -378,6 +419,15 @@ export default function ImageResizeOverlay({ editorContainerRef, editor }) {
             onClick={() => setFigureAttrs({ wrap: "left" })}><WrapIcon side="left" /></LayoutBtn>
           <LayoutBtn title="Slika desno, besedilo ob njej" active={attrs.wrap === "right"}
             onClick={() => setFigureAttrs({ wrap: "right" })}><WrapIcon side="right" /></LayoutBtn>
+        </div>
+      )}
+      {group && !dropLine && (
+        <div ref={toolbarRef} data-image-toolbar
+          style={{ position: "absolute", left: tbX, top: tbY, zIndex: 43 }}
+          className="flex items-center rounded-lg border border-border bg-popover px-1 py-1 shadow-md">
+          <LayoutBtn title={group.label} onClick={() => { setSelected(null); setEditing(group); }}>
+            <span className="flex items-center gap-1.5 px-0.5 text-xs font-medium"><ArrowLeftRight size={14} />{group.label}</span>
+          </LayoutBtn>
         </div>
       )}
       {resizable && !dropLine && handles.map(({ id, style }) => (

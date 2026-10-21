@@ -1,109 +1,26 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState } from "react";
 import { uploadToSupabase } from "@/lib/uploadToSupabase";
-import { Loader2, Upload, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { useSortableGrid } from "@/lib/useSortableGrid";
+import { Loader2, Upload, X } from "lucide-react";
+import Lightbox from "./Lightbox";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB per image
 
 const uploadImageToSupabase = (file) => uploadToSupabase(file, "gallery");
 
-// ── Lightbox ──────────────────────────────────────────────────────────────────
-function Lightbox({ images, startIndex, onClose }) {
-  const [current, setCurrent] = useState(startIndex);
-  const touchStartX = useRef(null);
-
-  const prev = useCallback(() => setCurrent((i) => (i - 1 + images.length) % images.length), [images.length]);
-  const next = useCallback(() => setCurrent((i) => (i + 1) % images.length), [images.length]);
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (e.key === "ArrowLeft") prev();
-      else if (e.key === "ArrowRight") next();
-      else if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [prev, next, onClose]);
-
-  useEffect(() => {
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = ""; };
-  }, []);
-
-  const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
-  const handleTouchEnd = (e) => {
-    if (touchStartX.current === null) return;
-    const delta = e.changedTouches[0].clientX - touchStartX.current;
-    if (Math.abs(delta) > 50) delta < 0 ? next() : prev();
-    touchStartX.current = null;
-  };
-
-  return (
-    <div
-      className="fixed inset-0 z-[100] bg-black/96 flex flex-col"
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 flex-shrink-0">
-        <span className="text-white/50 text-sm tabular-nums">{current + 1} / {images.length}</span>
-        <button
-          onClick={onClose}
-          className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
-        >
-          <X size={18} />
-        </button>
-      </div>
-
-      {/* Main image */}
-      <div className="flex-1 flex items-center justify-center px-4 min-h-0 relative">
-        {images.length > 1 && (
-          <button
-            onClick={prev}
-            className="absolute left-3 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center text-white transition-colors"
-          >
-            <ChevronLeft size={22} />
-          </button>
-        )}
-
-        <img
-          key={current}
-          src={images[current]}
-          alt={`Photo ${current + 1}`}
-          className="max-h-full max-w-full object-contain rounded-lg select-none"
-          style={{ maxHeight: "calc(100vh - 160px)" }}
-          draggable={false}
-        />
-
-        {images.length > 1 && (
-          <button
-            onClick={next}
-            className="absolute right-3 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center text-white transition-colors"
-          >
-            <ChevronRight size={22} />
-          </button>
-        )}
-      </div>
-
-      {/* Dot indicators */}
-      {images.length > 1 && (
-        <div className="flex justify-center gap-1.5 py-5 flex-shrink-0">
-          {images.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrent(i)}
-              className={`rounded-full transition-all ${i === current ? "w-5 h-2 bg-white" : "w-2 h-2 bg-white/30 hover:bg-white/50"}`}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+// Stable React keys that survive a reorder; a repeated URL gets a suffix.
+const tileKeys = (urls) => {
+  const seen = {};
+  return urls.map((u) => (seen[u] = (seen[u] || 0) + 1) > 1 ? `${u}#${seen[u]}` : u);
+};
 
 // ── Main ImageUploader component ──────────────────────────────────────────────
 export default function ImageUploader({ images = [], onChange }) {
   const [uploading, setUploading] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(null);
+  // Drag a photo to a new place; the post's gallery shows them in this order.
+  const { gridRef, tileProps, tileStyle, placeOf, dragIndex, floating } =
+    useSortableGrid(images, onChange, (i) => images[i]);
 
   const handleFiles = async (files) => {
     const validFiles = Array.from(files).filter((f) => {
@@ -142,28 +59,39 @@ export default function ImageUploader({ images = [], onChange }) {
     images.length === 2 ? "grid-cols-2" :
     "grid-cols-3";
 
+  const keys = tileKeys(images);
+
   return (
     <div className="space-y-3">
       {/* Thumbnail grid */}
       {images.length > 0 && (
-        <div className={`grid gap-2 ${gridClass}`}>
+        <div ref={gridRef} className={`grid gap-2 ${gridClass}`}>
           {images.map((url, i) => (
             <div
-              key={url + i}
-              className="relative group rounded-xl overflow-hidden bg-muted cursor-pointer"
-              style={{ aspectRatio: "4/3" }}
+              key={keys[i]}
+              {...tileProps(i)}
+              aria-label={`Slika galerije ${i + 1}`}
+              className={`relative group rounded-xl overflow-hidden bg-muted outline-none focus-visible:ring-2 focus-visible:ring-primary ${dragIndex === i ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""}`}
+              style={{ aspectRatio: "4/3", ...tileStyle(i) }}
               onClick={() => setLightboxIndex(i)}
             >
               <img
                 src={url}
                 alt={`Slika galerije ${i + 1}`}
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                draggable={false}
+                className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${dragIndex === i ? "opacity-30" : ""}`}
               />
               {/* Hover overlay */}
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200" />
+              {/* The photo's place in the gallery */}
+              <span className="absolute top-2 left-2 min-w-6 h-6 px-1.5 rounded-full bg-black/60 text-white flex items-center justify-center text-xs font-medium tabular-nums pointer-events-none">
+                {placeOf(i) + 1}
+              </span>
               {/* Remove button */}
               <button
+                type="button"
                 onClick={(e) => { e.stopPropagation(); removeImage(i); }}
+                aria-label="Odstrani sliko"
                 className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80 z-10"
               >
                 <X size={12} />
@@ -172,6 +100,14 @@ export default function ImageUploader({ images = [], onChange }) {
           ))}
         </div>
       )}
+
+      {images.length > 1 && (
+        <p className="text-xs text-muted-foreground">
+          Povlecite sliko na novo mesto (na telefonu jo najprej malo pridržite). V tem vrstnem redu bodo slike prikazane v objavi.
+        </p>
+      )}
+
+      {floating}
 
       {/* Upload drop zone */}
       <label
@@ -200,14 +136,7 @@ export default function ImageUploader({ images = [], onChange }) {
         />
       </label>
 
-      {/* Lightbox */}
-      {lightboxIndex !== null && (
-        <Lightbox
-          images={images}
-          startIndex={lightboxIndex}
-          onClose={() => setLightboxIndex(null)}
-        />
-      )}
+      <Lightbox images={images} index={lightboxIndex} onClose={() => setLightboxIndex(null)} />
     </div>
   );
 }
