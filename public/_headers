@@ -6,6 +6,21 @@
 /*
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
+  # Clickjacking: the site is never meant to be framed (the admin panel least
+  # of all). frame-ancestors is the modern form; X-Frame-Options covers old
+  # browsers. Neither affects how the page itself loads resources.
+  X-Frame-Options: DENY
+  # These CSP directives constrain only framing, plugins, <base> and form
+  # targets — none of which the app uses — so they are safe to enforce without
+  # a source audit. The resource directives (script-src/connect-src/img-src…)
+  # that would blunt an XSS are staged below in Report-Only until their reports
+  # confirm nothing legitimate is blocked; promote that policy to enforcing
+  # (rename the header to Content-Security-Policy) after reviewing reports.
+  Content-Security-Policy: frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'
+  # Force HTTPS on return visits. No includeSubDomains: the mail subdomain is
+  # not served by this project. No preload until this has run a while.
+  Strict-Transport-Security: max-age=15552000
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://wkzgrvrvhmygfaobsbvb.supabase.co https://images.unsplash.com https://img.youtube.com; media-src 'self' https://wkzgrvrvhmygfaobsbvb.supabase.co; connect-src 'self' https://wkzgrvrvhmygfaobsbvb.supabase.co wss://wkzgrvrvhmygfaobsbvb.supabase.co https://api.open-meteo.com; frame-src https://www.youtube-nocookie.com https://www.youtube.com https://player.vimeo.com; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'
 
 /index.html
   Cache-Control: no-cache, must-revalidate

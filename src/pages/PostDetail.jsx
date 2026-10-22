@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import DOMPurify from "dompurify";
+import { sanitizePostHtml } from "@/lib/sanitizeHtml";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/lib/AuthContext";
 import { Loader2, ArrowLeft, Calendar, User, Eye, Edit } from "lucide-react";
@@ -248,10 +248,7 @@ export default function PostDetail() {
           ref={bodyRef}
           onClick={handleBodyClick}
           className="font-serif text-lg leading-[1.65] prose max-w-none"
-          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content, {
-            ADD_TAGS: ["iframe"],
-            ADD_ATTR: ["allow", "allowfullscreen", "frameborder", "src", "width", "height", "data-type", "data-wrap", "data-video-type", "data-youtube-id", "controls"],
-          }) }}
+          dangerouslySetInnerHTML={{ __html: sanitizePostHtml(post.content) }}
         />
         <Lightbox
           images={bodyLightbox.images}

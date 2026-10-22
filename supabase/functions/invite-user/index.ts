@@ -1,5 +1,5 @@
 // Deployed Supabase edge function, committed here as the source of truth.
-// Kept BYTE-FOR-BYTE as it runs in production — if you change it, deploy with:
+// Kept in sync with production — if you change it, deploy with:
 //   npx supabase functions deploy invite-user
 //
 // The invitation email's sender address is NOT set here. inviteUserByEmail()
@@ -7,9 +7,11 @@
 // settings (Dashboard → Project Settings → Authentication → SMTP Settings).
 // That is also where the sender for password-reset and confirmation mail lives.
 //
-// KNOWN ISSUE: the 401/403/400 early returns below omit corsHeaders, so the
-// browser blocks those responses and the admin UI reports a generic network
-// error instead of the real reason. Fix by spreading ...corsHeaders into them.
+// Only an admin with a VERIFIED second factor (AAL2) — or an explicitly
+// mfa_exempt account — may invite. Inviting is a privileged action (a fresh
+// invite is the first step of the profile-escalation path), so it must not be
+// reachable with a stolen password alone. This mirrors is_admin_mfa() in the
+// database.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -17,12 +19,31 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const json = (body: unknown, status: number) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
+// Read the Authenticator Assurance Level from the caller's access token.
+// Supabase sets `aal: "aal2"` once a user has completed an MFA challenge.
+function tokenAal(jwt: string): string | null {
+  try {
+    const [, payload] = jwt.split(".");
+    const data = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
+    return typeof data.aal === "string" ? data.aal : null;
+  } catch {
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) return new Response("Unauthorized", { status: 401 });
+    if (!authHeader) return json({ error: "Unauthorized" }, 401);
+    const token = authHeader.replace("Bearer ", "");
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -30,28 +51,26 @@ Deno.serve(async (req) => {
     );
 
     // Verify caller is an admin
-    const { data: { user }, error: userError } = await supabase.auth.getUser(
-      authHeader.replace("Bearer ", "")
-    );
-    if (userError || !user) return new Response("Unauthorized", { status: 401 });
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !user) return json({ error: "Unauthorized" }, 401);
 
     const { data: profile } = await supabase
-      .from("profile").select("role").eq("id", user.id).single();
-    if (profile?.role !== "admin") return new Response("Forbidden", { status: 403 });
+      .from("profile").select("role, mfa_exempt").eq("id", user.id).single();
+    if (profile?.role !== "admin") return json({ error: "Forbidden" }, 403);
+
+    // Require a verified second factor, unless the account is break-glass exempt.
+    if (profile?.mfa_exempt !== true && tokenAal(token) !== "aal2") {
+      return json({ error: "Za pošiljanje povabil je potrebna dvostopenjska prijava (MFA)." }, 403);
+    }
 
     const { email, redirectTo } = await req.json();
-    if (!email) return new Response(JSON.stringify({ error: "Email required" }), { status: 400 });
+    if (!email) return json({ error: "Email required" }, 400);
 
     const { error } = await supabase.auth.admin.inviteUserByEmail(email, { redirectTo });
     if (error) throw error;
 
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ success: true }, 200);
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 400,
-    });
+    return json({ error: err.message }, 400);
   }
 });

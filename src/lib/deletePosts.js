@@ -29,15 +29,25 @@ function collectPaths(post) {
 // so any match is a post that still needs the file.
 async function stillReferenced(paths) {
   const used = new Set();
+  // Full public URL for a bucket path, as it appears in a post's `images`
+  // array — so a gallery photo shared with another post is found and kept.
+  const publicUrl = (p) => supabase.storage.from(BUCKET).getPublicUrl(p).data.publicUrl;
   for (let i = 0; i < paths.length; i += 20) {
     const chunk = paths.slice(i, i + 20);
     const or = chunk
       .flatMap((p) => [`content.ilike.%${p}%`, `featured_image.ilike.%${p}%`])
       .join(",");
-    const { data, error } = await supabase
-      .from("BlogPost").select("content, featured_image, images").or(or);
-    if (error) { chunk.forEach((p) => used.add(p)); continue; } // can't verify → keep
-    for (const post of data || []) {
+    // Two reads, unioned: `content`/`featured_image` substring matches, and
+    // posts whose `images` array overlaps these files. The old code checked
+    // only the first, so a file referenced solely from another post's gallery
+    // looked unused and was permanently deleted (a member could weaponize this
+    // by referencing a victim's photos; it also struck shared imported images).
+    const [textMatch, imageMatch] = await Promise.all([
+      supabase.from("BlogPost").select("content, featured_image, images").or(or),
+      supabase.from("BlogPost").select("content, featured_image, images").overlaps("images", chunk.map(publicUrl)),
+    ]);
+    if (textMatch.error || imageMatch.error) { chunk.forEach((p) => used.add(p)); continue; } // can't verify → keep
+    for (const post of [...(textMatch.data || []), ...(imageMatch.data || [])]) {
       const haystack = `${post.content || ""}\n${post.featured_image || ""}\n${(post.images || []).join("\n")}`;
       for (const p of chunk) if (haystack.includes(p)) used.add(p);
     }

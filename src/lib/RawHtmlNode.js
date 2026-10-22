@@ -1,4 +1,5 @@
 import { Node } from "@tiptap/core";
+import { sanitizePostHtml } from "@/lib/sanitizeHtml";
 
 /**
  * Passthrough block for imported-WordPress markup the editor schema doesn't
@@ -21,7 +22,9 @@ export const RawHtmlNode = Node.create({
   },
 
   parseHTML() {
-    const capture = (dom) => ({ html: dom.outerHTML });
+    // Sanitize on the way in, so attrs.html is never a script carrier — not in
+    // the editor DOM, not in getHTML(), not re-saved to the database.
+    const capture = (dom) => ({ html: sanitizePostHtml(dom.outerHTML) });
     return [
       { tag: "div.gallery", getAttrs: capture, priority: 100 },
       { tag: "div.wp-block-gallery", getAttrs: capture, priority: 100 },
@@ -32,16 +35,20 @@ export const RawHtmlNode = Node.create({
   },
 
   renderHTML({ node }) {
-    // Returning a real DOM node lets getHTML() serialize the markup unchanged.
+    // Returning a real DOM node lets getHTML() serialize the markup. Sanitize
+    // again here: content stored before this fix (the imported posts already
+    // in the database) is only cleaned when it passes through.
     const tpl = document.createElement("template");
-    tpl.innerHTML = node.attrs.html;
+    tpl.innerHTML = sanitizePostHtml(node.attrs.html);
     return tpl.content.firstElementChild || document.createElement("div");
   },
 
   addNodeView() {
     return ({ node }) => {
+      // This DOM goes straight into the live editor, so it must be sanitized —
+      // this is the path that previously executed stored payloads.
       const tpl = document.createElement("template");
-      tpl.innerHTML = node.attrs.html;
+      tpl.innerHTML = sanitizePostHtml(node.attrs.html);
       const dom = tpl.content.firstElementChild || document.createElement("div");
       dom.contentEditable = "false";
       return { dom, ignoreMutation: () => true };
