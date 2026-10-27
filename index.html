@@ -5,6 +5,12 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AK Vertikala</title>
+    <!-- RSS: served by Cloudflare Pages functions (functions/feed*.js). The
+         main feed carries every category; vzponi and dogodki are the split
+         feeds. Readers and aggregators (e.g. slo-alp.com) auto-discover these. -->
+    <link rel="alternate" type="application/rss+xml" title="AK Vertikala — novice" href="/feed.xml" />
+    <link rel="alternate" type="application/rss+xml" title="AK Vertikala — vzponi" href="/feed/vzponi.xml" />
+    <link rel="alternate" type="application/rss+xml" title="AK Vertikala — tabori in dogodki" href="/feed/dogodki.xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <!-- Open the Supabase connection while JS is still loading — every page's
