@@ -112,3 +112,24 @@ export function errorResponse(e) {
 
 export const BLOG_COLS =
   "id,title,summary,category,created_date,author_name";
+
+// The "Tabori in dogodki" live in their own table (`camps`), not in BlogPost.
+// Both the main feed and the dogodki feed list them, so the mapping lives here.
+// Each item is dated by when it was PUBLISHED (created_at), not by when the
+// event happens — an announcement should appear the day it goes up, and a
+// future event date as <pubDate> would make some readers hide it.
+export async function getCampItems(env, origin) {
+  const camps = await sbSelect(
+    env,
+    "camps",
+    "select=id,title,summary,location,created_at&order=created_at.desc&limit=50"
+  );
+  return camps.map((c) => ({
+    title: c.title,
+    link: `${origin}/tabori-in-dogodki?tabor=${c.id}`,
+    guid: `${origin}/tabori-in-dogodki?tabor=${c.id}`,
+    date: c.created_at,
+    category: "Tabori in dogodki",
+    description: toText([c.location, c.summary].filter(Boolean).join(" — ")),
+  }));
+}
