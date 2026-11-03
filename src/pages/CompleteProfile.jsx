@@ -16,6 +16,14 @@ export default function CompleteProfile() {
   const [error, setError] = useState(null);
   const [done, setDone] = useState(false);
 
+  // When an MFA factor is enrolled, Supabase requires an AAL2 session to change
+  // the password. A reset link only grants AAL1, so we step up with a TOTP code
+  // before calling updateUser. (This applies even to mfa_exempt accounts — that
+  // flag only skips the admin gate; the server still enforces AAL2 here.)
+  const [needsMfa, setNeedsMfa] = useState(false);
+  const [mfaFactorId, setMfaFactorId] = useState(null);
+  const [mfaCode, setMfaCode] = useState("");
+
   const isLoading = isLoadingAuth || isLoadingProfile;
   const isNewUser = !profile;
 
@@ -27,6 +35,20 @@ export default function CompleteProfile() {
     }
   }, [isLoading, user, profile]);
 
+  // Detect whether the session needs an MFA step-up before the password change.
+  useEffect(() => {
+    if (isLoading || !user) return;
+    let cancelled = false;
+    (async () => {
+      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (cancelled || !(aal?.currentLevel === "aal1" && aal?.nextLevel === "aal2")) return;
+      const { data: list } = await supabase.auth.mfa.listFactors();
+      const verified = (list?.totp || []).find((f) => f.status === "verified");
+      if (!cancelled && verified) { setMfaFactorId(verified.id); setNeedsMfa(true); }
+    })();
+    return () => { cancelled = true; };
+  }, [isLoading, user]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
@@ -34,9 +56,19 @@ export default function CompleteProfile() {
     if (isNewUser && !form.name.trim()) { setError("Vnesite svoje ime."); return; }
     if (form.password.length < 6) { setError("Geslo mora vsebovati vsaj 6 znakov."); return; }
     if (form.password !== form.confirm) { setError("Gesli se ne ujemata."); return; }
+    if (needsMfa && mfaCode.trim().length < 6) { setError("Vnesite 6-mestno kodo iz aplikacije za avtentikacijo."); return; }
 
     setSubmitting(true);
     try {
+      // Step up to AAL2 first if a factor is enrolled, otherwise updateUser is
+      // rejected with "AAL2 session is required to update … password".
+      if (needsMfa) {
+        const { data: ch, error: chErr } = await supabase.auth.mfa.challenge({ factorId: mfaFactorId });
+        if (chErr) throw chErr;
+        const { error: vErr } = await supabase.auth.mfa.verify({ factorId: mfaFactorId, challengeId: ch.id, code: mfaCode.trim() });
+        if (vErr) throw new Error(vErr.message?.includes("Invalid") ? "Napačna koda za dvostopenjsko prijavo." : vErr.message);
+      }
+
       const { error: passError } = await supabase.auth.updateUser({ password: form.password });
       if (passError) throw passError;
 
@@ -195,6 +227,26 @@ export default function CompleteProfile() {
                     onBlur={(e) => e.target.style.borderColor = theme.border}
                   />
                 </div>
+
+                {needsMfa && (
+                  <div>
+                    <label style={labelStyle}>Koda za dvostopenjsko prijavo</label>
+                    <input
+                      required
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      value={mfaCode}
+                      onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      placeholder="123456"
+                      style={{ ...inputStyle, letterSpacing: "0.3em", fontFamily: "var(--font-mono, monospace)" }}
+                      onFocus={(e) => e.target.style.borderColor = "rgba(232,80,26,0.5)"}
+                      onBlur={(e) => e.target.style.borderColor = theme.border}
+                    />
+                    <p style={{ fontFamily: "var(--font-sans)", fontSize: "12px", color: theme.textFaint, marginTop: "8px" }}>
+                      Vaš račun uporablja dvostopenjsko prijavo. Vnesite 6-mestno kodo iz aplikacije za avtentikacijo.
+                    </p>
+                  </div>
+                )}
 
                 <button
                   type="submit"

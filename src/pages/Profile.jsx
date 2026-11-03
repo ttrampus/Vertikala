@@ -51,12 +51,30 @@ export default function Profile() {
   const [savingPw, setSavingPw] = useState(false);
   const [pwMsg, setPwMsg] = useState(null);
 
+  // MFA step-up: if a TOTP factor is enrolled, Supabase requires AAL2 to change
+  // the password. The current-password re-auth below resets the session to AAL1,
+  // so we re-verify the factor with a code before updateUser.
+  const [pwMfaFactorId, setPwMfaFactorId] = useState(null);
+  const [pwMfaCode, setPwMfaCode] = useState("");
+
   useEffect(() => {
     if (profile) {
       setName(profile.display_name || "");
       setAvatarUrl(profile.avatar_url || "");
     }
   }, [profile]);
+
+  // Note whether this account has a verified MFA factor so the password form can
+  // ask for a code (needed to reach AAL2 before the change).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data: list } = await supabase.auth.mfa.listFactors();
+      const verified = (list?.totp || []).find((f) => f.status === "verified");
+      if (!cancelled && verified) setPwMfaFactorId(verified.id);
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const inputStyle = {
     width: "100%", boxSizing: "border-box",
@@ -186,6 +204,27 @@ export default function Profile() {
       setPwMsg({ ok: false, text: "Trenutno geslo ni pravilno." });
       return;
     }
+    // The re-auth above put the session back at AAL1. If a factor is enrolled,
+    // step back up to AAL2 with a TOTP code or updateUser will be rejected.
+    if (pwMfaFactorId) {
+      if (pwMfaCode.trim().length < 6) {
+        setSavingPw(false);
+        setPwMsg({ ok: false, text: "Vnesite 6-mestno kodo iz aplikacije za avtentikacijo." });
+        return;
+      }
+      const { data: ch, error: chErr } = await supabase.auth.mfa.challenge({ factorId: pwMfaFactorId });
+      if (chErr) {
+        setSavingPw(false);
+        setPwMsg({ ok: false, text: "Sprememba ni uspela: " + chErr.message });
+        return;
+      }
+      const { error: vErr } = await supabase.auth.mfa.verify({ factorId: pwMfaFactorId, challengeId: ch.id, code: pwMfaCode.trim() });
+      if (vErr) {
+        setSavingPw(false);
+        setPwMsg({ ok: false, text: vErr.message?.includes("Invalid") ? "Napačna koda za dvostopenjsko prijavo." : vErr.message });
+        return;
+      }
+    }
     const { error: updErr } = await supabase.auth.updateUser({ password: pw.next });
     if (updErr) {
       setSavingPw(false);
@@ -198,6 +237,7 @@ export default function Profile() {
     try { await supabase.auth.signOut({ scope: "others" }); } catch (_) { /* non-fatal */ }
     setSavingPw(false);
     setPw({ current: "", next: "", confirm: "" });
+    setPwMfaCode("");
     setPwMsg({ ok: true, text: "Geslo spremenjeno. Druge naprave so bile odjavljene." });
   };
 
@@ -306,6 +346,22 @@ export default function Profile() {
               <input type="password" autoComplete="new-password" value={pw.confirm} onChange={(e) => setPw((p) => ({ ...p, confirm: e.target.value }))} style={inputStyle} onFocus={focusOn} onBlur={focusOff} />
             </div>
           </div>
+
+          {pwMfaFactorId && (
+            <div style={{ marginTop: "16px" }}>
+              <label style={labelStyle}>Koda za dvostopenjsko prijavo</label>
+              <input
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                value={pwMfaCode}
+                onChange={(e) => setPwMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder="123456"
+                style={{ ...inputStyle, letterSpacing: "0.3em", fontFamily: "var(--font-mono, monospace)" }}
+                onFocus={focusOn}
+                onBlur={focusOff}
+              />
+            </div>
+          )}
 
           <Banner msg={pwMsg} />
 
