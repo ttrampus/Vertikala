@@ -16,6 +16,15 @@ export default function CompleteProfile() {
   const [error, setError] = useState(null);
   const [done, setDone] = useState(false);
 
+  // Reset/invite links now point to this page on our own domain with a
+  // token_hash (instead of a raw <ref>.supabase.co/verify link, which tripped
+  // Gmail's phishing banner). Exchange it for a session here with verifyOtp.
+  const hasTokenHash =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).has("token_hash");
+  const [verifying, setVerifying] = useState(hasTokenHash);
+  const [linkError, setLinkError] = useState(null);
+
   // When an MFA factor is enrolled, Supabase requires an AAL2 session to change
   // the password. A reset link only grants AAL1, so we step up with a TOTP code
   // before calling updateUser. (This applies even to mfa_exempt accounts — that
@@ -27,13 +36,29 @@ export default function CompleteProfile() {
   const isLoading = isLoadingAuth || isLoadingProfile;
   const isNewUser = !profile;
 
+  // Exchange a token_hash link for a real session before anything else.
   useEffect(() => {
-    if (!isLoading && !user) navigate("/login");
+    if (!hasTokenHash) return;
+    const params = new URLSearchParams(window.location.search);
+    const token_hash = params.get("token_hash");
+    const type = params.get("type") || "recovery";
+    (async () => {
+      const { error: otpErr } = await supabase.auth.verifyOtp({ type, token_hash });
+      if (otpErr) setLinkError("Povezava je potekla ali ni veljavna. Zahtevajte novo povezavo za ponastavitev gesla.");
+      // Strip the token from the URL whether it worked or not.
+      window.history.replaceState({}, "", window.location.pathname);
+      setVerifying(false);
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (verifying) return;
+    if (!isLoading && !user && !linkError) navigate("/login");
     if (!isLoading && user && profile) {
       // Already set up — they landed here via a password reset link
       // Let them change their password but skip name
     }
-  }, [isLoading, user, profile]);
+  }, [isLoading, user, profile, verifying, linkError]);
 
   // Detect whether the session needs an MFA step-up before the password change.
   useEffect(() => {
@@ -134,9 +159,16 @@ export default function CompleteProfile() {
 
         <div style={{ background: theme.bgCard, border: `1px solid ${theme.border}`, borderRadius: "16px", padding: "40px", boxShadow: theme.isDark ? "0 40px 80px rgba(0,0,0,0.4)" : "0 20px 60px rgba(0,0,0,0.1)", transition: "background 0.4s, border-color 0.4s" }}>
 
-          {isLoading ? (
+          {(verifying || isLoading) ? (
             <div style={{ textAlign: "center", padding: "24px 0" }}>
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={theme.textLow} strokeWidth="2" style={{ animation: "spin 0.8s linear infinite", margin: "0 auto" }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            </div>
+
+          ) : linkError ? (
+            <div style={{ textAlign: "center" }}>
+              <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "22px", letterSpacing: "0.02em", marginBottom: "8px" }}>Povezava ni veljavna</h2>
+              <p style={{ fontFamily: "var(--font-sans)", fontSize: "14px", color: theme.textMid, marginBottom: "20px" }}>{linkError}</p>
+              <button onClick={() => navigate("/login")} style={{ background: "#E8501A", color: "#fff", border: "none", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "14px", letterSpacing: "0.1em", textTransform: "uppercase", padding: "13px 24px", borderRadius: "8px" }}>Na prijavo</button>
             </div>
 
           ) : done ? (
