@@ -57,6 +57,23 @@ export default function Footer() {
             ))}
           </div>
         </div>
+        {/* Sponsor — centered "S podporo" band (logo sits on a white chip so it
+            stays clean in both themes). Links to the sponsor's site. */}
+        <div style={{ height: '1px', background: theme.border, marginBottom: '24px' }} />
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', textAlign: 'center', marginBottom: '24px' }}>
+          <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: '12px', letterSpacing: '0.16em', textTransform: 'uppercase', color: theme.textLow }}>S podporo</span>
+          <a
+            href="https://www.i-ms.si/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="IMŠ — Inštitut za medicino in šport"
+            style={{ display: 'inline-flex', alignItems: 'center', background: '#fff', borderRadius: '8px', padding: '9px 13px', lineHeight: 0, transition: 'transform 0.2s' }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
+          >
+            <img src="/sponsors/ims.jpg" alt="IMŠ — Inštitut za medicino in šport" style={{ height: '38px', width: 'auto', display: 'block' }} />
+          </a>
+        </div>
         <div style={{ height: '1px', background: theme.border, marginBottom: '24px' }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
           <span style={{ fontFamily: "var(--font-sans)", fontSize: '12px', color: theme.textFaint }}>

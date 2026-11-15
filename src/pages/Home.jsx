@@ -12,7 +12,7 @@ import StatsSection from "../components/StatsSection";
 import CardImage from "../components/CardImage";
 import HeroBg from "../components/HeroBg";
 import PrivateBadge from "../components/PrivateBadge";
-import { Lock, Heart } from "lucide-react";
+import { Lock, Heart, Pin } from "lucide-react";
 import Arrow from "@/components/Arrow";
 
 const CATEGORIES = [
@@ -28,6 +28,14 @@ const CAT_LABEL = { climbs: 'Vzponi', trips: 'Izleti', events: 'Tabori in dogodk
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const isUuid = (v) => typeof v === "string" && UUID_RE.test(v);
+
+// A pin counts only while it is set and not past its (optional) expiry. Expired
+// pins are ignored here, so the post immediately falls back to by-date order —
+// no cleanup job needed.
+const pinActive = (p) => !!p.pinned_at && (!p.pinned_until || new Date(p.pinned_until) > new Date());
+// The post is still pinned to the top when the badge is off; this only controls
+// whether the public "Aktualno" label is shown.
+const showPinBadge = (p) => pinActive(p) && p.pinned_badge !== false;
 
 // Cards rendered initially / added per "show more" click. A phone shows one
 // card per row, so 24 of them is a very long scroll for no benefit — the
@@ -82,7 +90,7 @@ export default function Home() {
           .from("BlogPost")
           // Only the columns the cards use — avoids transferring the full HTML
           // `content` and large jsonb fields for every post on the landing page.
-          .select("id, title, summary, featured_image, focal_point, author_name, category, created_date, likes_count, created_by, created_by_id, is_public")
+          .select("id, title, summary, featured_image, focal_point, author_name, category, created_date, likes_count, created_by, created_by_id, is_public, pinned_at, pinned_until, pinned_badge")
           .eq("status", "published")
           .is("deleted_at", null)
           .order("created_date", { ascending: false }),
@@ -106,8 +114,16 @@ export default function Home() {
           created_date: c.created_at,
           created_by_id: c.created_by_id,
         }));
-        const list = [...(data || []), ...campItems]
-          .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+        // Pinned posts (admin-chosen, pinned_at set) sort above everything else
+        // regardless of date; the most recently pinned is highest. Camps have no
+        // pinned_at, so they always fall into the normal by-date ordering.
+        const list = [...(data || []), ...campItems].sort((a, b) => {
+          const pa = pinActive(a) ? 1 : 0, pb = pinActive(b) ? 1 : 0;
+          if (pa !== pb) return pb - pa;
+          if (pa && pb)
+            return new Date(b.pinned_at) - new Date(a.pinned_at);
+          return new Date(b.created_date) - new Date(a.created_date);
+        });
         // Override the stored author name/avatar with each author's CURRENT
         // profile, so cards reflect profile changes instead of the name saved
         // when the post was written. Only look up valid UUIDs — some legacy
@@ -303,6 +319,7 @@ export default function Home() {
                       <div>
                         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '20px' }}>
                           <span style={{ background: '#E8501A', color: '#fff', fontFamily: "var(--font-display)", fontWeight: 700, fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 10px', borderRadius: '3px' }}>{CAT_LABEL[featuredPost.category] || featuredPost.category || 'Objava'}</span>
+                          {showPinBadge(featuredPost) && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', border: '1px solid #E8501A', color: '#E8501A', fontFamily: "var(--font-display)", fontWeight: 700, fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '3px 9px', borderRadius: '3px' }}><Pin size={11} /> Aktualno</span>}
                           {featuredPost.is_public === false && <PrivateBadge small />}
                           <span style={{ color: theme.textLow, fontFamily: "var(--font-sans)", fontSize: '13px' }}>{formatDate(featuredPost.created_date)}</span>
                         </div>
@@ -364,6 +381,7 @@ export default function Home() {
                       )}
                     </CardImage>
                     <div style={{ padding: '24px' }}>
+                      {showPinBadge(post) && <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#E8501A', fontFamily: "var(--font-display)", fontWeight: 700, fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px' }}><Pin size={10} /> Aktualno</div>}
                       <div style={{ color: theme.textLow, fontFamily: "var(--font-sans)", fontSize: '12px', marginBottom: '10px' }}>{formatDate(post.created_date)}</div>
                       <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: '22px', lineHeight: 1.15, color: theme.text, margin: '0 0 10px' }}>{post.title}</h3>
                       {post.summary && <p style={{ fontFamily: "var(--font-sans)", fontSize: '13px', lineHeight: 1.6, color: theme.textMid, margin: '0 0 20px', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{post.summary}</p>}

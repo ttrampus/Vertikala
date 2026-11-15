@@ -266,7 +266,11 @@ function LinkModal({ onInsert, onClose }) {
 export default function EditPost() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, isAdmin, isLoadingAuth } = useAuth();
+  const { user, isAdmin, profile, isLoadingAuth } = useAuth();
+  // Pin-to-top is an admin OR owner action. The server (blogpost_guard_pin
+  // trigger) enforces the same rule, so this only governs whether the control
+  // is shown — it is not the security boundary.
+  const canPin = isAdmin || profile?.is_owner === true;
   const editorContainerRef = useRef(null);
 
   const [loading, setLoading] = useState(true);
@@ -277,9 +281,22 @@ export default function EditPost() {
   const [showLink, setShowLink] = useState(false);
   const [showSideBySide, setShowSideBySide] = useState(false);
   const [initialContent, setInitialContent] = useState(null);
+  const origPinnedAt = useRef(null);
+
+  // pinned_until is held in the form as a <input type="datetime-local"> string
+  // ("YYYY-MM-DDTHH:mm", local time); "" means a permanent pin. These convert
+  // to/from the ISO timestamp the database stores.
+  const toLocalInput = (iso) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (isNaN(d)) return "";
+    const p = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  };
+  const inHours = (h) => toLocalInput(new Date(Date.now() + h * 3600 * 1000).toISOString());
 
   const [form, setForm] = useState({
-    title: "", summary: "", content: "", featured_image: "", focal_point: null, images: [], tags: [], category: "climbs", status: "published", climb_metadata: {}, is_public: true,
+    title: "", summary: "", content: "", featured_image: "", focal_point: null, images: [], tags: [], category: "climbs", status: "published", climb_metadata: {}, is_public: true, pinned: false, pinned_until: "", pin_badge: true,
   });
   const [tagInput, setTagInput] = useState("");
 
@@ -325,11 +342,14 @@ export default function EditPost() {
     // against a table that only has column-level grants.
     const { data, error } = await supabase
       .from("BlogPost")
-      .select("id, title, summary, content, featured_image, focal_point, images, tags, category, climb_metadata, status, author_name, created_by, created_by_id, created_date, updated_date, deleted_at, is_public, is_sample, likes_count, comments_count, views_count, wp_id")
+      .select("id, title, summary, content, featured_image, focal_point, images, tags, category, climb_metadata, status, author_name, created_by, created_by_id, created_date, updated_date, deleted_at, is_public, is_sample, likes_count, comments_count, views_count, wp_id, pinned_at, pinned_until, pinned_badge")
       .eq("id", id)
       .single();
     if (error) { console.error(error); navigate("/dashboard"); return; }
     if (data.created_by_id !== user.id && !isAdmin) { alert("Te objave ne morete urejati."); navigate("/dashboard"); return; }
+    // Remember the original pin timestamp so re-saving an already-pinned post
+    // keeps its place (we don't bump pinned_at just because the post was edited).
+    origPinnedAt.current = data.pinned_at || null;
     setForm({
       title: data.title || "",
       summary: data.summary || "",
@@ -342,6 +362,9 @@ export default function EditPost() {
       status: data.status || "published",
       climb_metadata: data.climb_metadata || {},
       is_public: data.is_public !== false,
+      pinned: data.pinned_at != null,
+      pinned_until: toLocalInput(data.pinned_until),
+      pin_badge: data.pinned_badge !== false,
     });
     setInitialContent(data.content || "");
     setLoading(false);
@@ -396,8 +419,17 @@ export default function EditPost() {
       // return an error — it just updates nothing. Without asking for the
       // updated row back, a blocked save looked exactly like a successful one
       // and we navigated away having saved nothing.
+      const payload = { title: form.title, summary: form.summary, content: form.content, featured_image: form.featured_image, focal_point: form.focal_point, images: form.images, tags: form.tags, category: form.category, climb_metadata: climbMeta, is_public: form.is_public, status };
+      // Only an admin/owner writes the pin columns; normal authors never send
+      // them, so they can edit a pinned post without touching (or needing rights
+      // to) its pin, and the guard trigger is never tripped on an ordinary save.
+      if (canPin) {
+        payload.pinned_at = form.pinned ? (origPinnedAt.current || new Date().toISOString()) : null;
+        payload.pinned_until = form.pinned && form.pinned_until ? new Date(form.pinned_until).toISOString() : null;
+        payload.pinned_badge = form.pinned ? form.pin_badge !== false : true;
+      }
       const { data, error } = await supabase.from("BlogPost")
-        .update({ title: form.title, summary: form.summary, content: form.content, featured_image: form.featured_image, focal_point: form.focal_point, images: form.images, tags: form.tags, category: form.category, climb_metadata: climbMeta, is_public: form.is_public, status })
+        .update(payload)
         .eq("id", id)
         .select("id");
       if (error) throw error;
@@ -469,6 +501,57 @@ export default function EditPost() {
             <span className="text-sm text-muted-foreground font-sans">{form.is_public ? "Javno vidno vsem obiskovalcem" : "Vidno samo prijavljenim članom"}</span>
           </label>
         </div>
+
+        {canPin && (
+          <div>
+            <label className="block text-sm font-sans font-medium mb-2">Pripni na vrh</label>
+            <label className="flex items-center gap-2.5 cursor-pointer w-fit">
+              <Switch checked={!!form.pinned} onCheckedChange={(v) => updateForm("pinned", v)} />
+              <span className="text-sm text-muted-foreground font-sans">{form.pinned ? "Prikazano na vrhu domače strani (z oznako »Aktualno«)" : "Običajen vrstni red (po datumu)"}</span>
+            </label>
+            {form.pinned && (
+              <div className="mt-3 pl-1">
+                <label className="flex items-center gap-2.5 cursor-pointer w-fit mb-3">
+                  <Switch checked={form.pin_badge !== false} onCheckedChange={(v) => updateForm("pin_badge", v)} />
+                  <span className="text-sm text-muted-foreground font-sans">{form.pin_badge !== false ? "Prikaži oznako »Aktualno«" : "Brez oznake (objava je še vedno na vrhu)"}</span>
+                </label>
+                <div className="text-xs font-sans font-medium text-muted-foreground mb-2">Trajanje</div>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {[
+                    { label: "Trajno", val: "" },
+                    { label: "24 ur", val: inHours(24) },
+                    { label: "3 dni", val: inHours(72) },
+                    { label: "1 teden", val: inHours(168) },
+                  ].map((opt) => {
+                    const active = (form.pinned_until || "") === opt.val;
+                    return (
+                      <button
+                        key={opt.label}
+                        type="button"
+                        onClick={() => updateForm("pinned_until", opt.val)}
+                        className={`px-3 py-1.5 rounded-md text-xs font-sans font-medium border transition-colors ${active ? "bg-primary text-primary-foreground border-primary" : "bg-muted/40 text-muted-foreground border-border hover:border-primary/50"}`}
+                      >{opt.label}</button>
+                    );
+                  })}
+                </div>
+                <label className="flex items-center gap-2 text-xs font-sans text-muted-foreground">
+                  <span className="whitespace-nowrap">Do (po meri):</span>
+                  <input
+                    type="datetime-local"
+                    value={form.pinned_until || ""}
+                    onChange={(e) => updateForm("pinned_until", e.target.value)}
+                    className="bg-input border border-border rounded-md px-2 py-1 text-foreground text-xs"
+                  />
+                </label>
+                <p className="text-xs font-sans text-muted-foreground/70 mt-1.5">
+                  {form.pinned_until
+                    ? "Po tem času se objava samodejno vrne med ostale po datumu."
+                    : "Objava ostane pripeta, dokler je ročno ne odpnete."}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-sans font-medium mb-2">Oznake</label>
