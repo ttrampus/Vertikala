@@ -35,6 +35,7 @@ import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
 import { useBackdropClose } from "@/lib/useBackdropClose";
 import Arrow from "@/components/Arrow";
+import DateField from "@/components/DateField";
 
 const categories = ["climbs", "trips", "events", "training", "news"];
 const categoryLabels = { climbs: "Vzponi", trips: "Izleti", events: "Tabori in dogodki", training: "Trening", news: "Novice" };
@@ -294,6 +295,17 @@ export default function EditPost() {
     return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
   };
   const inHours = (h) => toLocalInput(new Date(Date.now() + h * 3600 * 1000).toISOString());
+  // Slovene readout of the chosen end time ("18. 11. 2026 ob 14:00"). The native
+  // datetime-local picker renders in the browser's own locale, so this is the
+  // authoritative, always-Slovene label we show the user.
+  const fmtSl = (localInput) => {
+    if (!localInput) return "";
+    const d = new Date(localInput);
+    if (isNaN(d)) return "";
+    const date = d.toLocaleDateString("sl-SI", { day: "numeric", month: "numeric", year: "numeric" });
+    const time = d.toLocaleTimeString("sl-SI", { hour: "2-digit", minute: "2-digit" });
+    return `${date} ob ${time}`;
+  };
 
   const [form, setForm] = useState({
     title: "", summary: "", content: "", featured_image: "", focal_point: null, images: [], tags: [], category: "climbs", status: "published", climb_metadata: {}, is_public: true, pinned: false, pinned_until: "", pin_badge: true,
@@ -534,18 +546,17 @@ export default function EditPost() {
                     );
                   })}
                 </div>
-                <label className="flex items-center gap-2 text-xs font-sans text-muted-foreground">
+                <div className="flex items-center gap-2 text-xs font-sans text-muted-foreground">
                   <span className="whitespace-nowrap">Do (po meri):</span>
-                  <input
-                    type="datetime-local"
-                    value={form.pinned_until || ""}
-                    onChange={(e) => updateForm("pinned_until", e.target.value)}
-                    className="bg-input border border-border rounded-md px-2 py-1 text-foreground text-xs"
+                  <DateField
+                    value={(form.pinned_until || "").slice(0, 10)}
+                    onChange={(iso) => updateForm("pinned_until", iso ? `${iso}T23:59` : "")}
+                    className="bg-input border border-border rounded-md px-2 py-1 text-foreground text-xs w-40"
                   />
-                </label>
+                </div>
                 <p className="text-xs font-sans text-muted-foreground/70 mt-1.5">
                   {form.pinned_until
-                    ? "Po tem času se objava samodejno vrne med ostale po datumu."
+                    ? `Pripeto do ${fmtSl(form.pinned_until)} — nato se objava samodejno vrne med ostale po datumu.`
                     : "Objava ostane pripeta, dokler je ročno ne odpnete."}
                 </p>
               </div>
