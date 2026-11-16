@@ -96,7 +96,7 @@ export default function Home() {
           .order("created_date", { ascending: false }),
         supabase
           .from("camps")
-          .select("id, title, summary, image_url, focal_point, created_by_id, created_at"),
+          .select("id, title, summary, image_url, focal_point, created_by_id, created_at, pinned_at, pinned_until, pinned_badge"),
       ]);
       if (!alive) return;
       if (!error) {
@@ -113,10 +113,13 @@ export default function Home() {
           category: 'events',
           created_date: c.created_at,
           created_by_id: c.created_by_id,
+          pinned_at: c.pinned_at,
+          pinned_until: c.pinned_until,
+          pinned_badge: c.pinned_badge,
         }));
-        // Pinned posts (admin-chosen, pinned_at set) sort above everything else
-        // regardless of date; the most recently pinned is highest. Camps have no
-        // pinned_at, so they always fall into the normal by-date ordering.
+        // Pinned items (admin-chosen, pinned_at set) sort above everything else
+        // regardless of date; the most recently pinned is highest. This applies
+        // to both BlogPost and camps, so any feed item can be pinned.
         const list = [...(data || []), ...campItems].sort((a, b) => {
           const pa = pinActive(a) ? 1 : 0, pb = pinActive(b) ? 1 : 0;
           if (pa !== pb) return pb - pa;

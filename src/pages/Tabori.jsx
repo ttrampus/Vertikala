@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ThemeCtx } from "@/lib/ThemeContext";
 import { supabase } from "@/lib/supabaseClient";
@@ -13,6 +13,7 @@ import DateField from "@/components/DateField";
 import { formatDate } from "@/lib/dates";
 import { Trash2, X, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -27,13 +28,38 @@ const CAMP_PREVIEWS = [
   { label: "Podrobnosti", ratio: 640 / 260 },
 ];
 
-const EMPTY_FORM = { title: "", date_from: "", date_to: "", location: "", summary: "", description: "", image_url: "", focal_point: "" };
+const EMPTY_FORM = { title: "", date_from: "", date_to: "", location: "", summary: "", description: "", image_url: "", focal_point: "", pinned: false, pinned_until: "", pin_badge: true };
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&q=70";
 
 export default function Tabori() {
   const theme = useContext(ThemeCtx);
   const navigate = useNavigate();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, profile } = useAuth();
+  // Pinning is admin/owner only — NOT a camp's own creator (who may still edit
+  // the camp). Enforced here in the UI and server-side by the camps_guard_pin
+  // trigger, so a crafted API request can never set these columns either.
+  const canPin = isAdmin || profile?.is_owner === true;
+  // Keep the original pin time so re-saving an already-pinned camp doesn't bump
+  // it to the top again.
+  const origPinnedAt = useRef(null);
+  // datetime-local <-> ISO helpers (the custom-date picker is date-only; the
+  // pin then lapses at the end of that day).
+  const toLocalInput = (iso) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (isNaN(d)) return "";
+    const p = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  };
+  const inHours = (h) => toLocalInput(new Date(Date.now() + h * 3600 * 1000).toISOString());
+  const fmtSl = (localInput) => {
+    if (!localInput) return "";
+    const d = new Date(localInput);
+    if (isNaN(d)) return "";
+    const date = d.toLocaleDateString("sl-SI", { day: "numeric", month: "numeric", year: "numeric" });
+    const time = d.toLocaleTimeString("sl-SI", { hour: "2-digit", minute: "2-digit" });
+    return `${date} ob ${time}`;
+  };
 
   const [camps, setCamps] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -61,6 +87,7 @@ export default function Tabori() {
 
   const openAddForm = () => {
     setEditingId(null);
+    origPinnedAt.current = null;
     setForm(EMPTY_FORM);
     setFormError("");
     setShowForm(true);
@@ -68,6 +95,7 @@ export default function Tabori() {
 
   const openEditForm = (c) => {
     setEditingId(c.id);
+    origPinnedAt.current = c.pinned_at || null;
     setForm({
       title: c.title || "",
       date_from: c.date_from || "",
@@ -77,6 +105,9 @@ export default function Tabori() {
       description: c.description || "",
       image_url: c.image_url || "",
       focal_point: c.focal_point || "",
+      pinned: c.pinned_at != null,
+      pinned_until: toLocalInput(c.pinned_until),
+      pin_badge: c.pinned_badge !== false,
     });
     setFormError("");
     setDetailCamp(null);
@@ -118,6 +149,13 @@ export default function Tabori() {
       image_url: form.image_url || null,
       focal_point: form.focal_point || null,
     };
+    // Only admins/owner write pin columns; everyone else leaves them untouched
+    // (the guard trigger would reject the write otherwise).
+    if (canPin) {
+      payload.pinned_at = form.pinned ? (origPinnedAt.current || new Date().toISOString()) : null;
+      payload.pinned_until = form.pinned && form.pinned_until ? new Date(form.pinned_until).toISOString() : null;
+      payload.pinned_badge = form.pinned ? form.pin_badge !== false : true;
+    }
 
     if (editingId) {
       const { data, error } = await supabase.from("camps").update(payload).eq("id", editingId).select().single();
@@ -381,6 +419,66 @@ export default function Tabori() {
                   previews={CAMP_PREVIEWS}
                 />
               </div>
+              {canPin && (
+                <div style={{ gridColumn: "1 / -1", borderTop: `1px solid ${theme.border}`, paddingTop: "18px", marginTop: "4px" }}>
+                  <label style={labelStyle}>Pripni na vrh</label>
+                  <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", width: "fit-content" }}>
+                    <Switch checked={!!form.pinned} onCheckedChange={(v) => setForm((f) => ({ ...f, pinned: v }))} />
+                    <span style={{ fontSize: "13px", fontFamily: "var(--font-sans)", color: theme.textMid }}>
+                      {form.pinned ? "Prikazano na vrhu domače strani (z oznako »Aktualno«)" : "Običajen vrstni red (po datumu)"}
+                    </span>
+                  </label>
+                  {form.pinned && (
+                    <div style={{ marginTop: "14px", display: "flex", flexDirection: "column", gap: "12px" }}>
+                      <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", width: "fit-content" }}>
+                        <Switch checked={form.pin_badge !== false} onCheckedChange={(v) => setForm((f) => ({ ...f, pin_badge: v }))} />
+                        <span style={{ fontSize: "13px", fontFamily: "var(--font-sans)", color: theme.textMid }}>
+                          {form.pin_badge !== false ? "Prikaži oznako »Aktualno«" : "Brez oznake (objava je še vedno na vrhu)"}
+                        </span>
+                      </label>
+                      <div>
+                        <div style={{ fontSize: "12px", fontFamily: "var(--font-sans)", fontWeight: 600, color: theme.textLow, marginBottom: "8px" }}>Trajanje</div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "10px" }}>
+                          {[
+                            { label: "Trajno", val: "" },
+                            { label: "24 ur", val: inHours(24) },
+                            { label: "3 dni", val: inHours(72) },
+                            { label: "1 teden", val: inHours(168) },
+                          ].map((opt) => {
+                            const active = (form.pinned_until || "") === opt.val;
+                            return (
+                              <button
+                                key={opt.label}
+                                type="button"
+                                onClick={() => setForm((f) => ({ ...f, pinned_until: opt.val }))}
+                                style={{
+                                  padding: "7px 13px", borderRadius: "7px", fontSize: "12px", fontFamily: "var(--font-sans)", fontWeight: 600, cursor: "pointer",
+                                  border: `1px solid ${active ? "#E8501A" : theme.border}`,
+                                  background: active ? "#E8501A" : "transparent",
+                                  color: active ? "#fff" : theme.textMid,
+                                }}
+                              >{opt.label}</button>
+                            );
+                          })}
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <span style={{ fontSize: "12px", fontFamily: "var(--font-sans)", color: theme.textMid, whiteSpace: "nowrap" }}>Do (po meri):</span>
+                          <DateField
+                            value={(form.pinned_until || "").slice(0, 10)}
+                            onChange={(iso) => setForm((f) => ({ ...f, pinned_until: iso ? `${iso}T23:59` : "" }))}
+                            style={{ ...inputStyle, maxWidth: "180px" }}
+                          />
+                        </div>
+                        <p style={{ fontSize: "12px", fontFamily: "var(--font-sans)", color: theme.textLow, marginTop: "8px" }}>
+                          {form.pinned_until
+                            ? `Pripeto do ${fmtSl(form.pinned_until)} — nato se objava samodejno vrne med ostale po datumu.`
+                            : "Objava ostane pripeta, dokler je ročno ne odpnete."}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {formError && <div style={{ marginTop: "14px", color: "#E8501A", fontSize: "13px", fontFamily: "var(--font-sans)" }}>{formError}</div>}

@@ -35,6 +35,7 @@ import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
 import { useBackdropClose } from "@/lib/useBackdropClose";
 import Arrow from "@/components/Arrow";
+import DateField from "@/components/DateField";
 
 const categories = ["climbs", "trips", "events", "training", "news"];
 const categoryLabels = { climbs: "Vzponi", trips: "Izleti", events: "Tabori in dogodki", training: "Trening", news: "Novice" };
@@ -283,8 +284,26 @@ function LinkModal({ onInsert, onClose }) {
 // ── Main component ────────────────────────────────────────────────────────────
 export default function CreatePost() {
   const navigate = useNavigate();
-  const { user, profile, isLoadingAuth } = useAuth();
+  const { user, profile, isLoadingAuth, isAdmin } = useAuth();
   const editorContainerRef = useRef(null);
+  // Pinning is admin/owner only (GUI here + camps/BlogPost guard triggers).
+  const canPin = isAdmin || profile?.is_owner === true;
+  const toLocalInput = (iso) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (isNaN(d)) return "";
+    const p = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  };
+  const inHours = (h) => toLocalInput(new Date(Date.now() + h * 3600 * 1000).toISOString());
+  const fmtSl = (localInput) => {
+    if (!localInput) return "";
+    const d = new Date(localInput);
+    if (isNaN(d)) return "";
+    const date = d.toLocaleDateString("sl-SI", { day: "numeric", month: "numeric", year: "numeric" });
+    const time = d.toLocaleTimeString("sl-SI", { hour: "2-digit", minute: "2-digit" });
+    return `${date} ob ${time}`;
+  };
 
   const [saving, setSaving] = useState(false);
   const [featuredUploading, setFeaturedUploading] = useState(false);
@@ -294,7 +313,7 @@ export default function CreatePost() {
   const [showSideBySide, setShowSideBySide] = useState(false);
 
   const [form, setForm] = useState({
-    title: "", summary: "", content: "", featured_image: "", focal_point: null, images: [], tags: [], category: "climbs", climb_metadata: {}, is_public: true,
+    title: "", summary: "", content: "", featured_image: "", focal_point: null, images: [], tags: [], category: "climbs", climb_metadata: {}, is_public: true, pinned: false, pinned_until: "", pin_badge: true,
   });
   const [tagInput, setTagInput] = useState("");
 
@@ -370,8 +389,16 @@ export default function CreatePost() {
       // to select=* on the insert's return representation, which errors
       // against a table that only has column-level grants. We only need the
       // new row's id anyway, to navigate to it below.
+      const row = { title: form.title, summary: form.summary, content: form.content, featured_image: form.featured_image, focal_point: form.focal_point, images: form.images, tags: form.tags, category: form.category, climb_metadata: climbMeta, is_public: form.is_public, status, created_by_id: user.id, created_by: user.email, author_email: user.email, author_name: profile?.display_name || user.email };
+      // Only admins/owner may set pin columns; the guard trigger would null a
+      // non-privileged attempt on insert anyway.
+      if (canPin && form.pinned) {
+        row.pinned_at = new Date().toISOString();
+        row.pinned_until = form.pinned_until ? new Date(form.pinned_until).toISOString() : null;
+        row.pinned_badge = form.pin_badge !== false;
+      }
       const { data, error } = await supabase.from("BlogPost")
-        .insert([{ title: form.title, summary: form.summary, content: form.content, featured_image: form.featured_image, focal_point: form.focal_point, images: form.images, tags: form.tags, category: form.category, climb_metadata: climbMeta, is_public: form.is_public, status, created_by_id: user.id, created_by: user.email, author_email: user.email, author_name: profile?.display_name || user.email }])
+        .insert([row])
         .select("id").single();
       if (error) throw error;
       // replace: the finished form shouldn't stay in history — back from the
@@ -447,6 +474,57 @@ export default function CreatePost() {
             <span className="text-sm text-muted-foreground font-sans">{form.is_public ? "Javno vidno vsem obiskovalcem" : "Vidno samo prijavljenim članom"}</span>
           </label>
         </div>
+
+        {/* Pin to top — admin/owner only (also enforced by the DB guard trigger) */}
+        {canPin && (
+          <div>
+            <label className="block text-sm font-sans font-medium mb-2">Pripni na vrh</label>
+            <label className="flex items-center gap-2.5 cursor-pointer w-fit">
+              <Switch checked={!!form.pinned} onCheckedChange={(v) => updateForm("pinned", v)} />
+              <span className="text-sm text-muted-foreground font-sans">{form.pinned ? "Prikazano na vrhu domače strani (z oznako »Aktualno«)" : "Običajen vrstni red (po datumu)"}</span>
+            </label>
+            {form.pinned && (
+              <div className="mt-3 pl-1">
+                <label className="flex items-center gap-2.5 cursor-pointer w-fit mb-3">
+                  <Switch checked={form.pin_badge !== false} onCheckedChange={(v) => updateForm("pin_badge", v)} />
+                  <span className="text-sm text-muted-foreground font-sans">{form.pin_badge !== false ? "Prikaži oznako »Aktualno«" : "Brez oznake (objava je še vedno na vrhu)"}</span>
+                </label>
+                <div className="text-xs font-sans font-medium text-muted-foreground mb-2">Trajanje</div>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {[
+                    { label: "Trajno", val: "" },
+                    { label: "24 ur", val: inHours(24) },
+                    { label: "3 dni", val: inHours(72) },
+                    { label: "1 teden", val: inHours(168) },
+                  ].map((opt) => {
+                    const active = (form.pinned_until || "") === opt.val;
+                    return (
+                      <button
+                        key={opt.label}
+                        type="button"
+                        onClick={() => updateForm("pinned_until", opt.val)}
+                        className={`px-3 py-1.5 rounded-md text-xs font-sans font-medium border transition-colors ${active ? "bg-primary text-primary-foreground border-primary" : "bg-muted/40 text-muted-foreground border-border hover:border-primary/50"}`}
+                      >{opt.label}</button>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center gap-2 text-xs font-sans text-muted-foreground">
+                  <span className="whitespace-nowrap">Do (po meri):</span>
+                  <DateField
+                    value={(form.pinned_until || "").slice(0, 10)}
+                    onChange={(iso) => updateForm("pinned_until", iso ? `${iso}T23:59` : "")}
+                    className="bg-input border border-border rounded-md px-2 py-1 text-foreground text-xs w-40"
+                  />
+                </div>
+                <p className="text-xs font-sans text-muted-foreground/70 mt-1.5">
+                  {form.pinned_until
+                    ? `Pripeto do ${fmtSl(form.pinned_until)} — nato se objava samodejno vrne med ostale po datumu.`
+                    : "Objava ostane pripeta, dokler je ročno ne odpnete."}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Tags */}
         <div>
